@@ -3,15 +3,22 @@ param(
     [string]$DatabaseUser = "root",
     [string]$DatabasePassword = "root",
     [string]$MySqlPath = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe",
-    [switch]$BaselineExisting
+    [string]$MigrationDirectory = "",
+    [string]$VerifyDirectory = "",
+    [switch]$BaselineExisting,
+    [switch]$CheckOnly
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $root = Split-Path -Parent $PSScriptRoot
-$migrationDirectory = Join-Path $root "database\migrations"
-$verifyDirectory = Join-Path $root "database\verify"
+if (-not $MigrationDirectory) {
+    $MigrationDirectory = Join-Path $root "database\migrations"
+}
+if (-not $VerifyDirectory) {
+    $VerifyDirectory = Join-Path $root "database\verify"
+}
 $oldMySqlPassword = $env:MYSQL_PWD
 
 function ConvertTo-SqlLiteral {
@@ -94,18 +101,32 @@ ON DUPLICATE KEY UPDATE
 }
 
 try {
+    if ($BaselineExisting -and $CheckOnly) {
+        throw "BaselineExisting and CheckOnly cannot be used together"
+    }
     if (-not (Test-Path -LiteralPath $MySqlPath -PathType Leaf)) {
         throw "MySQL client not found: $MySqlPath"
     }
 
-    $migrations = @(Get-ChildItem -LiteralPath $migrationDirectory -File -Filter "V*.sql" |
+    $migrations = @(Get-ChildItem -LiteralPath $MigrationDirectory -File -Filter "V*.sql" |
         Sort-Object Name)
     if ($migrations.Count -eq 0) {
-        throw "No migration files found in $migrationDirectory"
+        throw "No migration files found in $MigrationDirectory"
     }
 
     $env:MYSQL_PWD = $DatabasePassword
-    Invoke-MySqlQuery @"
+    $historyTableRows = @(Invoke-MySqlQuery @"
+SELECT COUNT(*)
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'pxczxn_schema_version';
+"@)
+    $historyTableCount = [int]$historyTableRows[0]
+    if ($CheckOnly -and $historyTableCount -ne 1) {
+        throw "pxczxn_schema_version does not exist in $Database"
+    }
+    if (-not $CheckOnly) {
+        Invoke-MySqlQuery @"
 CREATE TABLE IF NOT EXISTS pxczxn_schema_version (
     version VARCHAR(32) NOT NULL,
     description VARCHAR(255) NOT NULL,
@@ -116,6 +137,7 @@ CREATE TABLE IF NOT EXISTS pxczxn_schema_version (
     CONSTRAINT chk_pxczxn_schema_version_success CHECK (success IN (0, 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 "@ | Out-Null
+    }
 
     $applied = 0
     $skipped = 0
@@ -154,12 +176,18 @@ WHERE version = '$versionLiteral';
                 $skipped++
                 continue
             }
+            if ($CheckOnly) {
+                throw "$version is recorded as failed"
+            }
             if ($BaselineExisting) {
                 throw "$version has a previous failed execution and cannot be baselined"
             }
         }
+        elseif ($CheckOnly) {
+            throw "$version is missing from pxczxn_schema_version"
+        }
 
-        $verifyFiles = @(Get-ChildItem -LiteralPath $verifyDirectory -File `
+        $verifyFiles = @(Get-ChildItem -LiteralPath $VerifyDirectory -File `
                 -Filter "$($version)__verify_*.sql")
         if ($verifyFiles.Count -ne 1) {
             throw "Expected exactly one verification file for $version, found $($verifyFiles.Count)"
@@ -209,9 +237,15 @@ WHERE version = '$versionLiteral';
     if ($failedCount -ne 0) {
         throw "Migration history contains $failedCount failed entries"
     }
+    $historyCountRows = @(Invoke-MySqlQuery `
+            "SELECT COUNT(*) FROM pxczxn_schema_version;")
+    $historyCount = [int]$historyCountRows[0]
+    if ($historyCount -ne $migrations.Count) {
+        throw "Migration history count $historyCount does not match repository count $($migrations.Count)"
+    }
 
     Write-Host "[PASS] migration history verified"
-    Write-Host "       applied=$applied baselined=$baselined skipped=$skipped total=$($migrations.Count)"
+    Write-Host "       checkOnly=$CheckOnly applied=$applied baselined=$baselined skipped=$skipped total=$($migrations.Count)"
 }
 finally {
     $env:MYSQL_PWD = $oldMySqlPassword
