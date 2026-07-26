@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-crypto</artifactId>
+            <artifactId>pxczxn-crypto</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
@@ -47,11 +47,11 @@
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-pay</artifactId>
+            <artifactId>pxczxn-pay</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-sms</artifactId>
+            <artifactId>pxczxn-sms</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
@@ -66,7 +66,7 @@
         <!-- WebSocket基础设施 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-websocket</artifactId>
+            <artifactId>pxczxn-websocket</artifactId>
         </dependency>
 
         <!-- Lombok -->

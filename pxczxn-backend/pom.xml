@@ -173,53 +173,53 @@
             <!-- 基础设施层 -->
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-db</artifactId>
+                <artifactId>pxczxn-db</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-redis</artifactId>
+                <artifactId>pxczxn-redis</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-oss</artifactId>
+                <artifactId>pxczxn-oss</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-websocket</artifactId>
+                <artifactId>pxczxn-websocket</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-sms</artifactId>
+                <artifactId>pxczxn-sms</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-push</artifactId>
+                <artifactId>pxczxn-push</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-wechat</artifactId>
+                <artifactId>pxczxn-wechat</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-social</artifactId>
+                <artifactId>pxczxn-social</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-crypto</artifactId>
+                <artifactId>pxczxn-crypto</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-mail</artifactId>
+                <artifactId>pxczxn-mail</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -251,7 +251,7 @@
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-pay</artifactId>
+                <artifactId>pxczxn-pay</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

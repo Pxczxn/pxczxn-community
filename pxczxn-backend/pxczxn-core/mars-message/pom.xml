@@ -23,15 +23,15 @@
         <!-- 邮件、短信、推送（通知多渠道） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-mail</artifactId>
+            <artifactId>pxczxn-mail</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-sms</artifactId>
+            <artifactId>pxczxn-sms</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-push</artifactId>
+            <artifactId>pxczxn-push</artifactId>
         </dependency>
 
         <!-- Lombok -->

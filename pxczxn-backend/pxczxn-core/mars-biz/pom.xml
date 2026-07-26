@@ -18,19 +18,19 @@
         <!-- 基础设施模块 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-db</artifactId>
+            <artifactId>pxczxn-db</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-redis</artifactId>
+            <artifactId>pxczxn-redis</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-oss</artifactId>
+            <artifactId>pxczxn-oss</artifactId>
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-crypto</artifactId>
+            <artifactId>pxczxn-crypto</artifactId>
         </dependency>
 
         <!-- 系统模块（Log 注解、权限等） -->

@@ -9,9 +9,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-oss</artifactId>
+    <artifactId>pxczxn-oss</artifactId>
     <packaging>jar</packaging>
-    <name>Mars OSS</name>
+    <name>pxczxn OSS</name>
     <description>对象存储基础设施 - 本地/MinIO/阿里云OSS/腾讯云COS/RustFS</description>
 
     <dependencies>

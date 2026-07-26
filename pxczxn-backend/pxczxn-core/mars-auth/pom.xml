@@ -23,17 +23,17 @@
         <!-- 短信（手机验证码登录） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-sms</artifactId>
+            <artifactId>pxczxn-sms</artifactId>
         </dependency>
         <!-- 微信（小程序登录） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-wechat</artifactId>
+            <artifactId>pxczxn-wechat</artifactId>
         </dependency>
         <!-- 三方登录 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-social</artifactId>
+            <artifactId>pxczxn-social</artifactId>
         </dependency>
 
         <!-- Sa-Token -->

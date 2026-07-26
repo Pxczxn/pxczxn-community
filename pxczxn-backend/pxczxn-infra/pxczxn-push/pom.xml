@@ -9,9 +9,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-push</artifactId>
+    <artifactId>pxczxn-push</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Push</name>
+    <name>pxczxn Push</name>
     <description>推送基础设施 - 极光/友盟/个推</description>
 
     <dependencies>

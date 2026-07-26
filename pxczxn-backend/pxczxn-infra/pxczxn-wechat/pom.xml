@@ -9,25 +9,28 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-redis</artifactId>
+    <artifactId>pxczxn-wechat</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Redis</name>
-    <description>Redis基础设施 - 缓存支持</description>
+    <name>pxczxn WeChat</name>
+    <description>微信基础设施 - 小程序/公众号</description>
 
     <dependencies>
-        <!-- Redis -->
+        <!-- 依赖系统模块（SystemConfigHelper读取配置） -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>mars-system</artifactId>
         </dependency>
 
-        <!--
-          Sa-Token 默认使用内存持久层，保证 Redis 关闭时仍可登录。
-          多实例部署时再通过独立 profile 显式接入 sa-token-redis-jackson。
-        -->
+        <!-- Hutool -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
     </dependencies>
 </project>

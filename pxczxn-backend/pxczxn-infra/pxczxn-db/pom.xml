@@ -9,9 +9,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-db</artifactId>
+    <artifactId>pxczxn-db</artifactId>
     <packaging>jar</packaging>
-    <name>Mars DB</name>
+    <name>pxczxn DB</name>
     <description>数据库基础设施 - MyBatis-Plus配置</description>
 
     <dependencies>

@@ -15,16 +15,16 @@
     <description>基础设施层</description>
 
     <modules>
-        <module>mars-db</module>
-        <module>mars-redis</module>
-        <module>mars-oss</module>
-        <module>mars-websocket</module>
-        <module>mars-sms</module>
-        <module>mars-push</module>
-        <module>mars-pay</module>
-        <module>mars-wechat</module>
-        <module>mars-social</module>
-        <module>mars-crypto</module>
-        <module>mars-mail</module>
+        <module>pxczxn-db</module>
+        <module>pxczxn-redis</module>
+        <module>pxczxn-oss</module>
+        <module>pxczxn-websocket</module>
+        <module>pxczxn-sms</module>
+        <module>pxczxn-push</module>
+        <module>pxczxn-pay</module>
+        <module>pxczxn-wechat</module>
+        <module>pxczxn-social</module>
+        <module>pxczxn-crypto</module>
+        <module>pxczxn-mail</module>
     </modules>
 </project>

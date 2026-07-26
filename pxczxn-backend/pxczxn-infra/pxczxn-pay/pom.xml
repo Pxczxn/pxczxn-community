@@ -9,9 +9,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-pay</artifactId>
+    <artifactId>pxczxn-pay</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Pay</name>
+    <name>pxczxn Pay</name>
     <description>支付基础设施 - 微信支付/支付宝</description>
 
     <dependencies>

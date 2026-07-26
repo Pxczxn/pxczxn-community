@@ -9,16 +9,16 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-websocket</artifactId>
+    <artifactId>pxczxn-websocket</artifactId>
     <packaging>jar</packaging>
-    <name>Mars WebSocket</name>
+    <name>pxczxn WebSocket</name>
     <description>WebSocket基础设施 - 握手认证、容器配置</description>
 
     <dependencies>
         <!-- Redis-backed one-time tickets with a local single-instance fallback -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-redis</artifactId>
+            <artifactId>pxczxn-redis</artifactId>
         </dependency>
 
         <!-- WebSocket -->

@@ -23,7 +23,7 @@
         <!-- 短信 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-sms</artifactId>
+            <artifactId>pxczxn-sms</artifactId>
         </dependency>
         <!-- 文件模块 -->
         <dependency>
@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-wechat</artifactId>
+            <artifactId>pxczxn-wechat</artifactId>
         </dependency>
 
         <!-- Lombok -->

@@ -9,27 +9,25 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-crypto</artifactId>
+    <artifactId>pxczxn-redis</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Crypto</name>
-    <description>加解密基础设施 - RSA/AES加解密、请求解密、响应加密</description>
+    <name>pxczxn Redis</name>
+    <description>Redis基础设施 - 缓存支持</description>
 
     <dependencies>
-        <dependency>
-            <groupId>top.pxczxn</groupId>
-            <artifactId>pxczxn-common</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Web (ControllerAdvice) -->
+        <!-- Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
         </dependency>
 
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
+        <!--
+          Sa-Token 默认使用内存持久层，保证 Redis 关闭时仍可登录。
+          多实例部署时再通过独立 profile 显式接入 sa-token-redis-jackson。
+        -->
     </dependencies>
 </project>

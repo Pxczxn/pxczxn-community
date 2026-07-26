@@ -9,22 +9,21 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-social</artifactId>
+    <artifactId>pxczxn-crypto</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Social</name>
-    <description>三方登录基础设施 - 微信/支付宝/Apple（策略+工厂模式）</description>
+    <name>pxczxn Crypto</name>
+    <description>加解密基础设施 - RSA/AES加解密、请求解密、响应加密</description>
 
     <dependencies>
-        <!-- 依赖系统模块（SystemConfigHelper读取配置） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
+            <artifactId>pxczxn-common</artifactId>
         </dependency>
 
-        <!-- Hutool -->
+        <!-- Spring Boot Web (ControllerAdvice) -->
         <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <!-- Lombok -->
