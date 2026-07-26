@@ -8,7 +8,7 @@
 
 ```text
 pxczxn-backend   Java 21 / Spring Boot 模块化单体与社区 API
-pxczxn-admin     Mars Admin / Vue 3 / Vite / Naive UI 平台管理端
+pxczxn-admin     Vue 3 / Vite / Naive UI 社区运营管理端
 pxczxn-web       vinext / React 19 博客用户端
 database         MySQL 迁移、种子、验证与受保护回滚
 docs             决策、交付记录和开发状态
@@ -19,7 +19,7 @@ docs             决策、交付记录和开发状态
 | 服务 | 地址 | 说明 |
 | --- | --- | --- |
 | 博客端 | `http://localhost:8847` | 用户注册、创作、投稿与公开博客 |
-| 管理端 | `http://localhost:8848` | Mars Admin 社区运营后台 |
+| 管理端 | `http://localhost:8848` | 星语社区运营中心 |
 | 后端 | `http://127.0.0.1:8849` | `/api/v1/**` 与 `/admin-api/**` |
 
 博客端私有生产预览：
@@ -51,7 +51,7 @@ cd pxczxn-backend
 $env:PXCZXN_DB_USERNAME = "root"
 $env:PXCZXN_DB_PASSWORD = "root"
 & "D:\Coding\software\environment\apache-maven-3.9.9\bin\mvn.cmd" package
-java -jar .\mars-starter\target\mars-starter-1.0.0.jar
+java -jar .\pxczxn-starter\target\pxczxn-starter-1.0.0.jar
 ```
 
 博客端：

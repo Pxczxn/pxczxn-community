@@ -6,7 +6,7 @@ import top.pxczxn.platform.system.entity.Customer;
 /**
  * 客户表 Service
  * 
- * @author Mars
+ * @author pxczxn
  * @date 2026-02-02
  */
 public interface CustomerService {

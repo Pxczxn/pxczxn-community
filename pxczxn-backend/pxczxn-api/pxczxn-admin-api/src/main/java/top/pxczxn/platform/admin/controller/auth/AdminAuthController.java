@@ -35,7 +35,7 @@ import java.util.Map;
 
 /**
  * 后台认证控制器
- * 登录通过 mars-auth 统一策略工厂处理
+ * 登录通过 pxczxn-auth 统一策略工厂处理
  */
 @RestController
 @RequestMapping("/auth")
@@ -125,7 +125,7 @@ public class AdminAuthController {
     }
 
     /**
-     * 登录（通过 mars-auth 统一策略）
+     * 登录（通过 pxczxn-auth 统一策略）
      */
     @PostMapping("/login")
     public Result<LoginResult> login(@RequestBody LoginRequest request) {

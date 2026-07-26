@@ -9,7 +9,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 /**
  * WebSocket配置
- * 注册业务WebSocket处理器，容器配置由 mars-websocket 模块提供
+ * 注册业务 WebSocket 处理器，容器配置由 pxczxn-websocket 模块提供
  */
 @Configuration
 @EnableWebSocket

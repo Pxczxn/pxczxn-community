@@ -92,7 +92,7 @@ export const useUserStore = defineStore('user', () => {
   }
 }, {
   persist: {
-    key: 'mars-user',
+    key: 'pxczxn-admin-user',
     paths: ['token']
   }
 })

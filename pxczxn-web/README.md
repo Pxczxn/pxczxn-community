@@ -1,7 +1,7 @@
 # 星语社区博客端
 
 用户侧前端根据 `blog-community-engineering-docs-v0.3/pxczxn-ui-design-system.md`
-和用户提供的八组原型实现，独立于 Mars Admin 管理端。
+和用户提供的八组原型实现，独立于星语社区运营管理端。
 
 ## 页面
 

@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * 客户表 Mapper
  * 
- * @author Mars
+ * @author pxczxn
  * @date 2026-02-02
  */
 @Mapper

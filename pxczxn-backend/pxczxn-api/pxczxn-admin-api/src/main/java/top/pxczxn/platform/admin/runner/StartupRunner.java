@@ -30,7 +30,7 @@ public class StartupRunner implements ApplicationRunner {
         }
 
         System.out.println("\n=================================================");
-        System.out.println("        Mars Admin 启动成功!");
+        System.out.println("        星语社区运营中心启动成功!");
         System.out.println("=================================================");
         System.out.println("  本地访问: http://localhost:" + port + contextPath);
         System.out.println("  网络访问: http://" + hostAddress + ":" + port + contextPath);

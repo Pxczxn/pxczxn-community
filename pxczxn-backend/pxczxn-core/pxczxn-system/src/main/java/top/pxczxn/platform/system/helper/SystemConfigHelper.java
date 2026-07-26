@@ -664,7 +664,7 @@ public class SystemConfigHelper implements top.pxczxn.platform.crypto.CryptoConf
      * 获取站点名称
      */
     public String getSiteName() {
-        return getString(GROUP_SYSTEM, "siteName", "Mars管理系统");
+        return getString(GROUP_SYSTEM, "siteName", "星语社区运营中心");
     }
 
     /**

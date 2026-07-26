@@ -10,7 +10,7 @@ import java.io.ByteArrayInputStream;
 
 @Component
 @RequiredArgsConstructor
-public class MarsCommunityObjectStorage implements CommunityObjectStorage {
+public class PxczxnCommunityObjectStorage implements CommunityObjectStorage {
 
     private final FileStorageFactory storageFactory;
 

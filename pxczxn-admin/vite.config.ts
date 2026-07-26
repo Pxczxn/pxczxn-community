@@ -13,7 +13,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: resolve(__dirname, '../pxczxn-backend/mars-starter/src/main/resources/static'),
+    outDir: resolve(__dirname, '../pxczxn-backend/pxczxn-starter/src/main/resources/static'),
     emptyOutDir: true
   },
   server: {

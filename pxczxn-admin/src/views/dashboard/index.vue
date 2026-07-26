@@ -113,65 +113,35 @@
             <n-descriptions-item label="系统名称">星语社区运营中心</n-descriptions-item>
             <n-descriptions-item label="系统版本">v1.0.7</n-descriptions-item>
             <n-descriptions-item label="前端框架">Vue 3.4 + Naive UI</n-descriptions-item>
-            <n-descriptions-item label="后端框架">Spring Boot 3.2</n-descriptions-item>
+            <n-descriptions-item label="后端框架">Spring Boot 3.5</n-descriptions-item>
             <n-descriptions-item label="数据库">MySQL 8.0</n-descriptions-item>
             <n-descriptions-item label="缓存">Redis 7.0</n-descriptions-item>
           </n-descriptions>
         </n-card>
       </n-gi>
 
-      <!-- 作者介绍 -->
+      <!-- 项目介绍 -->
       <n-gi>
-        <n-card title="关于作者" class="author-card">
+        <n-card title="关于项目" class="author-card">
           <div class="author-content">
             <div class="author-avatar">
               <n-avatar
                   round
                   :size="80"
-                  src="https://foruda.gitee.com/avatar/1692522394185109890/4768152_marsfactory_1692522394.png!avatar30"
+                  src="/pxczxn-mark.svg"
               >
               </n-avatar>
             </div>
             <div class="author-info">
-              <h3 class="author-name">程序员Mars</h3>
-              <p class="author-desc">开源作者全栈开发，抖音技术博主，专注于后台管理系统的开发与优化。</p>
-              <div class="author-links">
-                <n-space>
-                  <a href="https://gitee.com/Marsfactory/mars-admin" target="_blank" class="author-link">
-                    <n-icon size="16">
-                      <LogoGitlab/>
-                    </n-icon>
-                    <span>Gitee</span>
-                  </a>
-                  <a href="https://mars-coder.cn/" target="_blank" class="author-link">
-                    <n-icon size="16">
-                      <Globe/>
-                    </n-icon>
-                    <span>火星编程导航</span>
-                  </a>
-                  <n-popover trigger="hover" placement="top">
-                    <template #trigger>
-                      <span class="author-link">
-                        <n-icon size="16"><ChatbubbleOutline/></n-icon>
-                        <span>微信</span>
-                      </span>
-                    </template>
-                    <div class="wechat-info">
-                      <n-icon size="16" color="#07C160">
-                        <LogoWechat/>
-                      </n-icon>
-                      <span>Mars8377</span>
-                    </div>
-                  </n-popover>
-                </n-space>
-              </div>
+              <h3 class="author-name">星语社区</h3>
+              <p class="author-desc">面向团队博客、内容协作与社区治理的一体化平台。</p>
             </div>
           </div>
           <n-divider/>
           <div class="project-info">
             <p class="project-desc">
-              Mars Admin 是一个基于 Spring Boot 3 + Vue 3 的现代化后台管理系统，
-              采用最新的技术栈，提供完整的权限管理、系统监控等功能。
+              星语社区运营中心基于 Spring Boot 3 + Vue 3 构建，
+              提供社区内容治理、用户与权限、通知和系统审计等运营能力。
             </p>
             <div class="project-stats">
               <div class="project-stat-item">
@@ -208,9 +178,6 @@ import {
   PeopleOutline,
   MenuOutline,
   ShieldCheckmarkOutline,
-  LogoGitlab,
-  LogoWechat,
-  Globe,
   Star,
   Refresh,
   DocumentText,
@@ -220,8 +187,7 @@ import {
   RocketOutline,
   SparklesOutline,
   CodeSlashOutline,
-  CloudOutline,
-  ChatbubbleOutline
+  CloudOutline
 } from '@vicons/ionicons5'
 import {useUserStore} from '@/stores/user'
 import {dashboardApi} from '@/api/system'
@@ -248,8 +214,8 @@ function getGreeting() {
 // 轮播Banner数据
 const banners = [
   {
-    title: 'Mars Admin',
-    subtitle: '现代化后台管理系统',
+    title: '星语社区',
+    subtitle: '社区运营与内容治理中心',
     bgColor: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     icon: markRaw(RocketOutline),
     iconColor: 'rgba(255,255,255,0.3)'
@@ -376,7 +342,7 @@ const changelog = [
     changes: [
       '系统通知：移除短信渠道，Webhook 拆分为飞书/钉钉/企业微信分别选择',
       '钉钉推送：支持加签密钥（SEC），确保安全校验',
-      'mars-push 模块重构：支持文本和图片，统一 Webhook 发送逻辑',
+      'pxczxn-push 模块重构：支持文本和图片，统一 Webhook 发送逻辑',
       '新增通知记录：可查看各渠道推送触达情况及成功/失败状态',
       '推送失败支持重试：通知记录中失败渠道可一键重试'
     ]

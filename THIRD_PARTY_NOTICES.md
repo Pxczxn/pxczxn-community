@@ -1,6 +1,15 @@
+# Third-Party Notices
+
+星语社区运营管理端以 Mars Admin 脚手架为工程起点，并已进行独立的品牌、模块、包名与业务改造。
+
+- Upstream project: `https://gitee.com/Marsfactory/mars-admin`
+- Upstream license: MIT
+
+## Mars Admin MIT notice
+
 MIT License
 
-Copyright (c) 2026 pxczxn contributors
+Copyright (c) 2026 程序员Mars
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -33,20 +33,20 @@ function Assert-NotContains {
 }
 
 $saTokenConfig = Read-Source `
-    "pxczxn-backend\mars-core\mars-system\src\main\java\com\mars\system\config\SaTokenConfig.java"
+    "pxczxn-backend\pxczxn-core\pxczxn-system\src\main\java\top\pxczxn\platform\system\config\SaTokenConfig.java"
 $webSocketConfig = Read-Source `
-    "pxczxn-backend\mars-api\mars-admin-api\src\main\java\com\mars\admin\websocket\WebSocketConfig.java"
+    "pxczxn-backend\pxczxn-api\pxczxn-admin-api\src\main\java\top\pxczxn\platform\admin\websocket\WebSocketConfig.java"
 $handshake = Read-Source `
-    "pxczxn-backend\mars-infra\mars-websocket\src\main\java\com\mars\websocket\WebSocketHandshakeInterceptor.java"
+    "pxczxn-backend\pxczxn-infra\pxczxn-websocket\src\main\java\top\pxczxn\platform\websocket\WebSocketHandshakeInterceptor.java"
 $messageWebSocket = Read-Source "pxczxn-admin\src\utils\websocket.ts"
 $sshWebSocket = Read-Source `
     "pxczxn-admin\src\views\monitor\server-manager\index.vue"
 $userService = Read-Source `
-    "pxczxn-backend\mars-core\mars-system\src\main\java\com\mars\system\service\impl\SysUserServiceImpl.java"
+    "pxczxn-backend\pxczxn-core\pxczxn-system\src\main\java\top\pxczxn\platform\system\service\impl\SysUserServiceImpl.java"
 $userImport = Read-Source `
-    "pxczxn-backend\mars-core\mars-system\src\main\java\com\mars\system\excel\SysUserImportListener.java"
+    "pxczxn-backend\pxczxn-core\pxczxn-system\src\main\java\top\pxczxn\platform\system\excel\SysUserImportListener.java"
 $productionConfig = Read-Source `
-    "pxczxn-backend\mars-starter\src\main\resources\application-prod.yml"
+    "pxczxn-backend\pxczxn-starter\src\main\resources\application-prod.yml"
 
 Assert-NotContains $saTokenConfig 'allowedOriginPatterns("*")' "HTTP CORS"
 Assert-NotContains $webSocketConfig 'setAllowedOrigins("*")' "WebSocket CORS"
@@ -64,7 +64,7 @@ Assert-Contains $productionConfig "require-redis: true" `
     "production WebSocket ticket store"
 Assert-Contains $productionConfig 'allowed-origins: ${PXCZXN_CORS_ALLOWED_ORIGINS}' `
     "production CORS whitelist"
-Assert-NotContains $productionConfig "com.mars: debug" `
+Assert-NotContains $productionConfig "top.pxczxn.platform: debug" `
     "production logging"
 Assert-NotContains $productionConfig "500MB" `
     "production upload limits"

@@ -144,7 +144,7 @@ WHERE group_code = 'login';
 
     if (-not (Test-BackendReady)) {
         New-Item -ItemType Directory -Force -Path $workDirectory | Out-Null
-        $jar = Join-Path $backendRoot "mars-starter\target\mars-starter-1.0.0.jar"
+        $jar = Join-Path $backendRoot "pxczxn-starter\target\pxczxn-starter-1.0.0.jar"
         if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) {
             throw "Backend JAR not found after Maven verification: $jar"
         }

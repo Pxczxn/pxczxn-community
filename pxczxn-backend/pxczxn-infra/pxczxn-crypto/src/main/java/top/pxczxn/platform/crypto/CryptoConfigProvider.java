@@ -2,7 +2,7 @@ package top.pxczxn.platform.crypto;
 
 /**
  * 加密配置提供者接口
- * 由业务层（mars-system）实现，提供加密配置
+ * 由业务层（pxczxn-system）实现，提供加密配置
  * 避免基础设施层直接依赖业务层的 SystemConfigHelper
  */
 public interface CryptoConfigProvider {

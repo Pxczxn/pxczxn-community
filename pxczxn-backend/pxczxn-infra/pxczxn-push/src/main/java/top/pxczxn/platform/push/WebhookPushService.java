@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * Webhook 推送服务
- * 供 mars-message 等模块调用，向钉钉/飞书/企业微信群机器人发送消息
+ * 供 pxczxn-message 等模块调用，向钉钉/飞书/企业微信群机器人发送消息
  */
 @Slf4j
 @Service

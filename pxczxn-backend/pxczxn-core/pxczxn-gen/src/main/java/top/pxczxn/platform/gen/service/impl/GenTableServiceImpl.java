@@ -110,7 +110,7 @@ public class GenTableServiceImpl implements GenTableService {
             table.setFormLayout("vertical");
             table.setFunctionName(StrUtil.isNotBlank(dbTable.getTableComment()) ? 
                     dbTable.getTableComment() : toClassName(tableName));
-            table.setAuthor("Mars");
+            table.setAuthor("pxczxn");
             table.setGenType("crud");
             table.setFrontType("naive-ui");
             genTableMapper.insert(table);
@@ -259,10 +259,7 @@ public class GenTableServiceImpl implements GenTableService {
         List<String> files = new ArrayList<>();
         List<String[]> templates = getTemplateList();
         
-        String projectRoot = System.getProperty("user.dir");
-        if (projectRoot.endsWith("mars-web")) {
-            projectRoot = projectRoot.substring(0, projectRoot.length() - 8);
-        }
+        String projectRoot = resolveProjectRoot();
         
         for (String[] tpl : templates) {
             String relativePath = getProjectFilePath(table, tpl[1], projectRoot);
@@ -296,12 +293,7 @@ public class GenTableServiceImpl implements GenTableService {
         VelocityContext context = prepareContext(table);
         List<String[]> templates = getTemplateList();
         
-        // 获取项目根目录
-        String projectRoot = System.getProperty("user.dir");
-        // 如果是在 mars-web 目录下运行，需要找到项目根目录
-        if (projectRoot.endsWith("mars-web")) {
-            projectRoot = projectRoot.substring(0, projectRoot.length() - 8);
-        }
+        String projectRoot = resolveProjectRoot();
         
         for (String[] tpl : templates) {
             String code = renderTemplate(tpl[0], context);
@@ -453,10 +445,7 @@ public class GenTableServiceImpl implements GenTableService {
         
         List<String> files = new ArrayList<>();
         
-        String projectRoot = System.getProperty("user.dir");
-        if (projectRoot.endsWith("mars-web")) {
-            projectRoot = projectRoot.substring(0, projectRoot.length() - 8);
-        }
+        String projectRoot = resolveProjectRoot();
         
         // 检查哪些文件存在
         List<String[]> templates = getTemplateList();
@@ -497,11 +486,7 @@ public class GenTableServiceImpl implements GenTableService {
         
         List<String> removedFiles = new ArrayList<>();
         
-        // 获取项目根目录
-        String projectRoot = System.getProperty("user.dir");
-        if (projectRoot.endsWith("mars-web")) {
-            projectRoot = projectRoot.substring(0, projectRoot.length() - 8);
-        }
+        String projectRoot = resolveProjectRoot();
         
         // 获取所有生成的文件路径
         List<String[]> templates = getTemplateList();
@@ -574,16 +559,25 @@ public class GenTableServiceImpl implements GenTableService {
         String businessName = table.getBusinessName();
         
         return switch (fileName) {
-            case "Entity.java" -> projectRoot + "/mars-core/mars-biz/src/main/java/com/mars/biz/entity/" + className + ".java";
-            case "Mapper.java" -> projectRoot + "/mars-core/mars-biz/src/main/java/com/mars/biz/mapper/" + className + "Mapper.java";
-            case "Service.java" -> projectRoot + "/mars-core/mars-biz/src/main/java/com/mars/biz/service/" + className + "Service.java";
-            case "ServiceImpl.java" -> projectRoot + "/mars-core/mars-biz/src/main/java/com/mars/biz/service/impl/" + className + "ServiceImpl.java";
-            case "Controller.java" -> projectRoot + "/mars-core/mars-biz/src/main/java/com/mars/biz/controller/" + className + "Controller.java";
-            case "api.ts" -> projectRoot + "/mars-ui/src/api/" + businessName + ".ts";
-            case "index.vue" -> projectRoot + "/mars-ui/src/views/" + moduleName + "/" + businessName + "/index.vue";
+            case "Entity.java" -> projectRoot + "/pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/platform/biz/entity/" + className + ".java";
+            case "Mapper.java" -> projectRoot + "/pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/platform/biz/mapper/" + className + "Mapper.java";
+            case "Service.java" -> projectRoot + "/pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/platform/biz/service/" + className + "Service.java";
+            case "ServiceImpl.java" -> projectRoot + "/pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/platform/biz/service/impl/" + className + "ServiceImpl.java";
+            case "Controller.java" -> projectRoot + "/pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/platform/biz/controller/" + className + "Controller.java";
+            case "api.ts" -> projectRoot + "/pxczxn-admin/src/api/" + businessName + ".ts";
+            case "index.vue" -> projectRoot + "/pxczxn-admin/src/views/" + moduleName + "/" + businessName + "/index.vue";
             case "menu.sql" -> null; // SQL 文件不自动写入
             default -> null;
         };
+    }
+
+    private String resolveProjectRoot() {
+        String projectRoot = System.getProperty("user.dir");
+        String backendDirectory = "pxczxn-backend";
+        if (projectRoot.endsWith(backendDirectory)) {
+            return projectRoot.substring(0, projectRoot.length() - backendDirectory.length());
+        }
+        return projectRoot;
     }
 
     @Override

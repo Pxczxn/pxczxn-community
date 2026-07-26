@@ -4,10 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 代码领取微信公众号【程序员Mars】
+ * 星语社区示例定时任务
  *
  * @className: TestTask
- * @author: Mars
+ * @author pxczxn
  * @date: 2026/3/3 20:55
  */
 @Slf4j
