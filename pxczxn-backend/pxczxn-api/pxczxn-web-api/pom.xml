@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
+            <artifactId>pxczxn-system</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

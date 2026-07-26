@@ -15,7 +15,7 @@
     <description>接口层 - 平台后台 API 与社区 Web API</description>
 
     <modules>
-        <module>mars-admin-api</module>
+        <module>pxczxn-admin-api</module>
         <module>pxczxn-web-api</module>
     </modules>
 </project>

@@ -18,7 +18,7 @@
         <!-- 后台接口层 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-admin-api</artifactId>
+            <artifactId>pxczxn-admin-api</artifactId>
         </dependency>
 
         <!-- 社区与公开接口层 -->

@@ -18,7 +18,7 @@
         <!-- 依赖系统模块（SystemConfigHelper读取配置） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
+            <artifactId>pxczxn-system</artifactId>
         </dependency>
 
         <!-- 微信支付 -->

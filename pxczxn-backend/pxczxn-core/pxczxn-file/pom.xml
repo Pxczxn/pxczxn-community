@@ -9,23 +9,16 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-gen</artifactId>
+    <artifactId>pxczxn-file</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Gen</name>
-    <description>代码生成模块 - 代码生成器</description>
+    <name>pxczxn File</name>
+    <description>文件管理模块 - 文件上传、存储、分组</description>
 
     <dependencies>
-        <!-- 依赖系统模块 -->
+        <!-- 依赖系统模块（使用存储策略工厂） -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
-        </dependency>
-
-        <!-- Velocity 模板引擎 -->
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity-engine-core</artifactId>
-            <version>2.3</version>
+            <artifactId>pxczxn-system</artifactId>
         </dependency>
 
         <!-- Lombok -->

@@ -226,17 +226,17 @@
             <!-- 业务核心层 -->
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-system</artifactId>
+                <artifactId>pxczxn-system</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-file</artifactId>
+                <artifactId>pxczxn-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-gen</artifactId>
+                <artifactId>pxczxn-gen</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -246,7 +246,7 @@
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-message</artifactId>
+                <artifactId>pxczxn-message</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -258,7 +258,7 @@
             <!-- 接口层 -->
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-admin-api</artifactId>
+                <artifactId>pxczxn-admin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -273,7 +273,7 @@
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-auth</artifactId>
+                <artifactId>pxczxn-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -18,12 +18,12 @@
         <!-- 认证模块 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-auth</artifactId>
+            <artifactId>pxczxn-auth</artifactId>
         </dependency>
         <!-- 系统模块 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
+            <artifactId>pxczxn-system</artifactId>
         </dependency>
         <!-- Lombok -->
         <dependency>

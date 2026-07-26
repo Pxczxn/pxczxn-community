@@ -9,29 +9,23 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>mars-message</artifactId>
+    <artifactId>pxczxn-gen</artifactId>
     <packaging>jar</packaging>
-    <name>Mars Message</name>
-    <description>消息中心模块 - 系统公告、即时通讯</description>
+    <name>pxczxn Gen</name>
+    <description>代码生成模块 - 代码生成器</description>
 
     <dependencies>
-        <!-- 依赖系统模块（使用用户信息） -->
+        <!-- 依赖系统模块 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
-            <artifactId>mars-system</artifactId>
+            <artifactId>pxczxn-system</artifactId>
         </dependency>
-        <!-- 邮件、短信、推送（通知多渠道） -->
+
+        <!-- Velocity 模板引擎 -->
         <dependency>
-            <groupId>top.pxczxn</groupId>
-            <artifactId>pxczxn-mail</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>top.pxczxn</groupId>
-            <artifactId>pxczxn-sms</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>top.pxczxn</groupId>
-            <artifactId>pxczxn-push</artifactId>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-engine-core</artifactId>
+            <version>2.3</version>
         </dependency>
 
         <!-- Lombok -->

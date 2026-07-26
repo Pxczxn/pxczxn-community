@@ -15,11 +15,11 @@
     <description>业务核心层 - 业务模块</description>
 
     <modules>
-        <module>mars-system</module>
-        <module>mars-file</module>
-        <module>mars-gen</module>
-        <module>mars-message</module>
-        <module>mars-auth</module>
+        <module>pxczxn-system</module>
+        <module>pxczxn-file</module>
+        <module>pxczxn-gen</module>
+        <module>pxczxn-message</module>
+        <module>pxczxn-auth</module>
         <module>pxczxn-biz</module>
     </modules>
 </project>
