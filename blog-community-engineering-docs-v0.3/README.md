@@ -1,7 +1,7 @@
 # 博客社区工程文档包 v0.3
 
-> 状态：产品方案定稿 / 第一阶段待开发  
-> 整理日期：2026-07-25  
+> 状态：V1（M1 + M2）与即时聊天已完成；M2.5 已规划待开发<br>
+> 整理日期：2026-07-27<br>
 > 工程项目代号：`pxczxn-community`
 
 ## 1. 项目定义
@@ -49,6 +49,9 @@
 | `ALL_IN_ONE.md` | 全部专题文档的完整合并版 |
 | `prompts/M1-T001-codex-prompt.md` | 第一个 Codex 开发任务提示词 |
 | `ENGINEERING_DOCUMENTATION.md` | 上述文档的合并版摘要 |
+| `../docs/planning/M2.5-M6-delivery-plan.md` | 当前正式产品演进计划与共同门禁 |
+| `../docs/delivery/M2.5-M6-task-breakdown.md` | M2.5 至 M6 可执行任务、依赖与验收标准 |
+| `../docs/delivery/development-status.md` | 当前工程交付状态和阶段证据 |
 
 ## 4. 文档使用规则
 
@@ -56,26 +59,23 @@
 - 技术栈与工程基线以 `docs/00-technology-stack.md` 为准。
 - 数据库字段以 `07-data-model.md` 为设计源，最终以 `database/migrations` 中的版本化 SQL 为准。
 - 接口以 `09-api-contract-m1.md` 为第一阶段契约源。
-- 开发顺序以 `10-m1-task-breakdown.md` 为准。
+- 当前开发顺序以 `../docs/delivery/M2.5-M6-task-breakdown.md` 为准；历史 M1 任务拆分保留为 V1 设计记录。
 - 法律与合规内容属于产品设计假设，不替代正式法律意见。
 
 ## 5. 当前开发起点
 
-第一项实际开发任务：
+当前 V1 已完成，下一项实际开发任务：
 
 ```text
-M1-T001：社区业务模块初始化
+M2.5-T001：平台首页与发现页
 ```
 
-第一阶段目标：
+M2.5 阶段目标：
 
 ```text
-注册
-→ 自动创建个人博客
-→ 创建文章
-→ 保存版本
-→ 提交审核
-→ 后台审核
-→ 发布
-→ 公开访问博客主页和文章
+首次进入博客端
+→ 真实 /discover 内容流
+→ 清晰的平台导航与创作入口
+→ 参数化内容、团队与协作路由
+→ 管理端社区运营中心
 ```

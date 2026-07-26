@@ -90,5 +90,10 @@ cd ..\pxczxn-backend
 & "D:\Coding\software\environment\apache-maven-3.9.9\bin\mvn.cmd" verify
 ```
 
-详细完成度和逐任务证据见 `docs/delivery/development-status.md`，最终验收见
+详细完成度和逐任务证据见 `docs/delivery/development-status.md`，V1 最终验收见
 `docs/delivery/M2-T010-final-acceptance.md`。
+
+后续产品路线与任务清单：
+
+- `docs/planning/M2.5-M6-delivery-plan.md`
+- `docs/delivery/M2.5-M6-task-breakdown.md`
