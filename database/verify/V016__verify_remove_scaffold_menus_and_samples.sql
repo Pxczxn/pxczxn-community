@@ -1,10 +1,25 @@
 SET NAMES utf8mb4;
 
 SELECT IF(
-    COUNT(*) = 0,
+    (
+        EXISTS (
+            SELECT 1
+            FROM `pxczxn_schema_version`
+            WHERE `version` = 'V017' AND `success` = 1
+        )
+        AND COUNT(*) > 0
+    )
+    OR (
+        NOT EXISTS (
+            SELECT 1
+            FROM `pxczxn_schema_version`
+            WHERE `version` = 'V017' AND `success` = 1
+        )
+        AND COUNT(*) = 0
+    ),
     'PASS',
     'FAIL'
-) AS `scaffold_menus_removed`
+) AS `scaffold_menu_policy_state_valid`
 FROM `sys_menu`
 WHERE `id` IN (139, 140, 154, 162, 170, 279)
    OR `parent_id` IN (140, 154, 162, 170)
@@ -41,10 +56,26 @@ LEFT JOIN `sys_menu` `m` ON `m`.`id` = `rm`.`menu_id`
 WHERE `m`.`id` IS NULL;
 
 SELECT IF(
-    COUNT(*) = 0,
+    (
+        EXISTS (
+            SELECT 1
+            FROM `pxczxn_schema_version`
+            WHERE `version` = 'V018' AND `success` = 1
+        )
+        AND COUNT(*) = 5
+        AND SUM(`status` = 0) = 5
+    )
+    OR (
+        NOT EXISTS (
+            SELECT 1
+            FROM `pxczxn_schema_version`
+            WHERE `version` = 'V018' AND `success` = 1
+        )
+        AND COUNT(*) = 0
+    ),
     'PASS',
     'FAIL'
-) AS `scaffold_config_groups_removed`
+) AS `scaffold_config_policy_state_valid`
 FROM `sys_config_group`
 WHERE `group_code` IN (
     'sms',
