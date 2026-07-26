@@ -1,0 +1,11 @@
+package top.pxczxn.community.social.application;
+
+import java.util.List;
+
+public record ContentFavoritorPageView(
+        List<ContentFavoritorView> records,
+        long total,
+        int pageNum,
+        int pageSize
+) {
+}

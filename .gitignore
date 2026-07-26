@@ -1,0 +1,51 @@
+# Dependencies, caches and build output
+node_modules/
+dist/
+out/
+target/
+**/target/
+.next/
+.vinext/
+.wrangler/
+.turbo/
+.cache/
+coverage/
+*.tsbuildinfo
+*.hprof
+pxczxn-backend/mars-starter/src/main/resources/static/
+
+# Local runtime state and generated evidence
+.run/
+**/.run/
+work/
+**/work/
+outputs/
+**/outputs/
+logs/
+**/logs/
+uploads/
+**/uploads/
+*.log
+*.pid
+*.tmp
+
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# Local Codex and IDE state
+.agents/
+.codex/
+.idea/
+.vscode/
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

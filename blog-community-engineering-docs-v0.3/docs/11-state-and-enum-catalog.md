@@ -1,0 +1,103 @@
+# 11 状态与枚举目录
+
+## 用户状态
+
+```text
+NORMAL / LIMITED / FROZEN / BANNED / DEACTIVATED / DELETED
+```
+
+## 博客类型与状态
+
+```text
+PERSONAL / TEAM
+ACTIVE / HIDDEN / FROZEN / CLOSED / DELETED
+```
+
+## 文章内容模式
+
+```text
+RICH_TEXT / MARKDOWN
+```
+
+## 文章可见性
+
+```text
+PUBLIC / PRIVATE / FOLLOWERS_ONLY / UNLISTED
+```
+
+## 发布方式
+
+```text
+IMMEDIATE / SCHEDULED / MANUAL
+```
+
+## 文章发布状态
+
+```text
+DRAFT / PENDING_REVIEW / APPROVED / SCHEDULED / PUBLISHED
+HIDDEN / TAKEN_DOWN / PUBLISH_FAILED / DELETED
+```
+
+## 审核状态
+
+```text
+NOT_SUBMITTED / QUEUED / AUTO_REVIEWING / MANUAL_REVIEWING
+APPROVED / REVISION_REQUIRED / REJECTED / CANCELLED / EXPIRED
+```
+
+## 审核阶段
+
+```text
+TEAM_INTERNAL / PLATFORM_AUTO / PLATFORM_MANUAL / APPEAL_REVIEW
+```
+
+## 关键词级别
+
+```text
+BLOCK / REVIEW / WARN
+```
+
+## 团队角色
+
+```text
+OWNER / ADMIN / EDITOR / AUTHOR
+```
+
+## 系列状态
+
+```text
+DRAFT / PENDING_REVIEW / REVISION_REQUIRED / APPROVED
+COMPLETED / HIDDEN / TAKEN_DOWN / DELETED
+```
+
+连载状态：
+
+```text
+ONGOING / PAUSED / COMPLETED
+```
+
+## 评论状态
+
+```text
+PENDING_REVIEW / PUBLISHED / HIDDEN_BY_AUTHOR / HIDDEN_BY_BLOG
+DELETED_BY_USER / TAKEN_DOWN / SPAM
+```
+
+## 关注通知等级
+
+```text
+ALL / IMPORTANT / MUTED
+```
+
+## 转载策略
+
+```text
+ALLOW / APPROVAL_REQUIRED / DISALLOW
+```
+
+## 动态类型
+
+```text
+TEXT / IMAGE / LINK / ARTICLE_SHARE / PROJECT_UPDATE / CODE / POLL
+TEAM_NOTICE / REPOST / QUOTE / VIDEO_LINK
+```
