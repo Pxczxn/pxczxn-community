@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.social;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

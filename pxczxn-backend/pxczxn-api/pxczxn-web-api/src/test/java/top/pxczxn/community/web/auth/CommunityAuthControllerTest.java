@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.auth;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.user.application.CommunityLoginSession;

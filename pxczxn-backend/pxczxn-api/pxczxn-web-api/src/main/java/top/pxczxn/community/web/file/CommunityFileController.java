@@ -1,7 +1,7 @@
 package top.pxczxn.community.web.file;
 
-import com.mars.common.exception.BusinessException;
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.exception.BusinessException;
+import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;

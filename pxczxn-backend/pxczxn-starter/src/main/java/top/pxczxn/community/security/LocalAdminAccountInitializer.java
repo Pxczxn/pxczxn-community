@@ -1,12 +1,12 @@
 package top.pxczxn.community.security;
 
 import cn.hutool.crypto.digest.BCrypt;
-import com.mars.system.entity.SysRole;
-import com.mars.system.entity.SysUser;
-import com.mars.system.entity.SysUserRole;
-import com.mars.system.service.SysRoleService;
-import com.mars.system.service.SysUserRoleService;
-import com.mars.system.service.SysUserService;
+import top.pxczxn.platform.system.entity.SysRole;
+import top.pxczxn.platform.system.entity.SysUser;
+import top.pxczxn.platform.system.entity.SysUserRole;
+import top.pxczxn.platform.system.service.SysRoleService;
+import top.pxczxn.platform.system.service.SysUserRoleService;
+import top.pxczxn.platform.system.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,6 +1,6 @@
 package top.pxczxn.community.file.application;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;

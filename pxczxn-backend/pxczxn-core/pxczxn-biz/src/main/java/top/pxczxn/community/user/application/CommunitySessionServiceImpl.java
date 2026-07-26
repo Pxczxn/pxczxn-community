@@ -3,7 +3,7 @@ package top.pxczxn.community.user.application;
 import cn.hutool.core.lang.Validator;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

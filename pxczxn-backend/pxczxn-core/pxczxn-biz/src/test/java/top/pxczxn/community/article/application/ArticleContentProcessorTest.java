@@ -1,7 +1,7 @@
 package top.pxczxn.community.article.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

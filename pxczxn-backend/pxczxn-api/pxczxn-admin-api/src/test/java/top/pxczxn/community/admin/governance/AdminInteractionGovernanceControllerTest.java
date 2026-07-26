@@ -1,8 +1,8 @@
 package top.pxczxn.community.admin.governance;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
-import com.mars.common.exception.BusinessException;
-import com.mars.system.annotation.Log;
+import top.pxczxn.platform.common.exception.BusinessException;
+import top.pxczxn.platform.system.annotation.Log;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.admin.application.AdminCommunityCommentView;

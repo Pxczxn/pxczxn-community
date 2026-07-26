@@ -1,6 +1,6 @@
 package top.pxczxn.community.social.application;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.util.Locale;
 import java.util.Set;

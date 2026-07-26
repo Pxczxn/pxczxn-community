@@ -1,7 +1,7 @@
 package top.pxczxn.community.blog.application;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;

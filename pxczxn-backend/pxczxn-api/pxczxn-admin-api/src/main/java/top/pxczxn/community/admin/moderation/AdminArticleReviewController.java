@@ -2,8 +2,8 @@ package top.pxczxn.community.admin.moderation;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
-import com.mars.common.result.PageResult;
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.PageResult;
+import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;

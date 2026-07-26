@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.article;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.article.application.ArticleDraftService;

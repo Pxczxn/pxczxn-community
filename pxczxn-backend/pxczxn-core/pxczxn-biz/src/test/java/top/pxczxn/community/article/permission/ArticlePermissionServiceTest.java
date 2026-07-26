@@ -1,6 +1,6 @@
 package top.pxczxn.community.article.permission;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.article.model.Article;

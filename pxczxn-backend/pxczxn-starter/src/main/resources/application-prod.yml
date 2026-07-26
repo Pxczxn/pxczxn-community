@@ -37,7 +37,7 @@ spring:
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: com.mars.common.entity,com.mars.system.entity,com.mars.file.entity,com.mars.gen.entity,com.mars.message.entity,com.mars.mall.entity,com.mars.job.entity,com.mars.biz.entity
+  type-aliases-package: top.pxczxn.platform.common.entity,top.pxczxn.platform.system.entity,top.pxczxn.platform.file.entity,top.pxczxn.platform.gen.entity,top.pxczxn.platform.message.entity,top.pxczxn.platform.mall.entity,top.pxczxn.platform.job.entity,top.pxczxn.platform.biz.entity
   configuration:
     map-underscore-to-camel-case: true
   global-config:

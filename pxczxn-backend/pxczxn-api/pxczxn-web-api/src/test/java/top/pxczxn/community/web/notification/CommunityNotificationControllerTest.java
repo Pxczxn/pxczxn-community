@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.notification;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.notification.application.CommunityNotificationInboxService;

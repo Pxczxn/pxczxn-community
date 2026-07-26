@@ -1,6 +1,6 @@
 package top.pxczxn.community.article.permission;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 
 public record ArticlePermissionDecision(
         boolean allowed,

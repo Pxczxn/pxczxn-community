@@ -1,9 +1,9 @@
 package top.pxczxn.community.admin.query;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
-import com.mars.common.exception.BusinessException;
-import com.mars.common.result.PageResult;
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.exception.BusinessException;
+import top.pxczxn.platform.common.result.PageResult;
+import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

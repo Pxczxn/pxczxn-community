@@ -1,7 +1,7 @@
 package top.pxczxn.community.web.file;
 
-import com.mars.oss.FileStorage;
-import com.mars.system.storage.FileStorageFactory;
+import top.pxczxn.platform.oss.FileStorage;
+import top.pxczxn.platform.system.storage.FileStorageFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import top.pxczxn.community.file.application.CommunityObjectStorage;

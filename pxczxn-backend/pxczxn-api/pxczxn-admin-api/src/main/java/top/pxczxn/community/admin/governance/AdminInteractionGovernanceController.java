@@ -2,10 +2,10 @@ package top.pxczxn.community.admin.governance;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
-import com.mars.common.exception.BusinessException;
-import com.mars.common.result.PageResult;
-import com.mars.common.result.Result;
-import com.mars.system.annotation.Log;
+import top.pxczxn.platform.common.exception.BusinessException;
+import top.pxczxn.platform.common.result.PageResult;
+import top.pxczxn.platform.common.result.Result;
+import top.pxczxn.platform.system.annotation.Log;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;

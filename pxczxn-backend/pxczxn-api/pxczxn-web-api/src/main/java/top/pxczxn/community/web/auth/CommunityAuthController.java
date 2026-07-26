@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.auth;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

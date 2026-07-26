@@ -1,6 +1,6 @@
 package top.pxczxn.community.user.application;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 
 public final class RegistrationConflictException extends BusinessException {
 

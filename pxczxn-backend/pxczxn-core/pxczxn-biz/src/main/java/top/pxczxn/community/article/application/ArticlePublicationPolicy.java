@@ -1,6 +1,6 @@
 package top.pxczxn.community.article.application;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.blog.model.Blog;
 

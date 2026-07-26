@@ -3,7 +3,7 @@ package top.pxczxn.community.article.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.commonmark.Extension;
 import org.commonmark.ext.autolink.AutolinkExtension;

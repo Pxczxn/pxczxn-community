@@ -1,7 +1,7 @@
 package top.pxczxn.community.moderation.application;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

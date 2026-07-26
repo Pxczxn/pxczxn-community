@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.moderation;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

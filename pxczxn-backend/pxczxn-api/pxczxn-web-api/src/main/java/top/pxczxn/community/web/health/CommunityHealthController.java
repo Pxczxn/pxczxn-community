@@ -1,6 +1,6 @@
 package top.pxczxn.community.web.health;
 
-import com.mars.common.result.Result;
+import top.pxczxn.platform.common.result.Result;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

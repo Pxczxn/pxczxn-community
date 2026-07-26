@@ -8,14 +8,14 @@ import org.mybatis.spring.annotation.MapperScan;
 /**
  * pxczxn 博客社区模块化单体启动入口。
  */
-@SpringBootApplication(scanBasePackages = {"top.pxczxn.community", "com.mars"})
+@SpringBootApplication(scanBasePackages = {"top.pxczxn.community", "top.pxczxn.platform"})
 @MapperScan({
-        "com.mars.system.mapper",
-        "com.mars.file.mapper",
-        "com.mars.gen.mapper",
-        "com.mars.message.mapper",
-        "com.mars.sms.mapper",
-        "com.mars.job.mapper",
+        "top.pxczxn.platform.system.mapper",
+        "top.pxczxn.platform.file.mapper",
+        "top.pxczxn.platform.gen.mapper",
+        "top.pxczxn.platform.message.mapper",
+        "top.pxczxn.platform.sms.mapper",
+        "top.pxczxn.platform.job.mapper",
         "top.pxczxn.community.user.persistence",
         "top.pxczxn.community.blog.persistence",
         "top.pxczxn.community.file.persistence",

@@ -1,6 +1,6 @@
 package top.pxczxn.community.file.application;
 
-import com.mars.common.exception.BusinessException;
+import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;

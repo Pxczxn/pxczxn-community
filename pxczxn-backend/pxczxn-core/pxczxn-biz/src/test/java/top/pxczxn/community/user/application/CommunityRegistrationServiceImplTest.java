@@ -192,7 +192,7 @@ class CommunityRegistrationServiceImplTest {
                 password,
                 null
         )))
-                .isInstanceOf(com.mars.common.exception.BusinessException.class)
+                .isInstanceOf(top.pxczxn.platform.common.exception.BusinessException.class)
                 .hasMessage("密码 UTF-8 编码后不能超过 72 字节");
 
         verify(userMapper, never()).selectCount(any());
