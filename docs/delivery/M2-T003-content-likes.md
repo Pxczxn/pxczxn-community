@@ -88,8 +88,8 @@ Orphan likes / follows: 0 / 0
 
 - `database/migrations/V008__like_list_privacy.sql`
 - `database/verify/V008__verify_like_list_privacy.sql`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/`
 
 ## 安全与一致性结论
 

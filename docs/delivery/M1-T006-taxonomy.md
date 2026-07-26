@@ -17,7 +17,7 @@ DELETE /admin-api/community/tags/{tagId}
 ```
 
 博客分类接口只接受独立的 `pxczxn-community-token`。平台标签公开查询只返回
-`ACTIVE` 标签；管理接口使用 Mars Admin 的 `Authorization` Token 和 RBAC。
+`ACTIVE` 标签；管理接口使用星语社区运营管理端的 `Authorization` Token 和 RBAC。
 
 ## 博客分类规则
 

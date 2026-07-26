@@ -2,7 +2,7 @@
 
 ## 交付范围
 
-- 保留 Mars Admin 的 Vue 3、Vite、TypeScript、Naive UI、RBAC、动态菜单和通用布局。
+- 保留 pxczxn 运营管理端的 Vue 3、Vite、TypeScript、Naive UI、RBAC、动态菜单和通用布局。
 - 新增社区工作台、社区用户、博客、文章、文章审核和平台标签六个运营页面。
 - 新增管理端社区查询 API、权限菜单迁移和浅色、深色、星空三套主题。
 - 完成 `pxczxn` 品牌、登录页、站点标题、图标和社区运营文案替换。
@@ -10,7 +10,7 @@
 ## 后端与权限
 
 - 新增管理查询服务，提供全局统计、近七日趋势、用户、博客、文章分页和文章详情。
-- 管理接口统一位于 `/admin-api/community/**`，继续使用 Mars Admin 管理员会话与权限拦截。
+- 管理接口统一位于 `/admin-api/community/**`，继续使用 pxczxn 管理员会话与权限拦截。
 - 文章详情只返回服务端清洗后的安全 HTML，不暴露编辑器源数据或未发布内容。
 - V006 注册社区工作台、用户、博客和文章菜单及查询权限，并授权默认管理员角色。
 - 所有 BIGINT 业务 ID 在 JSON 中继续使用字符串，避免前端精度损失。
@@ -38,7 +38,7 @@
 
 ```text
 PlatformTagService regression tests: 4 passed
-Mars Admin API automated tests: 8 passed
+pxczxn Admin API automated tests: 8 passed
 Admin production build: 4932 modules / PASS
 Backend Maven package: 26 modules / SUCCESS
 V006 menus / permissions / admin grants: 9 / 5 / 10, PASS
@@ -54,5 +54,5 @@ Runtime health on 8849: UP
 
 ## 已知脚手架债务
 
-- Mars Admin 原脚手架仍有一批旧页面的严格 TypeScript/noUnused 报错；社区新增页面已修正自身类型问题，Vite 生产构建正常。
+- 当时的原始脚手架仍有一批旧页面的严格 TypeScript/noUnused 报错；社区新增页面已修正自身类型问题，Vite 生产构建正常。
 - 原脚手架的少量大体积公共 chunk 和 Sass legacy API 会产生构建警告，留待最终性能与依赖治理阶段处理。

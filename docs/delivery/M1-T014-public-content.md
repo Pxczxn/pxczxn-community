@@ -66,7 +66,7 @@ review_status
 ```text
 Community business automated tests: 95 passed
 Community web API automated tests: 18 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T014-specific automated tests: 15 passed
 
 Public blog theme / SEO / live article count: PASS

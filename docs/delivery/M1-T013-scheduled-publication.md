@@ -46,7 +46,7 @@ last_error_code / last_error_message / lock_version
 最多一个活动发布任务。取消或修改计划会先终结旧任务，再在同一事务中创建新
 任务；文章乐观锁冲突时整个事务回滚。
 
-V005 同时向 Mars Admin 的 `sys_job` 注册
+V005 同时向运营管理平台的 `sys_job` 注册
 `articleScheduledPublishTask.runDueBatch`，Quartz 每分钟扫描到期任务，禁止
 同一 Job 并发，并采用 fire-and-proceed 的 misfire 策略。任务状态完全落
 MySQL，不依赖 Redis。
@@ -87,8 +87,8 @@ canonical、UTC 发布时间和 `PUBLISHED`，清空计划时间，并把任务�
 ```text
 Community business automated tests: 106 passed
 Community web API automated tests: 19 passed
-Mars Job automated tests: 1 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Job automated tests: 1 passed
+pxczxn Admin API automated tests: 4 passed
 T013-specific automated tests: 14 passed
 
 V005 first run / repeat run: PASS

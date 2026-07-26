@@ -87,10 +87,10 @@ Orphan favorite items / mappings: 0 / 0
 
 ## 主要文件
 
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/FavoriteFolderService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/FavoriteService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/model/FavoriteFolder.java`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/FavoriteController.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/FavoriteFolderService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/FavoriteService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/model/FavoriteFolder.java`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/FavoriteController.java`
 
 ## 安全与一致性结论
 

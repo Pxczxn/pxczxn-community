@@ -26,7 +26,7 @@ Maven Reactor: 26 modules SUCCESS
 Backend automated tests: 246 passed
 Business tests: 194
 Job tests: 1
-Mars Admin API tests: 12
+pxczxn Admin API tests: 12
 Community Web API tests: 39
 Failed / errors / skipped: 0 / 0 / 0
 Final executable JAR package: SUCCESS
@@ -110,7 +110,7 @@ Favorite folder metadata leak: none
 - Maven 已完成运行时依赖树解析；项目当前未集成 OWASP/NVD CVE 数据库扫描，
   上线前应在 CI 中增加 SBOM 和持续 CVE 扫描。
 
-开发环境中的 `admin123` 仅用于本地 Mars Admin/Druid 演示账号；生产环境必须
+开发环境中的 `admin123` 仅用于本地运营管理端/Druid 演示账号；生产环境必须
 通过环境变量和独立凭据替换。
 
 ## 7. 性能与可维护性审计
@@ -130,7 +130,7 @@ cd pxczxn-backend
 $env:PXCZXN_DB_USERNAME = "root"
 $env:PXCZXN_DB_PASSWORD = "root"
 & "D:\Coding\software\environment\apache-maven-3.9.9\bin\mvn.cmd" package
-java -jar .\mars-starter\target\mars-starter-1.0.0.jar
+java -jar .\pxczxn-starter\target\pxczxn-starter-1.0.0.jar
 
 # 博客端
 cd ..\pxczxn-web

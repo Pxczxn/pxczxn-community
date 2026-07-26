@@ -16,7 +16,7 @@ GET    /api/v1/public/files/{fileId}/content
 
 ## 存储复用与社区隔离
 
-- 复用 Mars Admin 的 `FileStorageFactory` 和本地、MinIO、OSS 等存储策略。
+- 复用 pxczxn 平台层的 `FileStorageFactory` 和本地、MinIO、OSS 等存储策略。
 - 社区文件单独写入 `file_object`，不写管理员 `sys_file`。
 - `created_by_user_id` 记录社区所有者，所有查看、引用和删除都重新校验
   当前社区用户。

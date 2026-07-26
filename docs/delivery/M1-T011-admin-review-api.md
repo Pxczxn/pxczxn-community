@@ -11,7 +11,7 @@ POST /admin-api/community/reviews/{taskId}/revision
 POST /admin-api/community/reviews/{taskId}/reject
 ```
 
-接口使用 Mars Admin 的 `StpUtil` 会话和 `@SaCheckPermission`，不接受社区
+接口使用运营管理端的 `StpUtil` 会话和 `@SaCheckPermission`，不接受社区
 `pxczxn-community-token`。V004 注册以下 RBAC：
 
 ```text
@@ -78,7 +78,7 @@ MANUAL_REVIEWING -> REJECTED
 ```text
 Community business automated tests: 74 passed
 Community web API automated tests: 13 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T011-specific automated tests: 15 passed
 V004 first run / repeat run: PASS
 V004 menus / permissions / admin grants: 7 / 7 / 8, PASS

@@ -148,10 +148,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 - `database/migrations/V011__community_notification_inbox.sql`
 - `database/verify/V011__verify_community_notification_inbox.sql`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationDispatchService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationInboxService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationEventListener.java`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/notification/CommunityNotificationController.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationDispatchService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationInboxService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/notification/application/CommunityNotificationEventListener.java`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/notification/CommunityNotificationController.java`
 - `scripts/e2e/m2-t007-notifications.ps1`
 
 ## 安全与一致性结论

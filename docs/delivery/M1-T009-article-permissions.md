@@ -59,7 +59,7 @@ EDIT / DELETE / SUBMIT_REVIEW / PUBLISH / PLATFORM_REVIEW
 
 ## 平台管理员边界
 
-- 平台审核使用 Mars Admin 独立会话，权限标识为
+- 平台审核使用运营管理端独立会话，权限标识为
   `community:article:review`。
 - 管理员未登录返回 401，缺少 RBAC 权限返回 403。
 - 只有固定了审核版本，且审核状态为 `QUEUED`、`AUTO_REVIEWING` 或

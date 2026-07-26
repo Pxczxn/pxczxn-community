@@ -17,10 +17,10 @@ Maven Reactor 的 26 个模块全部成功。Surefire 报告汇总如下：
 
 | 模块 | 测试类 | 测试 | 失败 | 错误 | 跳过 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `mars-core/pxczxn-biz` | 19 | 107 | 0 | 0 | 0 |
-| `mars-api/pxczxn-web-api` | 7 | 19 | 0 | 0 | 0 |
-| `mars-api/mars-admin-api` | 2 | 8 | 0 | 0 | 0 |
-| `mars-job` | 1 | 1 | 0 | 0 | 0 |
+| `pxczxn-core/pxczxn-biz` | 19 | 107 | 0 | 0 | 0 |
+| `pxczxn-api/pxczxn-web-api` | 7 | 19 | 0 | 0 | 0 |
+| `pxczxn-api/pxczxn-admin-api` | 2 | 8 | 0 | 0 | 0 |
+| `pxczxn-job` | 1 | 1 | 0 | 0 | 0 |
 | **合计** | **29** | **135** | **0** | **0** | **0** |
 
 ## 需求覆盖矩阵

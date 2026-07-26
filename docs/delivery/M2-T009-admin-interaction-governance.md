@@ -6,7 +6,7 @@
 
 ## 交付范围
 
-- 在 Mars Admin 脚手架内新增评论治理、动态治理和互动查询三个页面。
+- 在 pxczxn 运营管理端内新增评论治理、动态治理和互动查询三个页面。
 - 评论与动态支持关键词、状态、目标、发布者等条件分页查询。
 - 待审核内容支持通过和驳回；已发布内容支持平台下架；平台下架内容支持恢复。
 - 评论根线程治理会级联处理回复，并在事务内校准目标评论数。
@@ -15,7 +15,7 @@
 - 详情抽屉展示内容、Snowflake ID、锁版本和不可变治理事件时间线。
 - 互动查询覆盖 LIKE、FAVORITE、FOLLOW，仅返回关系和公开目标摘要。
 - 收藏查询不会返回收藏夹 ID、名称或目录结构。
-- 管理端写操作接入 Mars `@Log` 操作日志。
+- 管理端写操作接入 pxczxn `@Log` 操作日志。
 - 新增评论、动态和互动的菜单与细粒度 RBAC 权限，并授予管理员角色。
 - 只读角色可查询但无法执行治理动作。
 - 管理端品牌统一为“星语社区运营中心”，保留浅色、深色和星空三色主题。
@@ -91,7 +91,7 @@ invalid menu names: 0
 ```text
 Backend targeted governance tests: 15 passed
 Backend full regression: 246 passed
-Mars Admin production build: PASS
+pxczxn Admin production build: PASS
 Database migrations and verification: PASS
 
 Approve idempotent replay: true
@@ -144,8 +144,8 @@ Browser console errors: 0
 
 - `database/migrations/V012__community_interaction_governance.sql`
 - `database/migrations/V013__xingyu_admin_brand.sql`
-- `pxczxn-backend/mars-core/pxczxn-biz/.../AdminInteractionGovernanceService.java`
-- `pxczxn-backend/mars-api/mars-admin-api/.../AdminInteractionGovernanceController.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/.../AdminInteractionGovernanceService.java`
+- `pxczxn-backend/pxczxn-api/pxczxn-admin-api/.../AdminInteractionGovernanceController.java`
 - `pxczxn-admin/src/views/community/comments/index.vue`
 - `pxczxn-admin/src/views/community/moments/index.vue`
 - `pxczxn-admin/src/views/community/interactions/index.vue`

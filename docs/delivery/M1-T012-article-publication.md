@@ -69,7 +69,7 @@ lock_version         = lock_version + 1
 ```text
 Community business automated tests: 83 passed
 Community web API automated tests: 15 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T012-specific automated tests: 11 passed
 
 Real registration / login: PASS

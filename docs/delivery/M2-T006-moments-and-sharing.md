@@ -119,9 +119,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 - `database/migrations/V010__moment_publication_constraints.sql`
 - `database/verify/V010__verify_moment_publication_constraints.sql`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/MomentService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/MomentContentRenderer.java`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/MomentController.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/MomentService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/MomentContentRenderer.java`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/MomentController.java`
 - `scripts/e2e/m2-t006-moments.ps1`
 
 ## 安全与一致性结论

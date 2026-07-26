@@ -52,9 +52,9 @@ Runtime backend port: 8849
 
 ## 主要文件
 
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/test/java/top/pxczxn/community/social/application/BlogFollowServiceTest.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/test/java/top/pxczxn/community/social/application/BlogFollowServiceTest.java`
 
 ## 安全与一致性结论
 

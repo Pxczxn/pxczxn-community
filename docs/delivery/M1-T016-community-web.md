@@ -6,7 +6,7 @@
 
 ## 交付范围
 
-博客端使用 vinext、React 19 和 TypeScript 独立实现，不复用 Mars Admin
+博客端使用 vinext、React 19 和 TypeScript 独立实现，不复用运营管理端
 管理端页面。品牌统一为“星语社区”，本地固定端口如下：
 
 | 服务 | 地址 |

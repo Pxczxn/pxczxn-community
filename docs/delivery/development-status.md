@@ -8,7 +8,7 @@
 
 交付内容：
 
-- 基于本机 Mars Admin 脚手架建立 `pxczxn-backend`。
+- 基于本机后台脚手架建立 `pxczxn-backend`。
 - 后端编译目标升级为 Java 21，Maven 坐标使用 `top.pxczxn`。
 - 新增 `pxczxn-biz`，根包为 `top.pxczxn.community`。
 - 建立 `user`、`blog`、`article`、`taxonomy`、`moderation`、
@@ -154,7 +154,7 @@ Temporary verification data: removed
 
 交付内容：
 
-- 复用 Mars Admin 文件存储策略，但使用独立的社区文件元数据和身份边界。
+- 复用 pxczxn 平台文件存储策略，但使用独立的社区文件元数据和身份边界。
 - 新增社区文件上传、本人详情、本人内容读取、逻辑删除和受控公开读取 API。
 - 基于真实文件签名、DOCX 容器和 UTF-8 内容识别类型，不信任客户端 MIME。
 - 文件大小限制为 20MB，并拒绝扩展名与真实类型不一致的输入。
@@ -263,7 +263,7 @@ Temporary database, storage and file objects: removed
 - 公开读取要求固定公开版本；删除、下架和未公开内容统一隐藏资源存在性。
 - `UNLISTED` 允许直接详情访问但不进入公开列表，`PRIVATE` 仅允许必要协作者。
 - 已发布文章的新版本审核期间继续允许旧公开版本展示。
-- 社区作者与 Mars Admin 平台审核使用各自独立会话；后台审核要求
+- 社区作者与运营管理平台审核使用各自独立会话；后台审核要求
   `community:article:review`。
 - 草稿、版本和删除流程均已接入统一权限入口，团队编辑产生的新版本记录真实
   操作者。
@@ -337,15 +337,15 @@ Temporary verification data and policy rules: removed
 - 已有公开版本的文章审核新版本时，退修或驳回不影响旧公开版本。
 - 审核结果在主事务提交后通过独立事务生成站内通知和未读收件人。
 - 通知失败被隔离并记录元数据，不回滚或误报已经成功的审核决定。
-- V004 注册 Mars Admin 审核菜单、7 项权限并授权默认 admin 角色。
-- 所有接口使用 Mars Admin 会话和 RBAC，社区 Token 不能调用。
+- V004 注册运营管理端审核菜单、7 项权限并授权默认 admin 角色。
+- 所有接口使用运营管理端会话和 RBAC，社区 Token 不能调用。
 
 验证结果：
 
 ```text
 Community business automated tests: 74 passed
 Community web API automated tests: 13 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T011-specific automated tests: 15 passed
 V004 first run / repeat run: PASS
 Menus / permissions / admin grants: 7 / 7 / 8, PASS
@@ -383,7 +383,7 @@ Temporary verification data: removed, remaining 0
 ```text
 Community business automated tests: 83 passed
 Community web API automated tests: 15 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T012-specific automated tests: 11 passed
 MANUAL review / publish: APPROVED / PUBLISHED
 Repeated manual publish: idempotentReplay=true
@@ -421,7 +421,7 @@ Temporary verification data: removed, remaining 0
 ```text
 Community business automated tests: 95 passed
 Community web API automated tests: 18 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Admin API automated tests: 4 passed
 T014-specific automated tests: 15 passed
 Public blog theme / SEO / live article count: PASS
 Category filter / public page / detail: PASS
@@ -448,7 +448,7 @@ Temporary verification data: removed, remaining 0
   下次重试时间、状态、结构化错误码和独立锁版本。
 - 活动任务生成列唯一约束保证每篇文章最多一个活动任务；修改或取消计划与文章
   乐观锁更新处于同一事务，旧任务不能覆盖新状态。
-- V005 在 Mars Admin `sys_job` 注册每分钟 Quartz 扫描任务，禁止 Job 并发，
+- V005 在运营管理平台 `sys_job` 注册每分钟 Quartz 扫描任务，禁止 Job 并发，
   Redis 不可用时仍由 MySQL 驱动。
 - Quartz 领取后再次校验文章、审核状态、固定版本、计划时间、博客和作者状态，
   然后以文章乐观锁原子切换 `published_version_id`、canonical 和发布时间。
@@ -463,8 +463,8 @@ Temporary verification data: removed, remaining 0
 ```text
 Community business automated tests: 106 passed
 Community web API automated tests: 19 passed
-Mars Job automated tests: 1 passed
-Mars Admin API automated tests: 4 passed
+pxczxn Job automated tests: 1 passed
+pxczxn Admin API automated tests: 4 passed
 T013-specific automated tests: 14 passed
 V005 first run / repeat run: PASS
 V005 table / required columns / Quartz job: 1 / 11 / PASS
@@ -483,7 +483,7 @@ Temporary verification data: removed, remaining 0
 
 交付内容：
 
-- 在 Mars Admin Vue 3、Vite、TypeScript、Naive UI、RBAC 和动态菜单基础上，
+- 在 pxczxn 运营管理端 Vue 3、Vite、TypeScript、Naive UI、RBAC 和动态菜单基础上，
   完成社区工作台、用户、博客、文章、审核和标签六个运营页面。
 - 新增管理端社区统计、用户、博客、文章分页和安全文章详情 API。
 - V006 注册社区查询菜单与权限，默认管理员角色可按权限访问页面与操作按钮。
@@ -499,7 +499,7 @@ Temporary verification data: removed, remaining 0
 
 ```text
 PlatformTagService regression tests: 4 passed
-Mars Admin API automated tests: 8 passed
+pxczxn Admin API automated tests: 8 passed
 Admin production build: 4932 modules / PASS
 Backend Maven package: 26 modules / SUCCESS
 V006 menus / permissions / admin grants: 9 / 5 / 10, PASS
@@ -823,7 +823,7 @@ Runtime ports blog / admin / backend: 8847 / 8848 / 8849
 
 - 新增评论治理、动态治理和互动查询页面与管理 API。
 - 支持审核通过、驳回、平台下架、恢复、批量事务和逐条乐观锁。
-- 详情抽屉展示不可变治理事件；写操作进入 Mars 操作日志。
+- 详情抽屉展示不可变治理事件；写操作进入 pxczxn 操作日志。
 - 新增 15 个治理权限点、18 条菜单/按钮记录和管理员授权。
 - LIKE、FAVORITE、FOLLOW 查询不暴露收藏夹名称与结构。
 - 完成只读角色查询 `200`、治理动作 `403` 的真实 RBAC 隔离验证。
@@ -834,7 +834,7 @@ Runtime ports blog / admin / backend: 8847 / 8848 / 8849
 
 ```text
 Backend targeted / full tests: 15 / 246 passed
-Mars Admin production build: PASS
+pxczxn Admin production build: PASS
 Comment / moment lifecycle: PASS / PASS
 Batch comment / moment governance: 2 / 2
 LIKE / FAVORITE / FOLLOW: 1 / 1 / 1
@@ -890,7 +890,7 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 已知迁移债务
 
-- 脚手架遗留模块和 Java 包仍有 `mars` 命名；新增社区代码已经统一为
+- 当时脚手架遗留模块和 Java 包尚未完成统一命名；新增社区代码已经统一为
   `pxczxn`，旧模块将在不破坏后台功能的前提下分阶段重命名。
 - 本地验证暂复用已有 `mars-system` 后台数据库；部署到独立环境时使用
   `pxczxn_community` 数据库。

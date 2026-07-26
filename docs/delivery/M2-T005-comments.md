@@ -124,10 +124,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 - `database/migrations/V009__comment_scope_and_moderation.sql`
 - `database/verify/V009__verify_comment_scope_and_moderation.sql`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentScopeService.java`
-- `pxczxn-backend/mars-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentContentRenderer.java`
-- `pxczxn-backend/mars-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/CommentController.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentScopeService.java`
+- `pxczxn-backend/pxczxn-core/pxczxn-biz/src/main/java/top/pxczxn/community/social/application/CommentContentRenderer.java`
+- `pxczxn-backend/pxczxn-api/pxczxn-web-api/src/main/java/top/pxczxn/community/web/social/CommentController.java`
 - `scripts/e2e/m2-t005-comments.ps1`
 
 ## 安全与一致性结论
