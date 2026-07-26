@@ -222,7 +222,7 @@ const columns: DataTableColumns<SysRole> = [
     width: 150,
     fixed: 'right',
     render(row) {
-      const buttons = []
+      const buttons: ReturnType<typeof h>[] = []
       if (hasPermission('sys:role:edit')) {
         buttons.push(h(NButton, { size: 'small', onClick: () => handleEdit(row) }, { default: () => '编辑' }))
       }

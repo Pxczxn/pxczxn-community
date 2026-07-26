@@ -260,9 +260,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted, computed, type HTMLAttributes } from 'vue'
+import { ref, reactive, h, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { NButton, NTag, NSpace, NDropdown, NPagination, NGrid, NGi, NUploadDragger, useMessage, useDialog, type DataTableColumns, type FormInst, type FormRules, type TreeOption, type UploadCustomRequestOptions } from 'naive-ui'
+import { NButton, NTag, NSpace, NDropdown, NPagination, NGrid, NGi, NUploadDragger, useMessage, useDialog, type DataTableColumns, type FormInst, type FormRules, type UploadCustomRequestOptions } from 'naive-ui'
 import { SearchOutline, RefreshOutline, AddOutline, ChevronDownOutline, CloudUploadOutline, DownloadOutline, TrashOutline } from '@vicons/ionicons5'
 import { userApi, roleApi, postApi, type SysUser, type SysRole } from '@/api/system'
 import { deptApi, type SysDept } from '@/api/org'
@@ -313,8 +313,6 @@ const pagination = reactive({
   pageSize: 10,
   itemCount: 0
 })
-
-const pageCount = computed(() => Math.ceil(pagination.itemCount / pagination.pageSize))
 
 const roleOptions = ref<Array<{ label: string; value: number }>>([])
 
@@ -383,7 +381,7 @@ const columns: DataTableColumns<SysUser> = [
     width: 240,
     fixed: 'right',
     render(row) {
-      const buttons = []
+      const buttons: ReturnType<typeof h>[] = []
       // 待审核状态显示审核按钮
       if (row.status === 2 && hasPermission('sys:user:edit')) {
         buttons.push(

@@ -184,7 +184,7 @@ export function SubmissionDetailPanel() {
           <aside className="stack">
             <section className="surface workflow-card">
               <h2 className="card-heading">投稿状态</h2>
-              <ReviewWorkflow status={currentReview} task={task} />
+              <ReviewWorkflow status={currentReview} task={task ?? null} />
             </section>
             <section className="surface related-help">
               <h2 className="card-heading">相关帮助</h2>

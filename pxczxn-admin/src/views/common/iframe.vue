@@ -2,7 +2,6 @@
   <div class="iframe-container">
     <n-spin :show="loading" description="加载中...">
       <iframe
-        ref="iframeRef"
         :src="frameSrc"
         class="iframe-content"
         frameborder="0"
@@ -18,7 +17,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const iframeRef = ref<HTMLIFrameElement | null>(null)
 const loading = ref(true)
 
 // 从路由 meta 中获取外链地址

@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev --port 8847",
+    "typecheck": "tsc --noEmit",
     "build": "vinext build",
     "start": "vinext start --port 8847",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.47.0",
+    "@cloudflare/workers-types": "^5.20260726.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

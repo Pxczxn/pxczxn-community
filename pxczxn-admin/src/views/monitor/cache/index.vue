@@ -41,7 +41,7 @@
         </n-form>
       </div>
 
-      <n-data-table :columns="columns" :data="keys" :loading="keysLoading" :row-key="(row: string) => row" />
+      <n-data-table :columns="columns" :data="keys" :loading="keysLoading" :row-key="row => row.key" />
     </n-card>
 
     <n-modal v-model:show="detailVisible" preset="card" title="缓存详情" style="width: 800px">
@@ -74,7 +74,11 @@ import { cacheApi } from '@/api/monitor'
 const message = useMessage()
 const dialog = useDialog()
 
-const keys = ref<string[]>([])
+interface CacheKeyRow {
+  key: string
+}
+
+const keys = ref<CacheKeyRow[]>([])
 const keysLoading = ref(false)
 const searchPattern = ref('*')
 
@@ -85,15 +89,15 @@ const cacheDetail = ref<{ key: string; type: string; value: string; ttl: number 
   key: '', type: '', value: '', ttl: -1
 })
 
-const columns: DataTableColumns<string> = [
-  { title: '键名', key: 'key', render(row) { return h('span', { style: 'word-break: break-all;' }, row) }},
+const columns: DataTableColumns<CacheKeyRow> = [
+  { title: '键名', key: 'key', render(row) { return h('span', { style: 'word-break: break-all;' }, row.key) }},
   { title: '操作', key: 'actions', width: 180, render(row) {
     return h(NSpace, null, {
       default: () => [
-        h(NButton, { size: 'small', quaternary: true, type: 'primary', onClick: () => handleView(row) }, {
+        h(NButton, { size: 'small', quaternary: true, type: 'primary', onClick: () => handleView(row.key) }, {
           default: () => [h(NIcon, null, { default: () => h(EyeOutline) }), ' 查看']
         }),
-        h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => handleDelete(row) }, {
+        h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => handleDelete(row.key) }, {
           default: () => [h(NIcon, null, { default: () => h(TrashOutline) }), ' 删除']
         })
       ]
@@ -197,7 +201,7 @@ async function loadKeys() {
   keysLoading.value = true
   try {
     const res = await cacheApi.keys(searchPattern.value) || []
-    keys.value = res
+    keys.value = res.map(key => ({ key }))
     pagination.itemCount = res.length
     pagination.page = 1
   } finally { keysLoading.value = false }
@@ -220,7 +224,7 @@ function handleDelete(key: string) {
     onPositiveClick: async () => {
       await cacheApi.delete(key)
       message.success('删除成功')
-      keys.value = keys.value.filter(k => k !== key)
+      keys.value = keys.value.filter(row => row.key !== key)
       pagination.itemCount = keys.value.length
     }
   })

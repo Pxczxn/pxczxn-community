@@ -36,19 +36,22 @@ WHERE `r`.`code` = 'admin'
   );
 
 SELECT
-    CASE WHEN COUNT(*) = 6 THEN 'PASS' ELSE 'FAIL' END
+    CASE
+        WHEN COUNT(*) = 6
+         AND MAX(CASE WHEN `id` = 9030 THEN `sort` END) = 1
+         AND MAX(CASE WHEN `id` = 9040 THEN `sort` END) = 2
+         AND MAX(CASE WHEN `id` = 9050 THEN `sort` END) = 3
+         AND MAX(CASE WHEN `id` = 9060 THEN `sort` END) = 4
+         AND MAX(CASE WHEN `id` = 9020 THEN `sort` END) > 4
+         AND MAX(CASE WHEN `id` = 9010 THEN `sort` END)
+             > MAX(CASE WHEN `id` = 9020 THEN `sort` END)
+        THEN 'PASS'
+        ELSE 'FAIL'
+    END
         AS `community_page_order_check`,
     COUNT(*) AS `actual_ordered_pages`
 FROM `sys_menu`
 WHERE `id` IN (9030, 9040, 9050, 9060, 9020, 9010)
-  AND `sort` = CASE `id`
-      WHEN 9030 THEN 1
-      WHEN 9040 THEN 2
-      WHEN 9050 THEN 3
-      WHEN 9060 THEN 4
-      WHEN 9020 THEN 5
-      WHEN 9010 THEN 6
-  END
   AND `deleted` = 0;
 
 SELECT

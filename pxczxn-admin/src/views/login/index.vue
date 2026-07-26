@@ -344,7 +344,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMessage, type FormInst, type FormRules } from 'naive-ui'
-import { PersonOutline, LockClosedOutline, GridOutline, AppsOutline, ImageOutline, RefreshOutline, CloseOutline, ArrowForwardOutline, CheckmarkOutline } from '@vicons/ionicons5'
+import { PersonOutline, LockClosedOutline, GridOutline, AppsOutline, RefreshOutline, CloseOutline, ArrowForwardOutline, CheckmarkOutline } from '@vicons/ionicons5'
 import { useUserStore } from '@/stores/user'
 import { useSiteStore } from '@/stores/site'
 import { useThemeStore } from '@/stores/theme'

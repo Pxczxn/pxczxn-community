@@ -2,18 +2,18 @@
   <n-popover trigger="click" placement="bottom" :width="400">
     <template #trigger>
       <n-input
-        :value="modelValue"
+        :value="props.modelValue"
         placeholder="请选择图标"
         readonly
         style="cursor: pointer"
       >
-        <template #prefix v-if="modelValue">
+        <template #prefix v-if="props.modelValue">
           <n-icon :size="18">
-            <component :is="getIconComponent(modelValue)" />
+            <component :is="getIconComponent(props.modelValue)" />
           </n-icon>
         </template>
         <template #suffix>
-          <n-icon :size="14" style="cursor: pointer" @click.stop="handleClear" v-if="modelValue">
+          <n-icon :size="14" style="cursor: pointer" @click.stop="handleClear" v-if="props.modelValue">
             <CloseOutline />
           </n-icon>
         </template>
@@ -33,7 +33,7 @@
             v-for="icon in filteredIcons"
             :key="icon.name"
             class="icon-item"
-            :class="{ active: modelValue === icon.name }"
+            :class="{ active: props.modelValue === icon.name }"
             @click="handleSelect(icon.name)"
             :title="icon.name"
           >
@@ -169,16 +169,6 @@ import {
   ExitOutline,
   ExpandOutline,
   ContractOutline,
-  ChevronUpOutline,
-  ChevronDownOutline,
-  ChevronBackOutline,
-  ChevronForwardOutline,
-  ArrowUpOutline,
-  ArrowDownOutline,
-  ArrowBackOutline,
-  ArrowForwardOutline,
-  SwapHorizontalOutline,
-  SwapVerticalOutline,
   CopyOutline,
   ClipboardOutline,
   CutOutline,
@@ -209,28 +199,15 @@ import {
   MedkitOutline,
   RestaurantOutline,
   CafeOutline,
-  BeerOutline,
-  WineOutline,
-  PizzaOutline,
-  FastFoodOutline,
-  IceCreamOutline,
   LeafOutline,
   FlowerOutline,
   PawOutline,
   FingerPrintOutline,
-  HandLeftOutline,
-  HandRightOutline,
   ThumbsUpOutline,
   ThumbsDownOutline,
   HappyOutline,
   SadOutline,
   AccessibilityOutline,
-  BodyOutline,
-  ManOutline,
-  WomanOutline,
-  MaleOutline,
-  FemaleOutline,
-  TransgenderOutline,
   PlanetOutline,
   EarthOutline,
   CloseOutline,
@@ -244,7 +221,7 @@ import {
 defineOptions({ name: 'IconSelect' })
 
 const props = defineProps<{
-  modelValue: string
+  modelValue?: string
 }>()
 
 const emit = defineEmits<{

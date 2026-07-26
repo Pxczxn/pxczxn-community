@@ -137,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted, computed } from 'vue'
+import { ref, reactive, h, onMounted } from 'vue'
 import { NButton, NTag, NSpace, NPagination, useMessage, useDialog, type DataTableColumns, type FormInst, type FormRules } from 'naive-ui'
 import { SearchOutline, RefreshOutline, AddOutline } from '@vicons/ionicons5'
 import { dictTypeApi, dictDataApi, type SysDictType, type SysDictData } from '@/api/org'
@@ -224,7 +224,7 @@ const dataColumns: DataTableColumns<SysDictData> = [
   }},
   { title: '备注', key: 'remark', ellipsis: { tooltip: true } },
   { title: '操作', key: 'actions', width: 150, render(row) {
-    const buttons = []
+    const buttons: ReturnType<typeof h>[] = []
     if (hasPermission('sys:dict:edit')) {
       buttons.push(h(NButton, { size: 'small', onClick: () => handleEditData(row) }, { default: () => '编辑' }))
     }
@@ -238,7 +238,13 @@ const dataColumns: DataTableColumns<SysDictData> = [
 async function loadData() {
   loading.value = true
   try {
-    const res = await dictTypeApi.page({ page: pagination.page, pageSize: pagination.pageSize, ...searchForm })
+    const res = await dictTypeApi.page({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      dictName: searchForm.dictName || undefined,
+      dictType: searchForm.dictType || undefined,
+      status: searchForm.status ?? undefined
+    })
     tableData.value = res.list
     pagination.itemCount = res.total
   } finally { loading.value = false }

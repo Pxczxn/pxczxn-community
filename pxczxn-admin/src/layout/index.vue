@@ -402,8 +402,6 @@ const recentNotices = ref<SysNotice[]>([])
 const recentChats = ref<ChatMessage[]>([])
 const messagePage = ref(1)
 const hasMoreMessages = ref(true)
-const messageListRef = ref<HTMLElement | null>(null)
-
 // 搜索相关
 const searchVisible = ref(false)
 const searchKeyword = ref('')

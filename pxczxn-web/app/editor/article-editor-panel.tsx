@@ -554,7 +554,7 @@ function richTextToPlainText(raw?: string | null) {
   try {
     const root = JSON.parse(raw);
     const paragraphs: string[] = [];
-    function visit(node: unknown) {
+    function visit(node: unknown): string {
       if (!node || typeof node !== "object") return "";
       const candidate = node as {
         type?: string;
@@ -562,7 +562,7 @@ function richTextToPlainText(raw?: string | null) {
         content?: unknown[];
       };
       if (candidate.type === "text") return candidate.text || "";
-      const text = (candidate.content || []).map(visit).join("");
+      const text: string = (candidate.content || []).map(visit).join("");
       if (["paragraph", "heading", "blockquote"].includes(candidate.type || "")) {
         paragraphs.push(text);
         return "";

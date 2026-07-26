@@ -130,7 +130,7 @@
     <n-modal v-model:show="showEditModal" preset="card" title="编辑生成配置" style="width: 1100px">
       <n-tabs type="line">
         <n-tab-pane name="basic" tab="基本信息">
-          <n-form ref="editFormRef" :model="editForm" label-placement="left" label-width="100px">
+          <n-form :model="editForm" label-placement="left" label-width="100px">
             <n-grid :cols="2" :x-gap="24">
               <n-form-item-gi label="表名">
                 <n-input v-model:value="editForm.tableName" disabled />
@@ -163,7 +163,7 @@
           <n-data-table :columns="columnEditColumns" :data="editForm.columns" :max-height="400" />
         </n-tab-pane>
         <n-tab-pane name="layout" tab="布局配置">
-          <n-form ref="editFormRef" :model="editForm" label-placement="left" label-width="120px">
+          <n-form :model="editForm" label-placement="left" label-width="120px">
             <n-form-item label="表单布局">
               <n-radio-group v-model:value="editForm.formLayout">
                 <n-space>
@@ -197,7 +197,10 @@
       </div>
       <template #footer>
         <n-space justify="end">
-
+          <n-button type="primary" @click="handleViewPreview">
+            <template #icon><n-icon><ExpandOutline /></n-icon></template>
+            预览效果
+          </n-button>
           <n-button @click="showPreviewModal = false">关闭</n-button>
         </n-space>
       </template>
@@ -343,7 +346,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
-import { NButton, NSpace, NIcon, NTag, NSwitch, NSelect, NInput, NText, NList, NListItem, NScrollbar, NAlert, NEmpty, NSpin, NPagination, useMessage, useDialog, type DataTableColumns } from 'naive-ui'
+import { NButton, NSpace, NIcon, NSwitch, NSelect, NInput, NText, NList, NListItem, NScrollbar, NAlert, NEmpty, NSpin, NPagination, useMessage, useDialog, type DataTableColumns } from 'naive-ui'
 import { SearchOutline, RefreshOutline, CloudDownloadOutline, CodeSlashOutline, TrashOutline, SettingsOutline, EyeOutline, SyncOutline, CloseCircleOutline, ExpandOutline } from '@vicons/ionicons5'
 import { genApi, type GenTable, type GenTableColumn, type DatabaseTable } from '@/api/gen'
 import { dictTypeApi } from '@/api/org'
@@ -386,7 +389,6 @@ const importPagination = reactive({
 
 // 编辑配置
 const showEditModal = ref(false)
-const editFormRef = ref()
 const dictTypeOptions = ref<{ label: string; value: string }[]>([])
 const editForm = reactive<GenTable>({
   id: undefined,

@@ -122,7 +122,7 @@
               :options="cronPresetOptions"
               style="width: 140px; flex-shrink: 0"
               clearable
-              @update:value="(v: string) => { if (v) { formData.cronExpression = v; cronPresetSelect.value = null } }"
+              @update:value="handleCronPresetChange"
             />
           </n-input-group>
         </n-form-item>
@@ -238,7 +238,7 @@ const columns: DataTableColumns<SysJob> = [
       { checked: () => '正常', unchecked: () => '暂停' })
   }},
   { title: '操作', key: 'actions', width: 280, fixed: 'right', render(row) {
-    const buttons = []
+    const buttons: ReturnType<typeof h>[] = []
     buttons.push(h(NButton, { size: 'small',  onClick: () => handleShowLog(row) }, { default: () => '调度日志' }))
     if (hasPermission('monitor:job:edit')) {
       buttons.push(h(NButton, { size: 'small', onClick: () => handleRun(row) }, { default: () => '执行' }))
@@ -261,6 +261,13 @@ const rules: FormRules = {
   jobName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
   invokeTarget: [{ required: true, message: '请输入调用目标', trigger: 'blur' }],
   cronExpression: [{ required: true, message: '请输入cron表达式', trigger: 'blur' }]
+}
+
+function handleCronPresetChange(value: string | null) {
+  if (value) {
+    formData.cronExpression = value
+    cronPresetSelect.value = null
+  }
 }
 
 // 日志
@@ -296,7 +303,13 @@ watch(showLogModal, (val) => {
 async function loadData() {
   loading.value = true
   try {
-    const res = await jobApi.page({ page: pagination.page, pageSize: pagination.pageSize, ...searchForm })
+    const res = await jobApi.page({
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      jobName: searchForm.jobName || undefined,
+      jobGroup: searchForm.jobGroup || undefined,
+      status: searchForm.status ?? undefined
+    })
     tableData.value = res.list
     pagination.itemCount = res.total
   } finally { loading.value = false }

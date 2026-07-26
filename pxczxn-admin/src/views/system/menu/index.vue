@@ -262,7 +262,7 @@ const columns: DataTableColumns<SysMenu> = [
     width: 200,
     fixed: 'right',
     render(row) {
-      const buttons = []
+      const buttons: ReturnType<typeof h>[] = []
       if (row.type !== 3 && hasPermission('sys:menu:add')) {
         buttons.push(h(NButton, { size: 'small', onClick: () => handleAdd(row.id) }, { default: () => '新增' }))
       }

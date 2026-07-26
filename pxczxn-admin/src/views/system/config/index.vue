@@ -922,7 +922,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch, h } from 'vue'
+import { ref, reactive, onMounted, computed, h } from 'vue'
 import { useMessage, type UploadCustomRequestOptions } from 'naive-ui'
 import { ImageOutline, CloseOutline, AddOutline, TrashOutline } from '@vicons/ionicons5'
 import { configGroupApi, type SysConfigGroup, type SmsLog } from '@/api/org'
@@ -1043,12 +1043,6 @@ const storageProviderOptions = [
   { label: '阿里云OSS', value: 'aliyun' },
   { label: '腾讯云COS', value: 'tencent' },
   { label: 'RustFS', value: 'rustfs' }
-]
-
-const pushProviderOptions = [
-  { label: '钉钉', value: 'dingtalk' },
-  { label: '飞书', value: 'feishu' },
-  { label: '企业微信', value: 'wechat_work' }
 ]
 
 const alipayGatewayOptions = [
@@ -1406,7 +1400,7 @@ function deleteCurrentMenu() {
 }
 
 // 菜单类型变更
-function handleMenuTypeChange(type: string) {
+function handleMenuTypeChange() {
   if (selectedSubIndex.value >= 0) {
     const menu = menuList.value[selectedMenuIndex.value]
     if (menu.sub_button) {

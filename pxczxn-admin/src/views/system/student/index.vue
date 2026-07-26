@@ -56,7 +56,7 @@
         :data="tableData"
         :loading="loading"
         :pagination="pagination"
-        :row-key="(row) => row.id"
+        :row-key="(row: Student) => row.id"
         :scroll-x="1200"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
@@ -173,7 +173,13 @@ const modalVisible = ref(false)
 const modalTitle = ref('')
 const importModalVisible = ref(false)
 const formRef = ref()
-const defaultFormData: Student = {
+type StudentForm = Omit<Student, 'birthday' | 'createTime' | 'updateTime'> & {
+  birthday?: string | number
+  createTime?: string | number
+  updateTime?: string | number
+}
+
+const defaultFormData: StudentForm = {
   studentNo: '',
   name: '',
   gender: undefined,
@@ -184,7 +190,7 @@ const defaultFormData: Student = {
   classId: undefined,
   status: undefined,
 }
-const formData = reactive<Student>({ ...defaultFormData })
+const formData = reactive<StudentForm>({ ...defaultFormData })
 
 // 字典选项（下拉框/单选框/复选框关联字典时使用）
 const genderOptions = ref<{ label: string; value: any }[]>([])
@@ -328,18 +334,19 @@ function handleEdit(row: Student) {
 async function handleSubmit() {
   await formRef.value?.validate()
   try {
-    const submitData = { ...formData } as Student
-    if (typeof submitData.birthday === 'number') {
-      const d = new Date(submitData.birthday)
-      submitData.birthday = d.toISOString().slice(0, 10)
+    const submitData: Student = {
+      ...formData,
+      birthday: typeof formData.birthday === 'number'
+        ? new Date(formData.birthday).toISOString().slice(0, 10)
+        : formData.birthday,
+      createTime: typeof formData.createTime === 'number'
+        ? new Date(formData.createTime).toISOString().slice(0, 19).replace('T', ' ')
+        : formData.createTime,
+      updateTime: typeof formData.updateTime === 'number'
+        ? new Date(formData.updateTime).toISOString().slice(0, 19).replace('T', ' ')
+        : formData.updateTime
     }
     submitData.address = formData.address ?? ''
-    if (typeof submitData.createTime === 'number') {
-      submitData.createTime = new Date(submitData.createTime).toISOString().slice(0, 19).replace('T', ' ')
-    }
-    if (typeof submitData.updateTime === 'number') {
-      submitData.updateTime = new Date(submitData.updateTime).toISOString().slice(0, 19).replace('T', ' ')
-    }
     if (submitData.id) {
       await studentApi.update(submitData)
       message.success('修改成功')

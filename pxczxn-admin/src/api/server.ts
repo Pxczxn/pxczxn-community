@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request } from '@/utils/request'
 
 export interface Server {
   id?: number
@@ -26,8 +26,8 @@ export interface ServerPageParams {
 
 export const serverApi = {
   // 分页查询
-  list(params: ServerPageParams) {
-    return request({
+  list(params: ServerPageParams): Promise<{ records?: Server[] }> {
+    return request<{ records?: Server[] }>({
       url: '/monitor/server-manager/list',
       method: 'get',
       params
