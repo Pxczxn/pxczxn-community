@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import top.pxczxn.platform.system.config.ScaffoldFeatureProperties;
 
 import java.io.IOException;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessageWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
+    private final ScaffoldFeatureProperties features;
 
     /**
      * 在线用户会话 <userId, session>
@@ -59,7 +61,13 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
 
             switch (type) {
                 case "ping" -> sendMessage(session, createMessage("pong", "pong"));
-                case "chat" -> handleChatMessage(userId, jsonNode);
+                case "chat" -> {
+                    if (features.isChat()) {
+                        handleChatMessage(userId, jsonNode);
+                    } else {
+                        sendMessage(session, createMessage("error", "功能未启用"));
+                    }
+                }
                 default -> log.warn("未知消息类型: {}", type);
             }
         } catch (Exception e) {

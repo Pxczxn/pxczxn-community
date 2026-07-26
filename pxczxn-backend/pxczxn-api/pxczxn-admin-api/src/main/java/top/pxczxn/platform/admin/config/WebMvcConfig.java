@@ -21,9 +21,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final DemoModeInterceptor demoModeInterceptor;
     private final AdminPasswordChangeInterceptor adminPasswordChangeInterceptor;
+    private final ScaffoldFeatureInterceptor scaffoldFeatureInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(scaffoldFeatureInterceptor)
+                .addPathPatterns("/api/**")
+                .order(-10);
         // 注册演示模式拦截器
         registry.addInterceptor(demoModeInterceptor)
                 .addPathPatterns("/api/**")

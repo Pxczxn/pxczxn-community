@@ -3,6 +3,7 @@ package top.pxczxn.platform.auth;
 import top.pxczxn.platform.auth.enums.ClientType;
 import top.pxczxn.platform.auth.enums.LoginType;
 import top.pxczxn.platform.common.exception.BusinessException;
+import top.pxczxn.platform.system.config.ScaffoldFeatureProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class LoginStrategyFactory {
 
     private final List<LoginStrategy> strategies;
+    private final ScaffoldFeatureProperties features;
 
     private final Map<LoginType, LoginStrategy> strategyMap = new EnumMap<>(LoginType.class);
 
@@ -39,6 +41,15 @@ public class LoginStrategyFactory {
      * 获取登录策略
      */
     public LoginStrategy getStrategy(LoginType loginType, ClientType clientType) {
+        if (loginType == LoginType.SMS && !features.isSms()) {
+            throw new BusinessException("不支持的登录方式: " + loginType.getDesc());
+        }
+        if (loginType == LoginType.MINIPROGRAM && !features.isWechat()) {
+            throw new BusinessException("不支持的登录方式: " + loginType.getDesc());
+        }
+        if (loginType == LoginType.SOCIAL && !features.isSocialLogin()) {
+            throw new BusinessException("不支持的登录方式: " + loginType.getDesc());
+        }
         LoginStrategy strategy = strategyMap.get(loginType);
         if (strategy == null) {
             throw new BusinessException("不支持的登录方式: " + loginType.getDesc());

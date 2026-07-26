@@ -1,6 +1,7 @@
 package top.pxczxn.platform.admin.websocket;
 
 import top.pxczxn.platform.system.config.PxczxnCorsProperties;
+import top.pxczxn.platform.system.config.ScaffoldFeatureProperties;
 import top.pxczxn.platform.websocket.WebSocketHandshakeInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -19,15 +20,18 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private final SshWebSocketHandler sshWebSocketHandler;
     private final WebSocketHandshakeInterceptor handshakeInterceptor;
     private final PxczxnCorsProperties corsProperties;
+    private final ScaffoldFeatureProperties features;
 
     public WebSocketConfig(MessageWebSocketHandler messageWebSocketHandler,
                           SshWebSocketHandler sshWebSocketHandler,
                           WebSocketHandshakeInterceptor handshakeInterceptor,
-                          PxczxnCorsProperties corsProperties) {
+                          PxczxnCorsProperties corsProperties,
+                          ScaffoldFeatureProperties features) {
         this.messageWebSocketHandler = messageWebSocketHandler;
         this.sshWebSocketHandler = sshWebSocketHandler;
         this.handshakeInterceptor = handshakeInterceptor;
         this.corsProperties = corsProperties;
+        this.features = features;
     }
 
     @Override
@@ -37,9 +41,10 @@ public class WebSocketConfig implements WebSocketConfigurer {
                 .addInterceptors(handshakeInterceptor)
                 .setAllowedOrigins(corsProperties.validatedAllowedOriginsArray());
 
-        // SSH 终端 WebSocket
-        registry.addHandler(sshWebSocketHandler, "/ws/ssh")
-                .addInterceptors(handshakeInterceptor)
-                .setAllowedOrigins(corsProperties.validatedAllowedOriginsArray());
+        if (features.isSshServer()) {
+            registry.addHandler(sshWebSocketHandler, "/ws/ssh")
+                    .addInterceptors(handshakeInterceptor)
+                    .setAllowedOrigins(corsProperties.validatedAllowedOriginsArray());
+        }
     }
 }

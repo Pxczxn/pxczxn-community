@@ -49,6 +49,16 @@ mybatis-plus:
 
 pxczxn:
   demo-mode: false
+  features:
+    scaffold:
+      payment: false
+      sms: false
+      wechat: false
+      social-login: false
+      chat: false
+      ssh-server: false
+      codegen: false
+      samples: false
   community:
     version: ${PXCZXN_COMMUNITY_VERSION:1.0.0}
   security:
