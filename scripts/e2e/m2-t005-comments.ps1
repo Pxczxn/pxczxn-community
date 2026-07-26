@@ -1,6 +1,6 @@
 ﻿param(
     [string]$BaseUrl = "http://127.0.0.1:8849",
-    [string]$Database = "mars-system",
+    [string]$Database = "pxczxn_community",
     [string]$DatabaseUser = "root",
     [string]$DatabasePassword = "root",
     [string]$MySqlPath = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"

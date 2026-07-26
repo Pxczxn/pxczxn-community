@@ -1,5 +1,5 @@
 param(
-    [string]$Database = "mars-system",
+    [string]$Database = "pxczxn_community",
     [string]$DatabaseUser = "root",
     [string]$DatabasePassword = "root",
     [string]$MySqlPath = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
@@ -78,6 +78,19 @@ try {
     foreach ($migration in $migrations) {
         $checksum = (Get-FileHash -LiteralPath $migration.FullName -Algorithm SHA256).Hash
         Write-Host "       $($migration.Name) $checksum"
+    }
+
+    & powershell.exe `
+        -NoProfile `
+        -ExecutionPolicy Bypass `
+        -File (Join-Path $PSScriptRoot "invoke-database-migrations.ps1") `
+        -Database $Database `
+        -DatabaseUser $DatabaseUser `
+        -DatabasePassword $DatabasePassword `
+        -MySqlPath $MySqlPath `
+        -CheckOnly
+    if ($LASTEXITCODE -ne 0) {
+        throw "Migration history or checksum verification failed"
     }
 }
 finally {

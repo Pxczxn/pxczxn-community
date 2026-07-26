@@ -39,7 +39,7 @@ Maven Reactor 的 26 个模块全部成功。Surefire 报告汇总如下：
 
 ## 数据库结构验证
 
-对本地过渡数据库 `mars-system` 只读执行 V001 至 V006 的全部
+对当时的本地过渡数据库只读执行 V001 至 V006 的全部
 `database/verify` 脚本：
 
 ```text

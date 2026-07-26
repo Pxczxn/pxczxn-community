@@ -27,7 +27,7 @@
 ## 验证结果
 
 ```text
-Database: mars-system（本地过渡库）
+Database: 当时的本地过渡库（阶段 5 已迁移为 `pxczxn_community`）
 Migration first run: PASS
 Migration repeat run: PASS
 M2 interaction tables: 7

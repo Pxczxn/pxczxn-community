@@ -8,7 +8,7 @@ const requireFromAdmin = createRequire(
 const JSEncrypt = requireFromAdmin('jsencrypt')
 
 const baseUrl = process.env.PXCZXN_BASE_URL || 'http://127.0.0.1:8849'
-const database = process.env.PXCZXN_DB_NAME || 'mars-system'
+const database = process.env.PXCZXN_DB_NAME || 'pxczxn_community'
 const databaseUser = process.env.PXCZXN_DB_USERNAME || 'root'
 const databasePassword = process.env.PXCZXN_DB_PASSWORD || 'root'
 const mysqlPath = process.env.PXCZXN_MYSQL_PATH

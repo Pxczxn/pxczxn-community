@@ -1,115 +1,123 @@
 # 数据库迁移
 
-核心数据库使用 MySQL 8.x、InnoDB 和 `utf8mb4`。SQL 迁移由仓库文件管理，
-不使用 Flyway 或 Liquibase。
+星语社区业务数据库使用 MySQL 8.x、InnoDB 和 `utf8mb4`。MySQL 是唯一业务
+事实来源；Redis 只提供可选增强。SQL 迁移继续由仓库中的
+`database/migrations/Vxxx__description.sql` 管理，不引入 Flyway 或 Liquibase。
 
-## 当前版本
+## 当前基线
 
-```text
-V011
-```
+- 当前数据库：`pxczxn_community`
+- 当前迁移：V014
+- 迁移历史表：`pxczxn_schema_version`
+- 在线校验：V001 至 V014 各有一个 `database/verify` 脚本
+- 后台兼容表：继续保留稳定的 `sys_*` 表名
 
-V001 创建 15 张 M1 社区业务基础表；V002 注册后台社区标签菜单和 RBAC；
-V003 创建自动内容审核关键词规则表；V004 注册后台文章审核工作台及动作权限；
-V005 创建文章定时发布持久任务并注册 Quartz 扫描任务；V006 注册社区运营
-工作台、用户、博客与文章查询页面及 RBAC。
-V007 创建关注、动态、评论、点赞、收藏与收藏夹的 M2 互动基础表。
-V008 为用户偏好增加喜欢列表公开范围。
-V009 增加评论范围约束与评论治理事件表。
-V010 增加动态公开流索引，以及链接、引用和纯转发的内容形状检查约束。
-V011 增加通知分类、重要等级、聚合字段、活动时间、稳定去重与收件箱索引。
-后台 `sys_*` 表来自管理脚手架，当前
-本地环境暂时与社区表共用同一数据库。
+V001 创建 M1 社区业务基础表；V002 至 V006 建立标签、审核、定时发布和运营
+查询能力；V007 至 V012 建立互动、隐私、评论治理、动态、通知和运营治理能力；
+V013 写入星语社区管理端品牌；V014 增加管理员密码生命周期字段。
 
-## 新环境
+## 迁移历史表
 
-先创建数据库：
+`scripts/invoke-database-migrations.ps1` 自动创建并维护：
 
-```sql
-CREATE DATABASE `pxczxn_community`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_0900_ai_ci;
-```
+| 字段 | 含义 |
+| --- | --- |
+| `version` | 唯一迁移版本，如 `V014` |
+| `description` | 从迁移文件名提取的描述 |
+| `checksum` | SQL 文件原始内容的 SHA-256 |
+| `executed_at` | 最近一次执行或登记时间 |
+| `success` | `1` 表示迁移和在线校验均成功 |
 
-初始化后台系统表后，进入 `database` 目录并按版本号顺序执行：
+已成功版本不会重复执行。脚本会先比较仓库文件与历史表中的 checksum；任一已
+登记文件发生变化会立即中止，不会继续执行后续 SQL。
+
+## 正常升级
+
+完成数据库备份后，在仓库根目录执行：
 
 ```powershell
-Set-Location .\database
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V001__m1_core_schema.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V002__community_admin_tag_permissions.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V003__content_keyword_rules.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V004__community_admin_review_permissions.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V005__scheduled_article_publication.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V006__community_admin_query_permissions.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V007__community_interaction_foundation.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V008__like_list_privacy.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V009__comment_scope_and_moderation.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V010__moment_publication_constraints.sql"
-mysql --user=root --password --database=pxczxn_community `
-  --execute="source ./migrations/V011__community_notification_inbox.sql"
+.\scripts\invoke-database-migrations.ps1 `
+  -Database pxczxn_community `
+  -DatabaseUser root
 ```
 
-密码通过 MySQL 的交互提示或环境变量提供，不写入脚本。
+密码通过参数、MySQL 交互环境或部署系统的安全变量提供，不提交到仓库。脚本按
+版本排序，每个版本依次执行迁移和对应在线校验，二者都成功后才写入
+`success=1`。
 
-## 已部署环境升级
+只读检查版本、checksum 和实际结构：
 
-1. 确认当前数据库与版本。
-2. 完成全量备份。
-3. 在维护窗口执行下一个版本 SQL。
-4. 执行对应 `verify` 文件。
-5. 在本文件的执行记录中追加环境、时间、版本和结果。
+```powershell
+.\scripts\check-database-migrations.ps1 `
+  -Database pxczxn_community `
+  -DatabaseUser root
+```
 
-V001 只创建新表，不修改历史数据；主要风险是创建表时取得元数据锁。
+该检查会验证：
 
-## 可重复执行
+1. 文件名、版本连续性和重复版本。
+2. 迁移与在线校验脚本一一对应。
+3. V001 至 V014 的真实数据库结构与数据约束。
+4. 历史记录数量、成功状态和 SHA-256 checksum。
 
-V001 使用 `CREATE TABLE IF NOT EXISTS`，在结构一致时可重复执行。它不会尝试
-自动修复一个已经存在但字段不一致的同名表；出现这种情况必须停止部署并人工
-核对，不能用 `IF NOT EXISTS` 掩盖结构漂移。
+## 已有数据库建立基线
 
-V002、V004 和 V006 使用固定菜单 ID 和受保护的角色授权插入；V003、V005 与 V007
-使用 `CREATE TABLE IF NOT EXISTS`，V008 通过元数据检查保护重复 `ALTER TABLE`，
-V009 使用 `CREATE TABLE IF NOT EXISTS` 并通过元数据检查保护评论范围约束，
-V010 通过元数据检查保护动态流索引和内容形状约束，V005 的 Quartz 任务也使用
-受保护插入；V011 通过元数据检查保护通知字段、索引和约束，并在建立唯一键前
-安全处理历史重复去重键。每次重复
-执行后仍必须运行对应 `verify` 文件，确认已有结构没有漂移。
+`-BaselineExisting` 只用于已经完成迁移但尚无历史表的受控数据库。它不会直接
+信任现状，而是先执行每个版本的在线校验，全部通过后才登记对应 checksum：
+
+```powershell
+.\scripts\invoke-database-migrations.ps1 `
+  -Database pxczxn_community `
+  -DatabaseUser root `
+  -BaselineExisting
+```
+
+存在失败记录、校验失败或 checksum 冲突时禁止建立基线。
+
+## 库名迁移
+
+阶段 5 使用新建数据库、逻辑备份、导入、逐表精确行数比对、在线结构验证和
+checksum 基线登记完成库名迁移：
+
+```powershell
+.\scripts\migrate-database-name.ps1 `
+  -SourceDatabase <legacy_database> `
+  -TargetDatabase pxczxn_community `
+  -DatabaseUser root `
+  -BackupDirectory <external_backup_directory>
+```
+
+脚本具有以下保护：
+
+- 目标库已存在时拒绝覆盖。
+- 不使用 `RENAME DATABASE`。
+- 不删除或修改源库。
+- 创建目标后发生失败时保留现场，不自动执行 `DROP DATABASE`。
+- 使用 `mysqldump --single-transaction` 创建一致性备份并记录 SHA-256。
+- 比较所有业务表名称和逐表 `COUNT(*)` 精确行数。
+- 通过 V001 至 V014 在线校验后才登记迁移历史。
+
+## 不可变迁移
+
+已登记成功的 `Vxxx` 文件不可修改。需要调整数据库结构时必须新增下一个版本。
+`CREATE TABLE IF NOT EXISTS` 和元数据保护只能保证脚本可重入，不能替代 checksum
+和在线结构校验，也不能用于掩盖结构漂移。
 
 ## 失败处理
 
-- 任一建表语句失败后立即停止后续业务部署。
-- 使用 `verify/V001__verify_m1_core_schema.sql` 核对实际结构。
-- 空库可在确认无业务数据后使用受保护的 rollback 脚本清理。
-- 已有数据的环境优先从备份恢复，不直接执行 DROP。
+- 任一迁移或校验失败后立即停止后续部署。
+- 保留失败记录和数据库现场，核对执行输出、备份和对应 `verify` 文件。
+- 空测试库可以在确认无业务数据后使用受保护 rollback 脚本。
+- 已有业务数据的环境优先切回保留的源库或从一致性备份恢复。
+- 禁止直接改写历史表把失败状态伪装为成功。
 
 ## 回滚保护
 
-`rollback/V001__rollback_m1_core_schema.sql` 默认拒绝执行。只有在同一 MySQL
-会话显式设置确认变量后才会删除表。
+已有 rollback SQL 默认拒绝破坏性执行。只有在同一 MySQL 会话显式设置确认变量
+后才允许删除对应对象；生产或含业务数据的库不应使用结构删除作为首选回滚。
 
 ## 执行记录
 
 | 环境 | 数据库 | 版本 | 时间 | 结果 |
-|---|---|---|---|---|
-| local-test | `pxczxn_community_m1_test` | V001 | 2026-07-25 | 首次与重复执行通过，结构验证通过 |
-| local | `mars-system`（过渡） | V001 | 2026-07-25 | 首次与重复执行通过，15 张表验证通过 |
-| local | `mars-system`（过渡） | V002 | 2026-07-25 | 菜单、权限与管理员授权验证通过 |
-| local | `mars-system`（过渡） | V003 | 2026-07-25 | 首次与重复执行通过，表、字段和索引验证通过 |
-| local | `mars-system`（过渡） | V004 | 2026-07-25 | 文章审核菜单、动作权限与 admin 角色授权验证通过 |
-| local | `mars-system`（过渡） | V005 | 2026-07-25 | 定时发布任务表与 Quartz 注册验证通过 |
-| local | `mars-system`（过渡） | V006 | 2026-07-25 | 社区运营页面、权限、admin 授权与菜单排序验证通过 |
-| local | `mars-system`（过渡） | V007 | 2026-07-25 | 首次与重复执行通过，7 张互动表、5 个业务唯一约束和 14 个外键验证通过 |
-| local | `mars-system`（过渡） | V008 | 2026-07-25 | 首次与重复执行通过，喜欢列表公开范围字段、默认值与检查约束验证通过 |
-| local | `mars-system`（过渡） | V009 | 2026-07-25 | 重复执行通过，治理事件表、8 个必需字段、评论范围约束和历史值验证通过 |
-| local | `mars-system`（过渡） | V010 | 2026-07-26 | 重复执行通过，1 个动态流索引、3 个内容形状约束和历史值验证通过 |
-| local | `mars-system`（过渡） | V011 | 2026-07-26 | 首次与重复执行通过，4 个收件箱字段、2 个索引、3 个约束及历史值验证通过 |
+| --- | --- | --- | --- | --- |
+| local | `pxczxn_community` | V001–V014 | 2026-07-26 | 源库逻辑复制、71 张表逐表精确行数一致、14 个在线校验通过、checksum 基线登记成功 |

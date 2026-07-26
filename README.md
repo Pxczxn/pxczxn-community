@@ -34,7 +34,7 @@ docs             决策、交付记录和开发状态
 - Maven 3.9+
 - Node.js 22.13+
 - MySQL 8
-- 数据库：`mars-system`
+- 数据库：`pxczxn_community`
 - 本地数据库账号/密码：`root` / `root`
 - Redis 可不启动，社区会话、验证码和配置读取具有本机降级实现
 

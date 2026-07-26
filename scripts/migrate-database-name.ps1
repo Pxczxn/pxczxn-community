@@ -1,5 +1,6 @@
 param(
-    [string]$SourceDatabase = "mars-system",
+    [Parameter(Mandatory = $true)]
+    [string]$SourceDatabase,
     [string]$TargetDatabase = "pxczxn_community",
     [string]$DatabaseUser = "root",
     [string]$DatabasePassword = "root",
