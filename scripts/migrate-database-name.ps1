@@ -70,8 +70,9 @@ ORDER BY TABLE_NAME;
         Assert-DatabaseName $tableName
         $databaseIdentifier = Quote-Identifier $Database
         $tableIdentifier = Quote-Identifier $tableName
-        $count = [long](Invoke-ServerQuery `
-                "SELECT COUNT(*) FROM $databaseIdentifier.$tableIdentifier;")[0]
+        $countRows = @(Invoke-ServerQuery `
+                "SELECT COUNT(*) FROM $databaseIdentifier.$tableIdentifier;")
+        $count = [long]$countRows[0]
         $result[$tableName] = $count
     }
     return $result
@@ -102,8 +103,9 @@ WHERE SCHEMA_NAME = '$sourceLiteral';
         throw "Source database does not exist: $SourceDatabase"
     }
 
-    $targetCount = [int](Invoke-ServerQuery `
-            "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '$targetLiteral';")[0]
+    $targetCountRows = @(Invoke-ServerQuery `
+            "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = '$targetLiteral';")
+    $targetCount = [int]$targetCountRows[0]
     if ($targetCount -ne 0) {
         throw "Target database already exists; refusing to overwrite: $TargetDatabase"
     }

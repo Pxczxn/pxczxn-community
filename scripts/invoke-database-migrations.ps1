@@ -203,8 +203,9 @@ WHERE version = '$versionLiteral';
         }
     }
 
-    $failedCount = [int](Invoke-MySqlQuery `
-            "SELECT COUNT(*) FROM pxczxn_schema_version WHERE success <> 1;")[0]
+    $failedCountRows = @(Invoke-MySqlQuery `
+            "SELECT COUNT(*) FROM pxczxn_schema_version WHERE success <> 1;")
+    $failedCount = [int]$failedCountRows[0]
     if ($failedCount -ne 0) {
         throw "Migration history contains $failedCount failed entries"
     }
