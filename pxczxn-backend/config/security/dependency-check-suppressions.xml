@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+            CVE-2026-53914 affects Kotlin compiler/build-cache metadata
+            deserialization. This application contains only kotlin-stdlib as a
+            transitive runtime dependency of OkHttp/Okio; it does not use the
+            Kotlin compiler or Kotlin build cache. JetBrains assigned CVSS 6.7,
+            below this project's CVSS 7.0 build-failure threshold.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib(?:-jdk7|-jdk8|-common)?@.*$</packageUrl>
+        <cve>CVE-2026-53914</cve>
+    </suppress>
+</suppressions>

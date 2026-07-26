@@ -100,6 +100,11 @@ try {
     Invoke-Step "Admin tests" $adminRoot { & npm.cmd test }
     Invoke-Step "Admin build" $adminRoot { & npm.cmd run build }
 
+    Invoke-Step "Dependency security and SBOM" $root {
+        & (Join-Path $PSScriptRoot "verify-dependencies.ps1") `
+            -MavenPath $MavenPath
+    }
+
     Invoke-Step "Database migration version check" $root {
         & powershell.exe `
             -NoProfile `

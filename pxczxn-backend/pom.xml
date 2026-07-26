@@ -26,7 +26,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>3.5.16</spring-boot.version>
-        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mybatis-plus.version>3.5.6</mybatis-plus.version>
         <sa-token.version>1.37.0</sa-token.version>
         <hutool.version>5.8.25</hutool.version>
         <easyexcel.version>3.3.3</easyexcel.version>
@@ -34,10 +34,31 @@
         <lombok.version>1.18.30</lombok.version>
         <commonmark.version>0.28.0</commonmark.version>
         <jsoup.version>1.22.2</jsoup.version>
+        <dependency-check.version>12.2.2</dependency-check.version>
+        <cyclonedx-maven-plugin.version>2.9.2</cyclonedx-maven-plugin.version>
+        <log4j.version>2.25.5</log4j.version>
+        <netty.version>4.1.136.Final</netty.version>
+        <tomcat.version>10.1.57</tomcat.version>
+        <okio.version>3.6.0</okio.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Spring Boot -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -45,6 +66,27 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${okio.version}</version>
             </dependency>
 
             <!-- MyBatis Plus -->
@@ -260,4 +302,70 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>security</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                        <version>${cyclonedx-maven-plugin.version}</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>aggregate-sbom</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>makeAggregateBom</goal>
+                                </goals>
+                                <configuration>
+                                    <projectType>application</projectType>
+                                    <schemaVersion>1.6</schemaVersion>
+                                    <includeTestScope>false</includeTestScope>
+                                    <outputFormat>json</outputFormat>
+                                    <outputName>pxczxn-backend-sbom</outputName>
+                                    <outputDirectory>${maven.multiModuleProjectDirectory}/../outputs/security</outputDirectory>
+                                    <outputReactorProjects>false</outputReactorProjects>
+                                    <skipAttach>true</skipAttach>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>${dependency-check.version}</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>aggregate-vulnerability-scan</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <failBuildOnCVSS>7.0</failBuildOnCVSS>
+                                    <failOnError>true</failOnError>
+                                    <skipTestScope>true</skipTestScope>
+                                    <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+                                    <formats>
+                                        <format>HTML</format>
+                                        <format>JSON</format>
+                                        <format>SARIF</format>
+                                    </formats>
+                                    <outputDirectory>${maven.multiModuleProjectDirectory}/../outputs/security/dependency-check</outputDirectory>
+                                    <dataDirectory>${maven.multiModuleProjectDirectory}/work/dependency-check-data</dataDirectory>
+                                    <suppressionFiles>
+                                        <suppressionFile>${maven.multiModuleProjectDirectory}/config/security/dependency-check-suppressions.xml</suppressionFile>
+                                    </suppressionFiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
