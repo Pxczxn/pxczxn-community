@@ -20,6 +20,7 @@ import java.io.IOException;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final DemoModeInterceptor demoModeInterceptor;
+    private final AdminPasswordChangeInterceptor adminPasswordChangeInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -27,6 +28,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(demoModeInterceptor)
                 .addPathPatterns("/api/**")
                 .order(0);  // 优先级最高
+        registry.addInterceptor(adminPasswordChangeInterceptor)
+                .addPathPatterns("/api/**", "/admin-api/**")
+                .excludePathPatterns("/api/v1/**")
+                .order(20);
     }
 
     @Override

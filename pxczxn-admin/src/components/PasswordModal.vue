@@ -5,6 +5,8 @@
     title="修改密码"
     :style="{ width: '450px' }"
     :mask-closable="false"
+    :close-on-esc="!required"
+    :closable="!required"
   >
     <n-form
       ref="formRef"
@@ -41,7 +43,7 @@
     </n-form>
     <template #footer>
       <n-space justify="end">
-        <n-button @click="handleClose">取消</n-button>
+        <n-button v-if="!required" @click="handleClose">取消</n-button>
         <n-button type="primary" :loading="loading" @click="handleSubmit">确定</n-button>
       </n-space>
     </template>
@@ -52,14 +54,19 @@
 import { ref, watch } from 'vue'
 import type { FormInst, FormRules, FormItemRule } from 'naive-ui'
 import { authApi } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps<{
   show: boolean
+  required?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:show', value: boolean): void
+  (e: 'changed'): void
 }>()
+
+const userStore = useUserStore()
 
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
@@ -112,6 +119,9 @@ function resetForm() {
 }
 
 function handleClose() {
+  if (props.required) {
+    return
+  }
   showModal.value = false
 }
 
@@ -123,8 +133,10 @@ async function handleSubmit() {
       oldPassword: formData.value.oldPassword,
       newPassword: formData.value.newPassword
     })
-    window.$message?.success('密码修改成功，请重新登录')
-    handleClose()
+    await userStore.getInfo()
+    emit('changed')
+    window.$message?.success('密码修改成功')
+    showModal.value = false
     // 可选：修改密码后自动退出登录
     // setTimeout(() => {
     //   userStore.logout()

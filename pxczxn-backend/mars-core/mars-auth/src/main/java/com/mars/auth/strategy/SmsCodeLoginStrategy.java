@@ -11,6 +11,7 @@ import com.mars.auth.enums.LoginType;
 import com.mars.common.exception.BusinessException;
 import com.mars.system.entity.SysUser;
 import com.mars.system.service.SysUserService;
+import com.mars.system.security.OneTimePasswordGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class SmsCodeLoginStrategy implements LoginStrategy {
     private final SysUserService userService;
     private final TransientCodeStore transientCodeStore;
     private final LoginHelper loginHelper;
+    private final OneTimePasswordGenerator oneTimePasswordGenerator;
 
     private static final String SMS_CODE_KEY = "sms:login:";
 
@@ -80,7 +82,8 @@ public class SmsCodeLoginStrategy implements LoginStrategy {
         user.setUsername(phone);
         user.setPhone(phone);
         user.setNickname("用户" + phone.substring(7));
-        user.setPassword(BCrypt.hashpw("123456")); // 默认密码
+        user.setPassword(BCrypt.hashpw(oneTimePasswordGenerator.generate()));
+        user.setMustChangePassword(0);
         user.setStatus(1);
         user.setGender(0);
         user.setUserType(userType);

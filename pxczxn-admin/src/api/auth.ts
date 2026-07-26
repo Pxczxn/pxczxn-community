@@ -35,6 +35,7 @@ export interface UserInfo {
   phone: string
   gender: number
   status: number
+  mustChangePassword: number
 }
 
 export interface MenuInfo {
@@ -55,7 +56,13 @@ export interface MenuInfo {
 
 export interface LoginResult {
   token: string
-  user: UserInfo
+  userId: number
+  username: string
+  nickname: string
+  avatar: string
+  extra?: {
+    mustChangePassword?: boolean
+  }
 }
 
 export interface UserInfoResult {
@@ -63,6 +70,11 @@ export interface UserInfoResult {
   roles: string[]
   permissions: string[]
   menus: MenuInfo[]
+}
+
+export interface WebSocketTicket {
+  ticket: string
+  expiresInSeconds: number
 }
 
 // 个人信息
@@ -81,6 +93,7 @@ export interface ProfileInfo {
   remark?: string
   userType?: string
   createTime?: string
+  mustChangePassword?: number
 }
 
 // 认证相关API
@@ -135,6 +148,13 @@ export const authApi = {
     return request({
       url: '/auth/info',
       method: 'get'
+    })
+  },
+
+  issueWebSocketTicket(): Promise<WebSocketTicket> {
+    return request({
+      url: '/auth/websocket-ticket',
+      method: 'post'
     })
   },
 

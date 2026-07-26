@@ -15,12 +15,12 @@ export const useUserStore = defineStore('user', () => {
   const isLogin = computed(() => !!token.value)
   const nickname = computed(() => user.value?.nickname || user.value?.username || '')
   const avatar = computed(() => user.value?.avatar || '')
+  const mustChangePassword = computed(() => user.value?.mustChangePassword === 1)
   
   // 登录
   async function login(params: LoginParams) {
     const res = await authApi.login(params)
     token.value = res.token
-    user.value = res.user
     // 登录成功后立即获取用户信息（包含菜单、权限等）
     await getInfo()
     return res
@@ -83,6 +83,7 @@ export const useUserStore = defineStore('user', () => {
     isLogin,
     nickname,
     avatar,
+    mustChangePassword,
     login,
     getInfo,
     logout,

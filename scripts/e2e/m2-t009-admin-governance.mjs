@@ -34,6 +34,7 @@ const ruleId = 8_200_000_000_000_000_000n
   + BigInt(Date.now() % 1_000_000_000_000)
 const tempAdmin = `m2gov_${stamp}`
 const tempRole = `m2gov_role_${stamp}`
+const forcedReplacementPassword = 'M2ForcedChange!2026'
 
 let userAId
 let userBId
@@ -402,6 +403,19 @@ try {
   if (!adminToken) {
     adminToken = await loginAdmin('admin', adminPassword)
   }
+  const websocketTicket = await adminRequest(
+    '/api/auth/websocket-ticket',
+    { method: 'POST' }
+  )
+  assertTrue(
+    typeof websocketTicket.data.ticket === 'string'
+      && websocketTicket.data.ticket.length >= 40,
+    'one-time WebSocket ticket was not issued'
+  )
+  assertTrue(
+    !Object.hasOwn(websocketTicket.data, 'token'),
+    'WebSocket ticket response leaked the administrator session token'
+  )
 
   const registeredA = await register(
     usernameA,
@@ -762,9 +776,10 @@ try {
        'M2-T009 E2E', 0, 1);
     SET @role_id := LAST_INSERT_ID();
     INSERT INTO sys_user
-      (username, password, nickname, status, user_type, deleted)
+      (username, password, must_change_password,
+       temporary_password_issued_at, nickname, status, user_type, deleted)
     SELECT
-      ${sqlString(tempAdmin)}, password,
+      ${sqlString(tempAdmin)}, password, 1, UTC_TIMESTAMP(),
       ${sqlString(`M2 governance reader ${stamp}`)},
       1, 'admin', 0
     FROM sys_user
@@ -784,6 +799,42 @@ try {
       (@role_id, 9091);
   `)
   readOnlyToken = await loginAdmin(tempAdmin, adminPassword)
+  const forcedPasswordGate = await adminRequest(
+    '/api/dashboard/stats',
+    { token: readOnlyToken, expectedCodes: [428] }
+  )
+  assertEqual(
+    forcedPasswordGate.code,
+    428,
+    'mandatory first-login password change gate'
+  )
+  const forcedPasswordAdminApiGate = await adminRequest(
+    '/admin-api/community/comments?pageNum=1&pageSize=5',
+    { token: readOnlyToken, expectedCodes: [428] }
+  )
+  assertEqual(
+    forcedPasswordAdminApiGate.code,
+    428,
+    'mandatory first-login password change gate on admin API'
+  )
+  await adminRequest('/api/auth/password', {
+    method: 'POST',
+    token: readOnlyToken,
+    body: {
+      oldPassword: encryptAdminPassword(adminPassword),
+      newPassword: encryptAdminPassword(forcedReplacementPassword)
+    }
+  })
+  assertEqual(
+    mysql(`
+      SELECT must_change_password
+      FROM sys_user
+      WHERE username = ${sqlString(tempAdmin)}
+      LIMIT 1;
+    `),
+    '0',
+    'password lifecycle flag cleared after password change'
+  )
   const readOnlyList = await adminRequest(
     '/admin-api/community/comments?pageNum=1&pageSize=5',
     { token: readOnlyToken }
@@ -831,6 +882,8 @@ try {
     stamp,
     backend: 'UP',
     adminAuthentication: 'RSA + Sa-Token',
+    websocketAuthentication: '30-second one-time ticket',
+    forcedPasswordChange: '428 until changed',
     approveReplay: replayComment.replay,
     commentLifecycle: 'PENDING_REVIEW/PUBLISHED/TAKEN_DOWN/PUBLISHED',
     momentLifecycle: 'PENDING_REVIEW/PUBLISHED/TAKEN_DOWN/PUBLISHED',

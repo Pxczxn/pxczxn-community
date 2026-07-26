@@ -1,5 +1,5 @@
 server:
-  port: ${PXCZXN_SERVER_PORT:8849}
+  port: 8849
 
 spring:
   application:
@@ -14,26 +14,26 @@ spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${PXCZXN_DB_URL}
-    username: ${PXCZXN_DB_USERNAME}
-    password: ${PXCZXN_DB_PASSWORD}
+    url: ${PXCZXN_DB_URL:jdbc:mysql://localhost:3306/mars-system?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=UTC}
+    username: ${PXCZXN_DB_USERNAME:root}
+    password: ${PXCZXN_DB_PASSWORD:root}
     hikari:
-      minimum-idle: ${PXCZXN_DB_MIN_IDLE:5}
-      maximum-pool-size: ${PXCZXN_DB_MAX_POOL_SIZE:20}
-      connection-timeout: ${PXCZXN_DB_CONNECTION_TIMEOUT:30000}
+      minimum-idle: 2
+      maximum-pool-size: 20
+      connection-timeout: 30000
       validation-timeout: 5000
   data:
     redis:
-      host: ${PXCZXN_REDIS_HOST}
+      host: ${PXCZXN_REDIS_HOST:localhost}
       port: ${PXCZXN_REDIS_PORT:6379}
-      password: ${PXCZXN_REDIS_PASSWORD}
-      database: ${PXCZXN_REDIS_DATABASE:10}
+      password: ${PXCZXN_REDIS_PASSWORD:}
+      database: ${PXCZXN_REDIS_DATABASE:6}
       lettuce:
         pool:
-          max-active: ${PXCZXN_REDIS_MAX_ACTIVE:16}
-          max-wait: ${PXCZXN_REDIS_MAX_WAIT:5s}
-          max-idle: ${PXCZXN_REDIS_MAX_IDLE:8}
-          min-idle: ${PXCZXN_REDIS_MIN_IDLE:2}
+          max-active: 8
+          max-wait: -1
+          max-idle: 8
+          min-idle: 0
 
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -50,32 +50,35 @@ mybatis-plus:
 pxczxn:
   demo-mode: false
   community:
-    version: ${PXCZXN_COMMUNITY_VERSION:1.0.0}
+    version: 1.0.0
+  local-admin:
+    username: ${PXCZXN_LOCAL_ADMIN_USERNAME:admin}
+    password: ${PXCZXN_LOCAL_ADMIN_PASSWORD:admin123}
   security:
     cors:
-      allowed-origins: ${PXCZXN_CORS_ALLOWED_ORIGINS}
+      allowed-origins:
+        - http://localhost:8847
+        - http://127.0.0.1:8847
+        - http://localhost:8848
+        - http://127.0.0.1:8848
   websocket:
     ticket:
       ttl: 30s
-      require-redis: true
+      require-redis: false
 
 management:
   endpoints:
-    enabled-by-default: false
     web:
       exposure:
         include: health,info
   endpoint:
     health:
-      enabled: true
       show-details: never
-    info:
-      enabled: true
   info:
     env:
       enabled: false
 
 logging:
   level:
-    root: info
-    top.pxczxn: info
+    com.mars: debug
+    top.pxczxn.community: debug

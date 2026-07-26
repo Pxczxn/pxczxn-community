@@ -10,6 +10,7 @@ import com.mars.auth.enums.LoginType;
 import com.mars.common.exception.BusinessException;
 import com.mars.system.entity.SysUser;
 import com.mars.system.service.SysUserService;
+import com.mars.system.security.OneTimePasswordGenerator;
 import com.mars.wechat.WechatMiniProgramService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class MiniProgramLoginStrategy implements LoginStrategy {
     private final WechatMiniProgramService wechatMiniProgramService;
     private final SysUserService userService;
     private final LoginHelper loginHelper;
+    private final OneTimePasswordGenerator oneTimePasswordGenerator;
 
     @Override
     public LoginType getType() {
@@ -83,7 +85,8 @@ public class MiniProgramLoginStrategy implements LoginStrategy {
         SysUser user = new SysUser();
         user.setUsername("wx_" + openId.substring(0, Math.min(openId.length(), 10)));
         user.setNickname("微信用户");
-        user.setPassword(BCrypt.hashpw("123456")); // 默认密码
+        user.setPassword(BCrypt.hashpw(oneTimePasswordGenerator.generate()));
+        user.setMustChangePassword(0);
         user.setOpenId(openId);
         user.setStatus(1);
         user.setGender(0);

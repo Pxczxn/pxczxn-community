@@ -33,3 +33,30 @@ test('the three supported visual themes remain available', async () => {
     assert.match(themeStore, new RegExp(theme))
   }
 })
+
+test('websocket authentication uses one-time tickets instead of session tokens', async () => {
+  const [websocket, serverManager, authApi] = await Promise.all([
+    source('src/utils/websocket.ts'),
+    source('src/views/monitor/server-manager/index.vue'),
+    source('src/api/auth.ts')
+  ])
+
+  assert.match(authApi, /issueWebSocketTicket/)
+  assert.match(websocket, /\?ticket=/)
+  assert.doesNotMatch(websocket, /\?token=/)
+  assert.match(serverManager, /\?ticket=/)
+  assert.doesNotMatch(serverManager, /\?token=/)
+})
+
+test('administrator passwords are random, one-time, and forced to change', async () => {
+  const [userPage, passwordModal, userStore] = await Promise.all([
+    source('src/views/system/user/index.vue'),
+    source('src/components/PasswordModal.vue'),
+    source('src/stores/user.ts')
+  ])
+
+  assert.doesNotMatch(userPage, /默认123456|重置后密码为123456/)
+  assert.match(userPage, /temporaryPassword/)
+  assert.match(passwordModal, /props\.required/)
+  assert.match(userStore, /mustChangePassword/)
+})

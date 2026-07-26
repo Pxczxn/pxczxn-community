@@ -21,6 +21,7 @@ import com.mars.system.entity.SysUser;
 import com.mars.system.entity.SysUserRole;
 import com.mars.system.helper.SystemConfigHelper;
 import com.mars.system.service.*;
+import com.mars.websocket.WebSocketTicketService;
 import com.mars.sms.SmsServiceFactory;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class AdminAuthController {
     private final TransientCodeStore transientCodeStore;
     private final SmsServiceFactory smsServiceFactory;
     private final LoginStrategyFactory loginStrategyFactory;
+    private final WebSocketTicketService webSocketTicketService;
 
     private static final String CAPTCHA_KEY = "captcha:";
     private static final String SMS_CODE_KEY = "sms:login:";
@@ -161,6 +163,15 @@ public class AdminAuthController {
         result.put("permissions", permissions);
         result.put("menus", menus);
         return Result.ok(result);
+    }
+
+    /**
+     * Issues a short-lived, one-time credential for a WebSocket handshake.
+     */
+    @PostMapping("/websocket-ticket")
+    public Result<WebSocketTicketService.IssuedTicket> issueWebSocketTicket() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return Result.ok(webSocketTicketService.issue(userId));
     }
 
     /**

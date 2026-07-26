@@ -19,7 +19,7 @@ import java.util.List;
 @Component
 public class DemoModeInterceptor implements HandlerInterceptor {
 
-    @Value("${mars.demo-mode:false}")
+    @Value("${pxczxn.demo-mode:false}")
     private boolean demoMode;
 
     private final ObjectMapper objectMapper = new ObjectMapper();

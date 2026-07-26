@@ -27,7 +27,7 @@ public interface SysUserService extends IService<SysUser> {
     /**
      * 创建用户
      */
-    void create(SysUser user, List<Long> roleIds, List<Long> postIds);
+    String create(SysUser user, List<Long> roleIds, List<Long> postIds);
 
     /**
      * 更新用户
@@ -67,7 +67,7 @@ public interface SysUserService extends IService<SysUser> {
     /**
      * 重置密码
      */
-    void resetPassword(Long userId);
+    String resetPassword(Long userId);
 
     /**
      * 更新个人信息

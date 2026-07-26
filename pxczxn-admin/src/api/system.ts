@@ -41,6 +41,23 @@ export interface SysUser {
   isQuit?: number     // 是否离职(0-否 1-是)
   postNames?: string  // 岗位名称列表
   createTime?: string
+  mustChangePassword?: number
+}
+
+export interface TemporaryPasswordResult {
+  username: string
+  temporaryPassword: string
+  mustChangePassword: boolean
+}
+
+export interface UserImportResult {
+  successCount: number
+  failCount: number
+  errors: string[]
+  temporaryPasswords: Array<{
+    username: string
+    temporaryPassword: string
+  }>
 }
 
 export interface UserDetailResult {
@@ -58,7 +75,7 @@ export const userApi = {
     return request({ url: `/sys/user/${id}`, method: 'get' })
   },
   
-  create(data: { user: SysUser; roleIds: number[]; postIds: number[] }): Promise<void> {
+  create(data: { user: SysUser; roleIds: number[]; postIds: number[] }): Promise<TemporaryPasswordResult> {
     return request({ url: '/sys/user', method: 'post', data })
   },
   
@@ -74,7 +91,7 @@ export const userApi = {
     return request({ url: '/sys/user/batch', method: 'delete', data: ids })
   },
   
-  resetPassword(id: number): Promise<void> {
+  resetPassword(id: number): Promise<TemporaryPasswordResult> {
     return request({ url: `/sys/user/${id}/reset-password`, method: 'post' })
   },
 
@@ -108,7 +125,7 @@ export const userApi = {
   },
 
   // 导入用户
-  importUsers(file: File): Promise<{ success: number; fail: number; errors: string[] }> {
+  importUsers(file: File): Promise<UserImportResult> {
     const formData = new FormData()
     formData.append('file', file)
     return request({

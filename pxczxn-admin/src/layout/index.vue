@@ -320,7 +320,10 @@
     <ProfileModal v-model:show="showProfileModal" />
 
     <!-- 修改密码弹窗 -->
-    <PasswordModal v-model:show="showPasswordModal" />
+    <PasswordModal
+      v-model:show="showPasswordModal"
+      :required="userStore.mustChangePassword"
+    />
 
     <!-- 消息通知弹窗 -->
     <MessageNotification />
@@ -328,7 +331,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NIcon, useMessage, useDialog, type MenuOption } from 'naive-ui'
 import {
@@ -395,6 +398,16 @@ const collapsed = ref(false)
 const showProfileModal = ref(false)
 const showPasswordModal = ref(false)
 const messageTab = ref('notice')
+
+watch(
+  () => userStore.mustChangePassword,
+  (required) => {
+    if (required) {
+      showPasswordModal.value = true
+    }
+  },
+  { immediate: true }
+)
 
 // 消息相关
 const messageLoading = ref(false)

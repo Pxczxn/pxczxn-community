@@ -14,6 +14,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class SaTokenConfig implements WebMvcConfigurer {
 
+    private final PxczxnCorsProperties corsProperties;
+
+    public SaTokenConfig(PxczxnCorsProperties corsProperties) {
+        this.corsProperties = corsProperties;
+    }
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor(handler -> {
@@ -47,7 +53,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("*")
+                .allowedOrigins(corsProperties.validatedAllowedOriginsArray())
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)

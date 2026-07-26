@@ -171,6 +171,14 @@ WHERE group_code = 'login';
         Write-Host "[PASS] Reusing healthy backend on $BaseUrl"
     }
 
+    Invoke-Step "Security hardening checks" $root {
+        & powershell.exe `
+            -NoProfile `
+            -ExecutionPolicy Bypass `
+            -File (Join-Path $PSScriptRoot "verify-security.ps1") `
+            -BaseUrl $BaseUrl
+    }
+
     Invoke-Step "Comments E2E" $root {
         & powershell.exe `
             -NoProfile `

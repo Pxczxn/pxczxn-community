@@ -117,11 +117,6 @@
               <n-input v-model:value="formData.username" placeholder="请输入用户名" :disabled="!!formData.id" />
             </n-form-item>
           </n-gi>
-          <n-gi v-if="!formData.id">
-            <n-form-item label="密码" path="password">
-              <n-input v-model:value="formData.password" type="password" placeholder="留空默认123456" show-password-on="click" />
-            </n-form-item>
-          </n-gi>
           <n-gi>
             <n-form-item label="昵称" path="nickname">
               <n-input v-model:value="formData.nickname" placeholder="请输入昵称" />
@@ -220,7 +215,7 @@
           <ul style="margin: 0; padding-left: 16px; line-height: 1.8">
             <li>请先下载导入模板，按模板格式填写数据</li>
             <li>用户名不能重复，否则导入失败</li>
-            <li>密码默认为 123456</li>
+            <li>系统会为每位导入用户生成随机一次性密码，并在结果中仅展示一次</li>
             <li>性别填写：男/女/未知</li>
             <li>用户类型填写：后台管理员/PC前台用户/App小程序用户</li>
             <li>状态填写：启用/禁用</li>
@@ -466,7 +461,6 @@ const formData = reactive<SysUser>({
   id: undefined,
   deptId: null,
   username: '',
-  password: '',
   nickname: '',
   email: '',
   phone: '',
@@ -558,7 +552,6 @@ function handleAdd() {
     id: undefined,
     deptId: null,
     username: '',
-    password: '',
     nickname: '',
     email: '',
     phone: '',
@@ -600,8 +593,8 @@ async function handleSubmit() {
       await userApi.update(data)
       message.success('更新成功')
     } else {
-      await userApi.create(data)
-      message.success('创建成功')
+      const result = await userApi.create(data)
+      showTemporaryPassword(result.username, result.temporaryPassword)
     }
 
     modalVisible.value = false
@@ -672,17 +665,40 @@ function handleReject(row: SysUser) {
 function handleResetPassword(row: SysUser) {
   dialog.warning({
     title: '提示',
-    content: `确定要重置用户"${row.username}"的密码吗？重置后密码为123456`,
+    content: `确定要重置用户"${row.username}"的密码吗？系统将生成仅展示一次的随机密码`,
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await userApi.resetPassword(row.id!)
-        message.success('密码重置成功')
+        const result = await userApi.resetPassword(row.id!)
+        showTemporaryPassword(result.username, result.temporaryPassword)
       } catch (error) {
         // 错误已在拦截器处理
       }
     }
+  })
+}
+
+function showTemporaryPassword(username: string, temporaryPassword: string) {
+  dialog.success({
+    title: '一次性密码',
+    content: () => h('div', [
+      h('p', `用户 ${username} 的一次性密码仅在此处展示一次，请立即安全交付：`),
+      h('code', {
+        style: {
+          display: 'block',
+          padding: '12px',
+          marginTop: '8px',
+          fontSize: '16px',
+          wordBreak: 'break-all',
+          background: 'var(--n-color-modal)'
+        }
+      }, temporaryPassword),
+      h('p', { style: { marginTop: '8px' } }, '用户首次登录后必须立即修改密码。')
+    ]),
+    positiveText: '我已安全保存',
+    closable: false,
+    maskClosable: false
   })
 }
 
@@ -775,14 +791,23 @@ async function handleImportUpload({ file }: UploadCustomRequestOptions) {
   if (!file.file) return
   try {
     const result = await userApi.importUsers(file.file)
-    if (result.fail > 0) {
+    const passwordLines = result.temporaryPasswords
+      .map(item => `${item.username}: ${item.temporaryPassword}`)
+      .join('\n')
+    if (result.failCount > 0) {
       dialog.warning({
         title: '导入结果',
-        content: `成功: ${result.success} 条，失败: ${result.fail} 条\n错误信息: ${result.errors?.join('\n') || '无'}`,
+        content: `成功: ${result.successCount} 条，失败: ${result.failCount} 条\n一次性密码:\n${passwordLines || '无'}\n错误信息: ${result.errors?.join('\n') || '无'}`,
         positiveText: '确定'
       })
     } else {
-      message.success(`导入成功，共 ${result.success} 条数据`)
+      dialog.success({
+        title: '导入成功：一次性密码仅展示一次',
+        content: passwordLines || '没有生成密码',
+        positiveText: '我已安全保存',
+        closable: false,
+        maskClosable: false
+      })
       importModalVisible.value = false
     }
     loadData()

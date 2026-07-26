@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Map;
+
 /**
  * 登录辅助工具
  * 提供登录后的公共逻辑：Token生成、Session写入、日志记录
@@ -55,13 +57,18 @@ public class LoginHelper {
         loginLogService.recordLog(user.getUsername(), 0, "登录成功", info.ip, info.browser, info.os);
 
         // 构建结果
-        return LoginResult.of(
+        LoginResult result = LoginResult.of(
                 StpUtil.getTokenValue(),
                 user.getId(),
                 user.getUsername(),
                 user.getNickname(),
                 user.getAvatar()
         );
+        result.setExtra(Map.of(
+                "mustChangePassword",
+                Integer.valueOf(1).equals(user.getMustChangePassword())
+        ));
+        return result;
     }
 
     /**

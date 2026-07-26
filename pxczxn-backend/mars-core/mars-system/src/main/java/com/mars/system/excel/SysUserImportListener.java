@@ -14,12 +14,14 @@ import com.mars.system.mapper.SysRoleMapper;
 import com.mars.system.mapper.SysUserMapper;
 import com.mars.system.mapper.SysUserPostMapper;
 import com.mars.system.mapper.SysUserRoleMapper;
+import com.mars.system.security.OneTimePasswordGenerator;
 import lombok.extern.slf4j.Slf4j;
 import cn.hutool.crypto.digest.BCrypt;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +33,6 @@ import java.util.stream.Collectors;
 public class SysUserImportListener extends AnalysisEventListener<SysUserExcel> {
 
     private static final int BATCH_COUNT = 100;
-    private static final String DEFAULT_PASSWORD = "123456";
 
     private final SysUserMapper userMapper;
     private final SysUserRoleMapper userRoleMapper;
@@ -39,18 +40,22 @@ public class SysUserImportListener extends AnalysisEventListener<SysUserExcel> {
     private final Map<String, Long> deptMap;
     private final Map<String, Long> roleMap;
     private final Map<String, Long> postMap;
+    private final OneTimePasswordGenerator oneTimePasswordGenerator;
 
     private final List<SysUserExcel> dataList = new ArrayList<>();
     private final List<String> errorMessages = new ArrayList<>();
+    private final List<Map<String, String>> temporaryPasswords = new ArrayList<>();
     private int successCount = 0;
     private int failCount = 0;
 
     public SysUserImportListener(SysUserMapper userMapper, SysDeptMapper deptMapper,
                                    SysRoleMapper roleMapper, SysPostMapper postMapper,
-                                   SysUserRoleMapper userRoleMapper, SysUserPostMapper userPostMapper) {
+                                   SysUserRoleMapper userRoleMapper, SysUserPostMapper userPostMapper,
+                                   OneTimePasswordGenerator oneTimePasswordGenerator) {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.userPostMapper = userPostMapper;
+        this.oneTimePasswordGenerator = oneTimePasswordGenerator;
         // 预加载所有部门，建立名称到ID的映射
         List<SysDept> depts = deptMapper.selectList(null);
         this.deptMap = depts.stream().collect(Collectors.toMap(SysDept::getDeptName, SysDept::getId, (a, b) -> a));
@@ -183,13 +188,21 @@ public class SysUserImportListener extends AnalysisEventListener<SysUserExcel> {
                 user.setGender(excel.getGender());
                 user.setUserType(excel.getUserType());
                 user.setStatus(excel.getStatus());
-                user.setPassword(BCrypt.hashpw(DEFAULT_PASSWORD));
+                String temporaryPassword = oneTimePasswordGenerator.generate();
+                user.setPassword(BCrypt.hashpw(temporaryPassword));
+                user.setMustChangePassword(1);
+                user.setTemporaryPasswordIssuedAt(LocalDateTime.now());
                 user.setCreateTime(LocalDateTime.now());
                 user.setUpdateTime(LocalDateTime.now());
                 user.setDeleted(0);
                 user.setIsQuit(0);
 
                 userMapper.insert(user);
+
+                Map<String, String> passwordResult = new LinkedHashMap<>();
+                passwordResult.put("username", user.getUsername());
+                passwordResult.put("temporaryPassword", temporaryPassword);
+                temporaryPasswords.add(passwordResult);
 
                 // 保存用户角色关联
                 if (excel.getRoleIds() != null && !excel.getRoleIds().isEmpty()) {
@@ -230,5 +243,9 @@ public class SysUserImportListener extends AnalysisEventListener<SysUserExcel> {
 
     public List<String> getErrorMessages() {
         return errorMessages;
+    }
+
+    public List<Map<String, String>> getTemporaryPasswords() {
+        return List.copyOf(temporaryPasswords);
     }
 }

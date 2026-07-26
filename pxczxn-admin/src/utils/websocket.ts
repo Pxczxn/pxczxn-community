@@ -1,4 +1,5 @@
 import { useUserStore } from '@/stores/user'
+import { authApi } from '@/api/auth'
 
 type MessageHandler = (data: any) => void
 
@@ -17,7 +18,7 @@ class WebSocketManager {
   /**
    * 连接WebSocket
    */
-  connect() {
+  async connect(): Promise<void> {
     const userStore = useUserStore()
     if (!userStore.token) {
       console.warn('[WebSocket] 未登录，无法连接')
@@ -29,9 +30,18 @@ class WebSocketManager {
       return
     }
 
+    let ticket: string
+    try {
+      ticket = (await authApi.issueWebSocketTicket()).ticket
+    } catch (error) {
+      console.error('[WebSocket] Unable to obtain a one-time ticket', error)
+      this.tryReconnect()
+      return
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const url = `${protocol}//${host}/ws/message?token=${userStore.token}`
+    const url = `${protocol}//${host}/ws/message?ticket=${encodeURIComponent(ticket)}`
 
     console.log('[WebSocket] 正在连接...')
     this.ws = new WebSocket(url)
@@ -164,7 +174,7 @@ class WebSocketManager {
     console.log(`[WebSocket] ${this.reconnectDelay / 1000}秒后尝试第${this.reconnectAttempts}次重连...`)
 
     this.reconnectTimer = window.setTimeout(() => {
-      this.connect()
+      void this.connect()
     }, this.reconnectDelay)
   }
 

@@ -28,10 +28,6 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: true
       },
-      '/druid': {
-        target: backendTarget,
-        changeOrigin: true
-      },
       '/ws': {
         target: backendTarget.replace(/^http/, 'ws'),
         ws: true,

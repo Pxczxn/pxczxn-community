@@ -78,7 +78,7 @@ export const useMessageStore = defineStore('message', () => {
     })
 
     // 连接WebSocket
-    wsManager.connect()
+    void wsManager.connect()
   }
 
   // 添加通知

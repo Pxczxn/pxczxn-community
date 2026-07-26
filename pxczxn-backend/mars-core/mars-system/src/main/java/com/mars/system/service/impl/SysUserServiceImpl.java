@@ -26,6 +26,7 @@ import com.mars.system.mapper.SysUserRoleMapper;
 import com.mars.system.config.StpInterfaceImpl;
 import com.mars.system.service.SysUserService;
 import com.mars.system.helper.SystemConfigHelper;
+import com.mars.system.security.OneTimePasswordGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -54,8 +55,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final SysPostMapper postMapper;
     private final SysRoleMapper roleMapper;
     private final SystemConfigHelper configHelper;
-
-    private static final String DEFAULT_PASSWORD = "123456";
+    private final OneTimePasswordGenerator oneTimePasswordGenerator;
 
     @Override
     public PageResult<SysUser> page(Integer page, Integer pageSize, String username, Integer status, String userType, Long deptId, Long postId) {
@@ -126,19 +126,22 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void create(SysUser user, List<Long> roleIds, List<Long> postIds) {
+    public String create(SysUser user, List<Long> roleIds, List<Long> postIds) {
         // 检查用户名是否存在
         if (this.getByUsername(user.getUsername()) != null) {
             throw new BusinessException("用户名已存在");
         }
-        // 加密密码
-        String password = StringUtils.hasText(user.getPassword()) ? user.getPassword() : DEFAULT_PASSWORD;
-        user.setPassword(BCrypt.hashpw(password));
+        String temporaryPassword = oneTimePasswordGenerator.generate();
+        user.setPassword(BCrypt.hashpw(temporaryPassword));
+        user.setMustChangePassword(1);
+        user.setTemporaryPasswordIssuedAt(java.time.LocalDateTime.now());
+        user.setPasswordChangedAt(null);
         this.save(user);
         // 保存用户角色关联
         saveUserRoles(user.getId(), roleIds);
         // 保存用户岗位关联
         saveUserPosts(user.getId(), postIds);
+        return temporaryPassword;
     }
 
     @Override
@@ -215,17 +218,25 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         configHelper.validatePassword(newPassword);
 
         user.setPassword(BCrypt.hashpw(newPassword));
+        user.setMustChangePassword(0);
+        user.setPasswordChangedAt(java.time.LocalDateTime.now());
+        user.setTemporaryPasswordIssuedAt(null);
         this.updateById(user);
     }
 
     @Override
-    public void resetPassword(Long userId) {
+    public String resetPassword(Long userId) {
         SysUser user = this.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
-        user.setPassword(BCrypt.hashpw(DEFAULT_PASSWORD));
+        String temporaryPassword = oneTimePasswordGenerator.generate();
+        user.setPassword(BCrypt.hashpw(temporaryPassword));
+        user.setMustChangePassword(1);
+        user.setTemporaryPasswordIssuedAt(java.time.LocalDateTime.now());
+        user.setPasswordChangedAt(null);
         this.updateById(user);
+        return temporaryPassword;
     }
 
     @Override
@@ -395,13 +406,15 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public Map<String, Object> importUsers(MultipartFile file) {
         try {
             SysUserImportListener listener = new SysUserImportListener(
-                    baseMapper, deptMapper, roleMapper, postMapper, userRoleMapper, userPostMapper);
+                    baseMapper, deptMapper, roleMapper, postMapper, userRoleMapper,
+                    userPostMapper, oneTimePasswordGenerator);
             EasyExcel.read(file.getInputStream(), SysUserExcel.class, listener).sheet().doRead();
 
             Map<String, Object> result = new HashMap<>();
             result.put("successCount", listener.getSuccessCount());
             result.put("failCount", listener.getFailCount());
             result.put("errors", listener.getErrorMessages());
+            result.put("temporaryPasswords", listener.getTemporaryPasswords());
             return result;
         } catch (IOException e) {
             log.error("读取Excel文件失败", e);

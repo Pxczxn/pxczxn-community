@@ -84,9 +84,17 @@ public class SysUserController {
     @SaCheckPermission("sys:user:add")
     @RepeatSubmit
     @Log(title = "用户管理", businessType = BusinessType.INSERT)
-    public Result<Void> create(@RequestBody UserRequest request) {
-        userService.create(request.getUser(), request.getRoleIds(), request.getPostIds());
-        return Result.ok();
+    public Result<TemporaryPasswordResponse> create(@RequestBody UserRequest request) {
+        String temporaryPassword = userService.create(
+                request.getUser(),
+                request.getRoleIds(),
+                request.getPostIds()
+        );
+        return Result.ok(new TemporaryPasswordResponse(
+                request.getUser().getUsername(),
+                temporaryPassword,
+                true
+        ));
     }
 
     /**
@@ -131,9 +139,17 @@ public class SysUserController {
     @PostMapping("/{id}/reset-password")
     @SaCheckPermission("sys:user:edit")
     @Log(title = "用户管理", businessType = BusinessType.UPDATE)
-    public Result<Void> resetPassword(@PathVariable Long id) {
-        userService.resetPassword(id);
-        return Result.ok();
+    public Result<TemporaryPasswordResponse> resetPassword(@PathVariable Long id) {
+        SysUser user = userService.getById(id);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        String temporaryPassword = userService.resetPassword(id);
+        return Result.ok(new TemporaryPasswordResponse(
+                user.getUsername(),
+                temporaryPassword,
+                true
+        ));
     }
 
     /**
@@ -252,5 +268,12 @@ public class SysUserController {
         private SysUser user;
         private List<Long> roleIds;
         private List<Long> postIds;
+    }
+
+    public record TemporaryPasswordResponse(
+            String username,
+            String temporaryPassword,
+            boolean mustChangePassword
+    ) {
     }
 }

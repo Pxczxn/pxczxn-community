@@ -181,7 +181,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMessage, type FormInst, type FormRules } from 'naive-ui'
 import { SearchOutline, AddOutline, ServerOutline, TerminalOutline, FlashOutline, CreateOutline, TrashOutline, ExpandOutline, ContractOutline, CloseOutline } from '@vicons/ionicons5'
 import { serverApi, type Server } from '@/api/server'
-import { useUserStore } from '@/stores/user'
+import { authApi } from '@/api/auth'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
@@ -384,11 +384,11 @@ async function handleConnect(server: Server) {
   showTerminal.value = true
   
   await nextTick()
-  initTerminal(server)
+  await initTerminal(server)
 }
 
 // 初始化终端
-function initTerminal(server: Server) {
+async function initTerminal(server: Server) {
   if (!terminalRef.value) return
   
   // 创建终端实例
@@ -419,12 +419,10 @@ function initTerminal(server: Server) {
   
   // 建立 WebSocket 连接
   // 开发环境直接连后端，生产环境使用相对路径
-  const userStore = useUserStore()
-  const token = userStore.token
-  const isDev = import.meta.env.DEV
+  const ticket = (await authApi.issueWebSocketTicket()).ticket
   const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsHost = isDev ? 'localhost:8849' : location.host
-  const wsUrl = `${wsProtocol}//${wsHost}/ws/ssh?token=${token}`
+  const wsHost = location.host
+  const wsUrl = `${wsProtocol}//${wsHost}/ws/ssh?ticket=${encodeURIComponent(ticket)}`
   ws = new WebSocket(wsUrl)
   
   ws.onopen = () => {

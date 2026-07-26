@@ -6,6 +6,8 @@ import com.mars.common.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 /**
  * 系统用户
  */
@@ -40,6 +42,21 @@ public class SysUser extends BaseEntity {
      * 密码
      */
     private String password;
+
+    /**
+     * Whether the administrator must replace the current one-time password.
+     */
+    private Integer mustChangePassword;
+
+    /**
+     * Time of the latest user-selected password change.
+     */
+    private LocalDateTime passwordChangedAt;
+
+    /**
+     * Time the current one-time password was issued.
+     */
+    private LocalDateTime temporaryPasswordIssuedAt;
 
     /**
      * 昵称

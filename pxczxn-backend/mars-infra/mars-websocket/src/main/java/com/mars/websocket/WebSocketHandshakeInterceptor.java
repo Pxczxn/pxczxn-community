@@ -1,7 +1,8 @@
 package com.mars.websocket;
 
-import cn.dev33.satoken.stp.StpUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -12,42 +13,49 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 /**
- * WebSocket握手拦截器
- * 基于Sa-Token进行WebSocket连接认证
+ * Authenticates WebSocket handshakes with a short-lived, single-use ticket.
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
+    private final WebSocketTicketService ticketService;
+
     @Override
-    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
+    public boolean beforeHandshake(
+            ServerHttpRequest request,
+            ServerHttpResponse response,
+            WebSocketHandler wsHandler,
+            Map<String, Object> attributes
+    ) {
         try {
             if (request instanceof ServletServerHttpRequest servletRequest) {
-                // 从请求参数获取token
-                String token = servletRequest.getServletRequest().getParameter("token");
-                if (token != null && !token.isEmpty()) {
-                    // 验证token并获取用户ID
-                    Object loginId = StpUtil.getLoginIdByToken(token);
-                    if (loginId != null) {
-                        attributes.put("userId", Long.parseLong(loginId.toString()));
-                        attributes.put("token", token);
-                        log.info("WebSocket握手成功，用户ID: {}", loginId);
-                        return true;
-                    }
+                String ticket = servletRequest.getServletRequest().getParameter("ticket");
+                Long userId = ticketService.consume(ticket);
+                if (userId != null) {
+                    attributes.put("userId", userId);
+                    log.info("WebSocket handshake accepted for userId={}", userId);
+                    return true;
                 }
             }
-            log.warn("WebSocket握手失败，token无效");
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            log.warn("WebSocket handshake rejected: missing, expired, or reused ticket");
             return false;
-        } catch (Exception e) {
-            log.error("WebSocket握手异常", e);
+        } catch (Exception exception) {
+            response.setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+            log.error("WebSocket handshake authentication failed", exception);
             return false;
         }
     }
 
     @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                               WebSocketHandler wsHandler, Exception exception) {
-        // 握手完成后的处理
+    public void afterHandshake(
+            ServerHttpRequest request,
+            ServerHttpResponse response,
+            WebSocketHandler wsHandler,
+            Exception exception
+    ) {
+        // No authentication data is retained after the one-time ticket is consumed.
     }
 }
