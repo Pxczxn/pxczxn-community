@@ -12,7 +12,7 @@ target/
 coverage/
 *.tsbuildinfo
 *.hprof
-pxczxn-backend/mars-starter/src/main/resources/static/
+pxczxn-backend/pxczxn-starter/src/main/resources/static/
 
 # Local runtime state and generated evidence
 .run/

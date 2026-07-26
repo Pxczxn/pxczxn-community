@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>top.pxczxn</groupId>
+        <artifactId>pxczxn-api</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>pxczxn-web-api</artifactId>
+    <name>pxczxn Community Web API</name>
+    <description>社区用户接口与公开内容接口</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>pxczxn-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>pxczxn-biz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>mars-system</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

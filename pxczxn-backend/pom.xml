@@ -12,12 +12,12 @@
     <description>pxczxn 博客社区模块化单体后端</description>
 
     <modules>
-        <module>mars-common</module>
-        <module>mars-infra</module>
-        <module>mars-core</module>
-        <module>mars-api</module>
-        <module>mars-job</module>
-        <module>mars-starter</module>
+        <module>pxczxn-common</module>
+        <module>pxczxn-infra</module>
+        <module>pxczxn-core</module>
+        <module>pxczxn-api</module>
+        <module>pxczxn-job</module>
+        <module>pxczxn-starter</module>
     </modules>
 
     <properties>
@@ -166,7 +166,7 @@
             <!-- 公共基础 -->
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-common</artifactId>
+                <artifactId>pxczxn-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -280,7 +280,7 @@
             <!-- 定时任务 -->
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-job</artifactId>
+                <artifactId>pxczxn-job</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
