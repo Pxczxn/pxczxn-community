@@ -94,9 +94,13 @@ export function AuthPanel() {
         text: mode === "register" ? "账号创建成功，正在进入社区…" : "登录成功，正在进入社区…",
       });
       window.setTimeout(() => {
-        window.location.assign(
-          me.blogSlug ? `/blogs/${encodeURIComponent(me.blogSlug)}` : "/teams/ai-explorers",
-        );
+        const redirectTarget = new URLSearchParams(window.location.search).get("returnTo");
+        const safeReturnTo = redirectTarget
+          && redirectTarget.startsWith("/")
+          && !redirectTarget.startsWith("//")
+          ? redirectTarget
+          : "/discover";
+        window.location.assign(safeReturnTo);
       }, 350);
     } catch (error) {
       setMessage({
@@ -254,11 +258,7 @@ export function AuthPanel() {
             {mode === "login" ? "立即注册" : "返回登录"}
           </button>
         </p>
-        <p className="auth-demo">
-          <Link className="link" href="/teams/ai-explorers">
-            暂不登录，浏览原型演示
-          </Link>
-        </p>
+        <p className="auth-demo"><Link className="link" href="/discover">暂不登录，先浏览社区内容</Link></p>
 
         <div className="auth-divider">
           <span>其他登录方式</span>

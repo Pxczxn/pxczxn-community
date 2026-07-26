@@ -38,13 +38,14 @@ WHERE `r`.`code` = 'admin'
 SELECT
     CASE
         WHEN COUNT(*) = 6
-         AND MAX(CASE WHEN `id` = 9030 THEN `sort` END) = 1
-         AND MAX(CASE WHEN `id` = 9040 THEN `sort` END) = 2
-         AND MAX(CASE WHEN `id` = 9050 THEN `sort` END) = 3
-         AND MAX(CASE WHEN `id` = 9060 THEN `sort` END) = 4
-         AND MAX(CASE WHEN `id` = 9020 THEN `sort` END) > 4
-         AND MAX(CASE WHEN `id` = 9010 THEN `sort` END)
-             > MAX(CASE WHEN `id` = 9020 THEN `sort` END)
+         AND MAX(CASE WHEN `id` = 9030 THEN `visible` END) = 0
+         AND MAX(CASE WHEN `id` = 9040 THEN `parent_id` END) = 9000
+         AND MAX(CASE WHEN `id` = 9040 THEN `sort` END) = 1
+         AND MAX(CASE WHEN `id` = 9050 THEN `parent_id` END) = 9000
+         AND MAX(CASE WHEN `id` = 9050 THEN `sort` END) = 2
+         AND MAX(CASE WHEN `id` = 9060 THEN `parent_id` END) = 9100
+         AND MAX(CASE WHEN `id` = 9020 THEN `parent_id` END) = 9110
+         AND MAX(CASE WHEN `id` = 9010 THEN `parent_id` END) = 9140
         THEN 'PASS'
         ELSE 'FAIL'
     END

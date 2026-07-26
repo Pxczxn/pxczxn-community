@@ -206,6 +206,52 @@ public class PublicArticleService {
         );
     }
 
+    /**
+     * Returns the newest publicly listable articles across active blogs.  It is a
+     * transparent chronological source for the discovery page, not a recommendation
+     * algorithm; ranking remains an explicit presentation concern in the client.
+     */
+    @Transactional(readOnly = true)
+    public PublicArticlePageView discover(PublicArticleQuery rawQuery) {
+        PublicArticleQuery query = normalizeQuery(rawQuery);
+        IPage<Article> result = articleMapper.selectDiscoverPublicPage(
+                new Page<>(query.pageNum(), query.pageSize())
+        );
+        List<Article> articles = result.getRecords() == null
+                ? List.of()
+                : result.getRecords();
+        List<PublicArticleSummaryView> records = articles.stream()
+                .map(Article::getId)
+                .map(this::detail)
+                .map(detail -> new PublicArticleSummaryView(
+                        detail.articleId(),
+                        detail.title(),
+                        detail.slug(),
+                        detail.summary(),
+                        detail.coverFileId(),
+                        detail.contentMode(),
+                        detail.author(),
+                        detail.category(),
+                        detail.tags(),
+                        detail.publishedAt(),
+                        detail.updatedAt(),
+                        detail.wordCount(),
+                        detail.readingTimeMinutes(),
+                        detail.viewCount(),
+                        detail.likeCount(),
+                        detail.favoriteCount(),
+                        detail.commentCount(),
+                        detail.canonicalPath()
+                ))
+                .toList();
+        return new PublicArticlePageView(
+                records,
+                result.getTotal(),
+                query.pageNum(),
+                query.pageSize()
+        );
+    }
+
     @Transactional(readOnly = true)
     public List<PublicArticleCategoryView> categories(String blogSlug) {
         BlogAccess access = requirePublicBlog(blogSlug);

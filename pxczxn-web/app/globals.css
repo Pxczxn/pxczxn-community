@@ -501,6 +501,232 @@ button {
   background: var(--bg-hover);
 }
 
+.community-primary-nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.community-primary-nav a:hover {
+  color: var(--primary);
+}
+
+.discover-page {
+  display: grid;
+  gap: 24px;
+}
+
+.discover-hero {
+  display: grid;
+  gap: 10px;
+  padding: 30px;
+  background: linear-gradient(130deg, color-mix(in srgb, var(--primary-soft) 72%, var(--bg-surface)), var(--bg-surface));
+}
+
+.discover-hero h1,
+.tag-page__hero h1,
+.community-placeholder-card h1 {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 38px);
+  letter-spacing: -0.035em;
+}
+
+.discover-hero p,
+.tag-page__hero p,
+.community-placeholder-card p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.discover-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.discover-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 24px;
+}
+
+.discover-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+}
+
+.discover-tabs button {
+  flex: 1;
+  border-radius: 8px;
+  background: transparent;
+  padding: 9px 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.discover-tabs button.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 650;
+}
+
+.discover-sort-note {
+  margin: -8px 0 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.discover-feed-card {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+}
+
+.discover-feed-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.discover-feed-card p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.discover-feed-card__kind {
+  width: fit-content;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  color: var(--primary);
+  font-size: 12px;
+}
+
+.discover-feed-card__meta,
+.discover-feed-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.discover-feed-card__tags a {
+  color: var(--link);
+}
+
+.discover-aside-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.discover-aside-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 15px;
+}
+
+.discover-tag,
+.discover-creator {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 8px;
+  padding: 7px;
+}
+
+.discover-tag:hover,
+.discover-creator:hover {
+  background: var(--bg-hover);
+}
+
+.discover-tag small {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.discover-creator span:last-child {
+  display: grid;
+}
+
+.discover-creator small,
+.discover-planned-card p {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.discover-transparent-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  color: var(--text-secondary);
+}
+
+.community-placeholder-page {
+  display: grid;
+  min-height: calc(100vh - 64px);
+  place-items: center;
+}
+
+.community-placeholder-card {
+  display: grid;
+  max-width: 620px;
+  gap: 14px;
+  justify-items: start;
+  padding: 34px;
+}
+
+.tag-page {
+  display: grid;
+  gap: 24px;
+}
+
+.tag-page__hero {
+  display: grid;
+  gap: 10px;
+  padding: 28px;
+}
+
+.tag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.tag-card {
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.tag-card:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.tag-card svg,
+.tag-card small {
+  color: var(--primary);
+}
+
+@media (max-width: 1100px) {
+  .community-primary-nav { display: none; }
+  .discover-layout { grid-template-columns: 1fr; }
+  .discover-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .metric-card {
   display: grid;
   min-height: 104px;
@@ -3617,6 +3843,12 @@ button {
   .user-chip > span:not(.avatar) {
     display: none;
   }
+
+  .discover-hero,
+  .tag-page__hero,
+  .community-placeholder-card { padding: 22px; }
+
+  .discover-aside { grid-template-columns: 1fr; }
 
   .auth-page {
     display: block;

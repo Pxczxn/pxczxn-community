@@ -51,6 +51,24 @@ public interface ArticleMapper extends BaseMapper<Article> {
     );
 
     @Select("""
+            SELECT a.*
+            FROM article a
+            INNER JOIN community_user author
+                    ON author.id = a.author_user_id
+                   AND author.status IN ('NORMAL', 'LIMITED')
+            INNER JOIN blog b
+                    ON b.id = a.blog_id
+                   AND b.status = 'ACTIVE'
+                   AND b.deleted_at IS NULL
+            WHERE a.deleted_at IS NULL
+              AND a.published_version_id IS NOT NULL
+              AND a.visibility = 'PUBLIC'
+              AND a.publish_status NOT IN ('HIDDEN', 'TAKEN_DOWN', 'DELETED')
+            ORDER BY a.published_at DESC, a.id DESC
+            """)
+    IPage<Article> selectDiscoverPublicPage(IPage<Article> page);
+
+    @Select("""
             SELECT DATE(created_at) AS day, COUNT(*) AS count
             FROM article
             WHERE created_at >= #{from}

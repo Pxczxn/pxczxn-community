@@ -26,20 +26,20 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/index.vue'),
-    redirect: '/dashboard',
+    redirect: '/community/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
-        meta: { title: '首页', icon: 'HomeOutline' }
+        meta: { title: '系统概览', icon: 'HomeOutline' }
       },
       // 社区运营
       {
         path: 'community/dashboard',
         name: 'CommunityDashboard',
         component: () => import('@/views/community/dashboard/index.vue'),
-        meta: { title: '社区工作台', icon: 'GridOutline', permission: 'community:dashboard:view' }
+        meta: { title: '运营总览', icon: 'GridOutline', permission: 'community:dashboard:view' }
       },
       {
         path: 'community/users',
@@ -89,6 +89,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/community/tags/index.vue'),
         meta: { title: '平台标签', icon: 'PricetagOutline', permission: 'community:tag:list' }
       },
+      {
+        path: 'community/teams',
+        name: 'CommunityTeams',
+        component: () => import('@/views/community/planned/index.vue'),
+        meta: { title: '团队管理', icon: 'PeopleOutline', permission: 'community:team:list' }
+      },
+      {
+        path: 'community/series',
+        name: 'CommunitySeries',
+        component: () => import('@/views/community/planned/index.vue'),
+        meta: { title: '系列管理', icon: 'AlbumsOutline', permission: 'community:series:list' }
+      },
+      {
+        path: 'community/analytics',
+        name: 'CommunityAnalytics',
+        component: () => import('@/views/community/planned/index.vue'),
+        meta: { title: '社区数据分析', icon: 'PulseOutline', permission: 'community:analytics:view' }
+      },
       // 个人中心
       {
         path: 'profile',
@@ -101,13 +119,13 @@ const routes: RouteRecordRaw[] = [
         path: 'system/user',
         name: 'SystemUser',
         component: () => import('@/views/system/user/index.vue'),
-        meta: { title: '用户管理', icon: 'PersonOutline' }
+        meta: { title: '平台人员', icon: 'PersonOutline' }
       },
       {
         path: 'system/role',
         name: 'SystemRole',
         component: () => import('@/views/system/role/index.vue'),
-        meta: { title: '角色管理', icon: 'PeopleOutline' }
+        meta: { title: '平台角色与权限', icon: 'PeopleOutline' }
       },
       {
         path: 'system/menu',
@@ -163,13 +181,13 @@ const routes: RouteRecordRaw[] = [
         path: 'org/dept',
         name: 'OrgDept',
         component: () => import('@/views/org/dept/index.vue'),
-        meta: { title: '部门管理', icon: 'GitNetworkOutline' }
+        meta: { title: '平台组织', icon: 'GitNetworkOutline' }
       },
       {
         path: 'org/post',
         name: 'OrgPost',
         component: () => import('@/views/org/post/index.vue'),
-        meta: { title: '岗位管理', icon: 'IdCardOutline' }
+        meta: { title: '平台岗位', icon: 'IdCardOutline' }
       },
       // 系统日志
       {
@@ -391,7 +409,7 @@ router.beforeEach(async (to, _from, next) => {
   const permission = to.meta.permission as string | undefined
   if (permission && !userStore.hasPermission(permission)) {
     window.$message?.warning('你没有访问该页面的权限')
-    next({ path: '/dashboard', replace: true })
+    next({ path: '/community/dashboard', replace: true })
     return
   }
 

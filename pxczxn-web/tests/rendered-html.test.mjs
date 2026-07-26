@@ -31,7 +31,7 @@ async function render(path) {
   );
 }
 
-test("server-renders the login prototype instead of the starter skeleton", async () => {
+test("server-renders the community login entry instead of the starter skeleton", async () => {
   const response = await render("/login");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -41,17 +41,20 @@ test("server-renders the login prototype instead of the starter skeleton", async
   assert.match(html, /星语社区/);
   assert.match(html, /发现有价值的内容/);
   assert.match(html, /请输入邮箱地址/);
-  assert.match(html, /暂不登录，浏览原型演示/);
+  assert.match(html, /暂不登录，先浏览社区内容/);
   assert.doesNotMatch(html, /Your site is taking shape|Codex is working/);
 });
 
-test("server-renders every supplied prototype route", async () => {
+test("server-renders formal community routes without fixed prototype content", async () => {
   const routes = [
-    ["/teams/ai-explorers", "AI探索者团队"],
-    ["/workspace/team", "待处理投稿"],
-    ["/submissions/ai-agent", "稿件信息"],
-    ["/collaboration/articles/agent-patterns", "协作成员"],
-    ["/moments/agent-architecture", "动态广场"],
+    ["/discover", "发现值得阅读的内容"],
+    ["/articles", "按公开时间浏览社区文章"],
+    ["/teams", "团队申请、成员、投稿、系列和共创会在 M3"],
+    ["/teams/ai-explorers", "不会回退到硬编码原型团队"],
+    ["/workspace/team", "当前不再保留写死的团队"],
+    ["/submissions/ai-agent", "当前不会展示虚构的投稿审核记录"],
+    ["/collaboration/articles/agent-patterns", "文章共创"],
+    ["/moments/agent-architecture", "星语社区"],
     ["/me/favorites", "我的文件夹"],
     ["/notifications", "通知中心"],
     ["/settings", "主题设置"],
@@ -63,6 +66,31 @@ test("server-renders every supplied prototype route", async () => {
     assert.equal(response.status, 200, path);
     assert.match(await response.text(), new RegExp(marker), path);
   }
+});
+
+test("keeps M2.5 discovery, login and dynamic-route semantics in source", async () => {
+  const [home, auth, discover, topbar, workspace] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/login/auth-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/discover/discover-page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/prototype-ui.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/workspace/team/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(home, /redirect\("\/discover"\)/);
+  assert.match(auth, /new URLSearchParams\(window\.location\.search\)\.get\("returnTo"\)/);
+  assert.match(auth, /: "\/discover"/);
+  assert.match(discover, /communityApi\.discoverArticles/);
+  assert.match(discover, /communityApi\.moments/);
+  assert.match(discover, /communityApi\.tags/);
+  assert.match(discover, /communityApi\.myFollowing/);
+  assert.match(discover, /不使用智能推荐算法/);
+  for (const path of ["/discover", "/articles", "/moments", "/series", "/teams", "/tags"]) {
+    assert.match(topbar, new RegExp(path.replaceAll("/", "\\/")));
+  }
+  assert.doesNotMatch(topbar, /ai-explorers|agent-architecture|agent-patterns/);
+  assert.match(workspace, /M3 团队协作创作/);
+  assert.doesNotMatch(workspace, /待处理投稿|AI探索者团队/);
 });
 
 test("keeps M1 user flows connected to the real community API", async () => {

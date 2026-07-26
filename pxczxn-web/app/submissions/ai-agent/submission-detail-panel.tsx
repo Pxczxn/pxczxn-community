@@ -174,8 +174,8 @@ export function SubmissionDetailPanel() {
                 <Link className="primary-button" href={isLive ? `/editor/${articleId}` : "/editor/new"}>
                   编辑修改
                 </Link>
-                <Link className="ghost-button" href="/teams/ai-explorers">
-                  返回博客
+                <Link className="ghost-button" href="/discover">
+                  返回发现
                 </Link>
               </div>
             </section>
@@ -195,7 +195,7 @@ export function SubmissionDetailPanel() {
               ].map(([Icon, text]) => {
                 const HelpIcon = Icon;
                 return (
-                  <Link className="link" href="/teams/ai-explorers" key={text as string}>
+                  <Link className="link" href="/discover" key={text as string}>
                     <HelpIcon size={15} /> {text as string}
                   </Link>
                 );

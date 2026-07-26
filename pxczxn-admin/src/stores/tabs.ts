@@ -15,7 +15,7 @@ export interface TabItem {
 
 export const useTabsStore = defineStore('tabs', () => {
   // 首页固定页签
-  const HOME_TAB: TabItem = { path: '/dashboard', title: '首页', name: 'Dashboard', affix: true }
+  const HOME_TAB: TabItem = { path: '/community/dashboard', title: '运营总览', name: 'CommunityDashboard', affix: true }
 
   // 已打开的页签列表
   const tabs = ref<TabItem[]>([{ ...HOME_TAB }])

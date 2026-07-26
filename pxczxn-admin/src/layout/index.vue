@@ -336,6 +336,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { NIcon, useMessage, useDialog, type MenuOption } from 'naive-ui'
 import {
   HomeOutline,
+  GridOutline,
   SettingsOutline,
   PersonOutline,
   PeopleOutline,
@@ -673,6 +674,7 @@ function handleSearch() {
 function getIconName(key: string): string {
   const iconMapping: Record<string, string> = {
     '/dashboard': 'HomeOutline',
+    '/community/dashboard': 'GridOutline',
     '/system/user': 'PersonOutline',
     '/system/role': 'PeopleOutline',
     '/system/menu': 'MenuOutline',
@@ -728,6 +730,7 @@ function setTheme(theme: ThemeMode) {
 // 图标映射
 const iconMap: Record<string, any> = {
   HomeOutline,
+  GridOutline,
   SettingsOutline,
   PersonOutline,
   PeopleOutline,
@@ -803,9 +806,9 @@ function convertMenus(menus: typeof userStore.menus): MenuOption[] {
 const menuOptions = computed<MenuOption[]>(() => {
   // 添加首页菜单
   const homeMenu: MenuOption = {
-    label: '首页',
-    key: '/dashboard',
-    icon: renderIcon('HomeOutline')
+    label: '运营总览',
+    key: '/community/dashboard',
+    icon: renderIcon('GridOutline')
   }
   
   // 从 userStore 获取动态菜单
@@ -820,14 +823,14 @@ const activeMenu = computed(() => route.path)
 // 面包屑
 const breadcrumbs = computed(() => {
   const items: Array<{ path: string; title: string }> = []
-  if (route.path === '/dashboard') {
-    items.push({ path: '/dashboard', title: '首页' })
+  if (route.path === '/community/dashboard') {
+    items.push({ path: '/community/dashboard', title: '运营总览' })
   } else if (route.path.startsWith('/system')) {
-    items.push({ path: '/system', title: '系统管理' })
+    items.push({ path: '/system', title: '系统设置' })
     if (route.path === '/system/user') {
-      items.push({ path: '/system/user', title: '用户管理' })
+      items.push({ path: '/system/user', title: '平台人员' })
     } else if (route.path === '/system/role') {
-      items.push({ path: '/system/role', title: '角色管理' })
+      items.push({ path: '/system/role', title: '平台角色与权限' })
     } else if (route.path === '/system/menu') {
       items.push({ path: '/system/menu', title: '菜单管理' })
     }

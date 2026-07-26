@@ -68,7 +68,7 @@ export function PublicBlogPage({ slug }: { slug: string }) {
   async function toggleFollow() {
     if (!blog) return;
     if (!readSession()) {
-      window.location.assign(`/login?redirect=${encodeURIComponent(`/blogs/${blog.slug}`)}`);
+      window.location.assign(`/login?returnTo=${encodeURIComponent(`/blogs/${blog.slug}`)}`);
       return;
     }
     setFollowBusy(true);
@@ -122,8 +122,8 @@ export function PublicBlogPage({ slug }: { slug: string }) {
           <button className="primary-button" onClick={load} type="button">
             <RefreshCw size={16} /> 重新加载
           </button>
-          <Link className="ghost-button" href="/teams/ai-explorers">
-            查看原型演示
+          <Link className="ghost-button" href="/discover">
+            返回发现
           </Link>
         </div>
       </main>

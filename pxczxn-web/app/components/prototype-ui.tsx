@@ -6,6 +6,7 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
+  MessageCircle,
   Moon,
   PenLine,
   Search,
@@ -24,8 +25,8 @@ import {
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link className="app-topbar__brand" href="/teams/ai-explorers">
-      <span className="brand-mark">A</span>
+    <Link className="app-topbar__brand" href="/discover">
+      <span className="brand-mark">星</span>
       {!compact && <span>星语社区</span>}
     </Link>
   );
@@ -86,6 +87,15 @@ export function UserTopbar({ title }: { title?: string }) {
         {title && <span className="secondary">/</span>}
         {title && <strong>{title}</strong>}
       </div>
+      <nav className="community-primary-nav" aria-label="星语社区主导航">
+        <Link href="/discover">首页</Link>
+        <Link href="/discover">发现</Link>
+        <Link href="/articles">文章</Link>
+        <Link href="/moments">动态</Link>
+        <Link href="/series">系列</Link>
+        <Link href="/teams">团队</Link>
+        <Link href="/tags">标签</Link>
+      </nav>
       <div className="app-topbar__group">
         <label className="top-search">
           <Search aria-hidden="true" size={17} />
@@ -111,9 +121,14 @@ export function UserTopbar({ title }: { title?: string }) {
             </span>
           )}
         </Link>
+        {session && (
+          <Link aria-label="即时聊天" className="icon-button" href="/chat">
+            <MessageCircle size={18} />
+          </Link>
+        )}
         {session ? (
           <>
-            <Link className="user-chip" href="/settings">
+            <Link className="user-chip" href="/me/blog">
               <Avatar label={(session.displayName || session.username).slice(0, 1)} size="sm" />
               <span>{session.displayName || session.username}</span>
               <ChevronDown size={15} />
@@ -182,23 +197,23 @@ export function SideNavigation({
     | "settings";
 }) {
   const links = [
-    ["overview", "概览", "/workspace/team"],
-    ["submissions", "投稿管理", "/submissions/ai-agent"],
-    ["articles", "文章管理", "/collaboration/articles/agent-patterns"],
-    ["moments", "动态管理", "/moments/agent-architecture"],
-    ["analytics", "数据统计", "/workspace/team"],
-    ["members", "成员管理", "/workspace/team"],
-    ["roles", "角色权限", "/workspace/team"],
+    ["overview", "团队主页", "/teams"],
+    ["submissions", "投稿管理", "/submissions"],
+    ["articles", "文章管理", "/articles"],
+    ["moments", "动态管理", "/moments"],
+    ["analytics", "数据统计", "/discover"],
+    ["members", "成员管理", "/teams"],
+    ["roles", "角色权限", "/teams"],
     ["settings", "团队设置", "/settings"],
   ] as const;
 
   return (
     <aside className="workspace-sidebar">
-      <Link className="workspace-brand" href="/teams/ai-explorers">
-        <span className="brand-mark">AI</span>
+      <Link className="workspace-brand" href="/teams">
+        <span className="brand-mark">星</span>
         <span>
-          <strong>AI探索者团队</strong>
-          <small>团队管理后台</small>
+          <strong>星语社区</strong>
+          <small>团队工作台（M3）</small>
         </span>
       </Link>
       <nav aria-label="团队工作台导航">

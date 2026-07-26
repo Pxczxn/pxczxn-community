@@ -154,7 +154,7 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
             <button className="primary-button" onClick={load} type="button">
               <RefreshCw size={16} /> 重新加载
             </button>
-            <Link className="ghost-button" href="/teams/ai-explorers">
+            <Link className="ghost-button" href="/discover">
               返回社区
             </Link>
           </div>

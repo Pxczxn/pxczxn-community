@@ -106,6 +106,20 @@ class PublicArticleControllerTest {
     }
 
     @Test
+    void discoverMapsGlobalPublicTimelineContract() {
+        when(service.discover(new PublicArticleQuery(null, 2, 10)))
+                .thenReturn(new PublicArticlePageView(List.of(), 0, 2, 10));
+
+        var result = controller.discover(2, 10);
+
+        assertThat(result.getCode()).isEqualTo(200);
+        assertThat(result.getData().records()).isEmpty();
+        assertThat(result.getData().pageNum()).isEqualTo(2);
+        assertThat(result.getData().pageSize()).isEqualTo(10);
+        verify(service).discover(new PublicArticleQuery(null, 2, 10));
+    }
+
+    @Test
     void categoriesReturnPrecisionSafeIds() {
         when(service.categories("alice")).thenReturn(List.of(category()));
 

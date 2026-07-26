@@ -11,7 +11,7 @@ export default function LoginPage() {
     <main className="auth-page">
       <section className="auth-story">
         <div className="auth-brand">
-          <span className="brand-mark">A</span>
+          <span className="brand-mark">星</span>
           <span>星语社区</span>
         </div>
         <h1>

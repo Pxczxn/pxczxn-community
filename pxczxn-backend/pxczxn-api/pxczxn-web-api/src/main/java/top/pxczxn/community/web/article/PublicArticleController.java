@@ -28,6 +28,16 @@ public class PublicArticleController {
         ));
     }
 
+    @GetMapping("/articles")
+    public Result<PublicArticlePageResponse> discover(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize
+    ) {
+        return Result.ok(PublicArticlePageResponse.from(
+                articleService.discover(new PublicArticleQuery(null, pageNum, pageSize))
+        ));
+    }
+
     @GetMapping("/blogs/{blogSlug}/articles")
     public Result<PublicArticlePageResponse> page(
             @PathVariable String blogSlug,

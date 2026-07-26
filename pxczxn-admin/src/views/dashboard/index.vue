@@ -13,7 +13,7 @@
               {{ getGreeting() }}，{{ userStore.nickname }} 👋
             </h1>
             <p class="welcome-desc">
-              这是您的管理控制台，您可以在这里管理系统的各项功能
+              这里是平台内部设置入口；社区内容运营请从“运营总览”开始。
             </p>
           </div>
         </div>
@@ -278,14 +278,14 @@ const stats = ref([
 // 快捷入口
 const shortcuts = [
   {
-    name: '用户管理',
+    name: '平台人员',
     path: '/system/user',
     icon: markRaw(PersonOutline),
     color: '#111827',
     bgColor: '#F3F4F6'
   },
   {
-    name: '角色管理',
+    name: '平台角色与权限',
     path: '/system/role',
     icon: markRaw(PeopleOutline),
     color: '#059669',

@@ -699,6 +699,13 @@ export const communityApi = {
       false,
     );
   },
+  discoverArticles(pageNum = 1, pageSize = 20) {
+    return communityRequest<PublicArticlePage>(
+      `/api/v1/public/articles?pageNum=${pageNum}&pageSize=${pageSize}`,
+      {},
+      false,
+    );
+  },
   categories() {
     return communityRequest<BlogCategory[]>("/api/v1/blogs/me/categories");
   },

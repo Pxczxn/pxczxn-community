@@ -3,7 +3,7 @@
     <header class="page-heading">
       <div>
         <div class="page-eyebrow">COMMUNITY OPERATIONS</div>
-        <h1>社区工作台</h1>
+        <h1>运营总览</h1>
         <p>集中查看用户增长、内容生产、审核队列与发布运行状态。</p>
       </div>
       <n-button :loading="loading" @click="loadDashboard">
@@ -161,8 +161,8 @@ const publishRate = computed(() => {
 })
 
 const quickLinks = [
-  { title: '用户管理', description: '查询社区账号与认证状态', path: '/community/users', icon: PeopleOutline },
-  { title: '博客管理', description: '查看个人与团队博客空间', path: '/community/blogs', icon: AlbumsOutline },
+  { title: '用户与博客', description: '查询社区账号、博客与认证状态', path: '/community/users', icon: PeopleOutline },
+  { title: '内容管理', description: '查看博客空间、文章状态与版本快照', path: '/community/articles', icon: AlbumsOutline },
   { title: '文章管理', description: '检索文章状态与版本快照', path: '/community/articles', icon: DocumentTextOutline },
   { title: '审核中心', description: '领取并处理文章审核任务', path: '/community/reviews', icon: ShieldCheckmarkOutline }
 ]
