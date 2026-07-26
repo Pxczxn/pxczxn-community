@@ -263,11 +263,6 @@
             </dependency>
             <dependency>
                 <groupId>top.pxczxn</groupId>
-                <artifactId>mars-app-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>top.pxczxn</groupId>
                 <artifactId>pxczxn-web-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
