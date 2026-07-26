@@ -23,8 +23,10 @@ class WebSocketTicketServiceTest {
 
         WebSocketTicketService.IssuedTicket issued = service.issue(42L);
 
-        assertThat(issued.ticket()).hasSizeGreaterThanOrEqualTo(40);
-        assertThat(issued.ticket()).doesNotContain("42");
+        assertThat(issued.ticket())
+                .hasSize(43)
+                .matches("[A-Za-z0-9_-]+")
+                .isNotEqualTo("42");
         assertThat(issued.expiresInSeconds()).isEqualTo(30);
         assertThat(service.consume(issued.ticket())).isEqualTo(42L);
         assertThat(service.consume(issued.ticket())).isNull();
