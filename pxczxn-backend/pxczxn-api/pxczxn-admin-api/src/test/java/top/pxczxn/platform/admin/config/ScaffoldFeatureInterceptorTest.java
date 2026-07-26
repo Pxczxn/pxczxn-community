@@ -26,8 +26,6 @@ class ScaffoldFeatureInterceptorTest {
                 "/api/sys/config-group/test-sms",
                 "/api/sys/config-group/sms-logs/recent",
                 "/api/wechat/miniprogram/login",
-                "/api/sys/chat/history/1",
-                "/api/chat/group/list",
                 "/api/monitor/server-manager/list",
                 "/api/tool/gen/page",
                 "/api/system/customer/page",
@@ -52,5 +50,21 @@ class ScaffoldFeatureInterceptorTest {
 
         assertTrue(interceptor.preHandle(request, response, new Object()));
         assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void chatEndpointsAreAvailableWhenChatIsEnabled() throws Exception {
+        features.setChat(true);
+
+        for (String path : List.of(
+                "/api/sys/chat/history/1",
+                "/api/chat/group/list")) {
+            MockHttpServletRequest request =
+                    new MockHttpServletRequest("GET", path);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+
+            assertTrue(interceptor.preHandle(request, response, new Object()));
+            assertEquals(200, response.getStatus());
+        }
     }
 }

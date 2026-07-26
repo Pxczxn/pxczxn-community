@@ -25,12 +25,12 @@ public interface ChatGroupService {
     /**
      * 获取群详情
      */
-    ChatGroup getGroupDetail(Long groupId);
+    ChatGroup getGroupDetail(Long groupId, Long userId);
     
     /**
      * 更新群信息
      */
-    void updateGroup(ChatGroup group);
+    void updateGroup(Long groupId, Long operatorId, String name, String announcement);
     
     /**
      * 解散群聊
@@ -55,7 +55,7 @@ public interface ChatGroupService {
     /**
      * 获取群成员列表
      */
-    List<ChatGroupMember> getGroupMembers(Long groupId);
+    List<ChatGroupMember> getGroupMembers(Long groupId, Long userId);
     
     /**
      * 设置管理员
@@ -80,7 +80,11 @@ public interface ChatGroupService {
     /**
      * 获取群消息历史
      */
-    IPage<ChatGroupMessage> getMessageHistory(Long groupId, int page, int pageSize);
+    IPage<ChatGroupMessage> getMessageHistory(
+            Long groupId,
+            Long userId,
+            int page,
+            int pageSize);
     
     /**
      * 检查用户是否是群成员
@@ -91,4 +95,19 @@ public interface ChatGroupService {
      * 获取群内所有成员ID
      */
     List<Long> getMemberIds(Long groupId);
+
+    /**
+     * 将指定群的消息标记为当前用户已读。
+     */
+    void markAsRead(Long groupId, Long userId);
+
+    /**
+     * 获取当前用户全部群聊未读数。
+     */
+    int getUnreadCount(Long userId);
+
+    /**
+     * 获取当前用户在指定群的未读数。
+     */
+    int getUnreadCount(Long groupId, Long userId);
 }

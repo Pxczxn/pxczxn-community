@@ -120,6 +120,21 @@ export interface ChatUser {
   lastMessage?: string
   lastMessageTime?: string
   isBlocked?: boolean
+  online?: boolean
+  unreadCount?: number
+}
+
+export interface ChatContact {
+  userId: number
+  username: string
+  nickname: string
+  avatar?: string
+  lastMessage?: string
+  lastMessageType?: number
+  lastMessageTime?: string
+  unreadCount: number
+  blocked: boolean
+  online: boolean
 }
 
 export const chatApi = {
@@ -134,7 +149,7 @@ export const chatApi = {
   },
   
   // 获取最近联系人
-  getContacts(): Promise<ChatMessage[]> {
+  getContacts(): Promise<ChatContact[]> {
     return request({ url: '/sys/chat/contacts', method: 'get' })
   },
   
@@ -200,6 +215,7 @@ export interface ChatGroup {
   updateTime?: string
   lastMessage?: string
   lastMessageTime?: string
+  unreadCount?: number
 }
 
 export interface ChatGroupMember {
@@ -295,5 +311,15 @@ export const groupChatApi = {
   // 获取消息历史
   getMessages(groupId: number, page: number = 1, pageSize: number = 50): Promise<PageResult<ChatGroupMessage>> {
     return request({ url: `/chat/group/${groupId}/messages`, method: 'get', params: { page, pageSize } })
+  },
+
+  // 标记群消息已读
+  markAsRead(groupId: number): Promise<void> {
+    return request({ url: `/chat/group/${groupId}/read`, method: 'post' })
+  },
+
+  // 获取群未读数量
+  getUnreadCount(groupId: number): Promise<number> {
+    return request({ url: `/chat/group/${groupId}/unread-count`, method: 'get' })
   }
 }

@@ -48,6 +48,35 @@ test('websocket authentication uses one-time tickets instead of session tokens',
   assert.doesNotMatch(serverManager, /\?token=/)
 })
 
+test('instant chat persists through HTTP and uses WebSocket only for events', async () => {
+  const [chatApi, chatPage, websocket] = await Promise.all([
+    source('src/api/message.ts'),
+    source('src/views/message/chat/index.vue'),
+    source('src/utils/websocket.ts')
+  ])
+
+  for (const route of [
+    '/sys/chat/send',
+    '/sys/chat/contacts',
+    '/sys/chat/unread-count',
+    '/chat/group/create',
+    '/chat/group/${groupId}/message',
+    '/chat/group/${groupId}/read'
+  ]) {
+    assert.match(chatApi, new RegExp(
+      route.replaceAll('/', '\\/').replaceAll('$', '\\$')
+    ))
+  }
+  assert.match(chatPage, /chatApi\.send/)
+  assert.match(chatPage, /groupChatApi\.sendMessage/)
+  assert.match(chatPage, /wsManager\.on\('chat'/)
+  assert.match(chatPage, /wsManager\.on\('groupChat'/)
+  assert.match(chatPage, /wsManager\.off\('chat'/)
+  assert.match(chatPage, /wsManager\.off\('groupChat'/)
+  assert.doesNotMatch(chatPage, /wsManager\.send\(['"](?:chat|groupChat)/)
+  assert.match(websocket, /不支持|send\(type/)
+})
+
 test('administrator passwords are random, one-time, and forced to change', async () => {
   const [userPage, passwordModal, userStore] = await Promise.all([
     source('src/views/system/user/index.vue'),

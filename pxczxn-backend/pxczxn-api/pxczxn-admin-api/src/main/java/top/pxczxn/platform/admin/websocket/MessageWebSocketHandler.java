@@ -2,15 +2,15 @@ package top.pxczxn.platform.admin.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import top.pxczxn.platform.system.config.ScaffoldFeatureProperties;
-
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -22,26 +22,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessageWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
-    private final ScaffoldFeatureProperties features;
 
     /**
-     * 在线用户会话 <userId, session>
+     * 在线用户会话。一个账号允许多个浏览器标签和设备同时在线。
      */
-    private static final Map<Long, WebSocketSession> ONLINE_SESSIONS = new ConcurrentHashMap<>();
+    private static final Map<Long, Set<WebSocketSession>> ONLINE_SESSIONS =
+            new ConcurrentHashMap<>();
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         Long userId = getUserId(session);
         if (userId != null) {
-            // 存储会话
-            WebSocketSession oldSession = ONLINE_SESSIONS.put(userId, session);
-            if (oldSession != null && oldSession.isOpen()) {
-                try {
-                    oldSession.close();
-                } catch (IOException e) {
-                    log.error("关闭旧会话失败", e);
-                }
-            }
+            ONLINE_SESSIONS.computeIfAbsent(
+                    userId,
+                    ignored -> ConcurrentHashMap.newKeySet()).add(session);
             log.info("WebSocket连接建立，用户ID: {}，当前在线: {}", userId, ONLINE_SESSIONS.size());
 
             // 发送连接成功消息
@@ -61,14 +55,9 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
 
             switch (type) {
                 case "ping" -> sendMessage(session, createMessage("pong", "pong"));
-                case "chat" -> {
-                    if (features.isChat()) {
-                        handleChatMessage(userId, jsonNode);
-                    } else {
-                        sendMessage(session, createMessage("error", "功能未启用"));
-                    }
-                }
-                default -> log.warn("未知消息类型: {}", type);
+                default -> sendMessage(
+                        session,
+                        createMessage("error", "不支持通过WebSocket直接发送业务消息"));
             }
         } catch (Exception e) {
             log.error("处理WebSocket消息失败", e);
@@ -79,7 +68,7 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long userId = getUserId(session);
         if (userId != null) {
-            ONLINE_SESSIONS.remove(userId);
+            removeSession(userId, session);
             log.info("WebSocket连接关闭，用户ID: {}，当前在线: {}", userId, ONLINE_SESSIONS.size());
         }
     }
@@ -89,35 +78,7 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
         log.error("WebSocket传输错误", exception);
         Long userId = getUserId(session);
         if (userId != null) {
-            ONLINE_SESSIONS.remove(userId);
-        }
-    }
-
-    /**
-     * 处理聊天消息
-     */
-    private void handleChatMessage(Long senderId, JsonNode jsonNode) {
-        try {
-            Long receiverId = jsonNode.has("receiverId") ? jsonNode.get("receiverId").asLong() : 0L;
-            String content = jsonNode.has("content") ? jsonNode.get("content").asText() : "";
-
-            // 构建消息
-            Map<String, Object> chatMsg = Map.of(
-                    "type", "chat",
-                    "senderId", senderId,
-                    "content", content,
-                    "time", System.currentTimeMillis()
-            );
-
-            if (receiverId > 0) {
-                // 私聊
-                sendToUser(receiverId, objectMapper.writeValueAsString(chatMsg));
-            } else {
-                // 广播
-                broadcastMessage(objectMapper.writeValueAsString(chatMsg));
-            }
-        } catch (Exception e) {
-            log.error("处理聊天消息失败", e);
+            removeSession(userId, session);
         }
     }
 
@@ -125,9 +86,25 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
      * 发送消息给指定用户
      */
     public void sendToUser(Long userId, String message) {
-        WebSocketSession session = ONLINE_SESSIONS.get(userId);
-        if (session != null && session.isOpen()) {
-            sendMessage(session, message);
+        Set<WebSocketSession> sessions = ONLINE_SESSIONS.get(userId);
+        if (sessions == null) {
+            return;
+        }
+        sessions.removeIf(session -> !session.isOpen());
+        sessions.forEach(session -> sendMessage(session, message));
+    }
+
+    /**
+     * 安全序列化并投递业务事件。
+     */
+    public void sendEvent(Long userId, String type, Object payload) {
+        try {
+            ObjectNode event = objectMapper.valueToTree(payload);
+            event.put("type", type);
+            event.put("time", System.currentTimeMillis());
+            sendToUser(userId, objectMapper.writeValueAsString(event));
+        } catch (Exception exception) {
+            log.error("序列化WebSocket业务事件失败, type={}", type, exception);
         }
     }
 
@@ -135,11 +112,7 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
      * 广播消息给所有在线用户
      */
     public void broadcastMessage(String message) {
-        ONLINE_SESSIONS.values().forEach(session -> {
-            if (session.isOpen()) {
-                sendMessage(session, message);
-            }
-        });
+        ONLINE_SESSIONS.keySet().forEach(userId -> sendToUser(userId, message));
     }
 
     /**
@@ -194,8 +167,8 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
      * 检查用户是否在线
      */
     public boolean isOnline(Long userId) {
-        WebSocketSession session = ONLINE_SESSIONS.get(userId);
-        return session != null && session.isOpen();
+        Set<WebSocketSession> sessions = ONLINE_SESSIONS.get(userId);
+        return sessions != null && sessions.stream().anyMatch(WebSocketSession::isOpen);
     }
 
     /**
@@ -210,8 +183,10 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
      */
     private void sendMessage(WebSocketSession session, String message) {
         try {
-            if (session.isOpen()) {
-                session.sendMessage(new TextMessage(message));
+            synchronized (session) {
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(message));
+                }
             }
         } catch (IOException e) {
             log.error("发送WebSocket消息失败", e);
@@ -226,6 +201,18 @@ public class MessageWebSocketHandler extends TextWebSocketHandler {
             return objectMapper.writeValueAsString(Map.of("type", type, "content", content));
         } catch (Exception e) {
             return "{\"type\":\"error\",\"content\":\"消息序列化失败\"}";
+        }
+    }
+
+    private void removeSession(Long userId, WebSocketSession session) {
+        Set<WebSocketSession> sessions = ONLINE_SESSIONS.get(userId);
+        if (sessions == null) {
+            return;
+        }
+        sessions.removeIf(existing ->
+                existing == session || existing.getId().equals(session.getId()));
+        if (sessions.isEmpty()) {
+            ONLINE_SESSIONS.remove(userId, sessions);
         }
     }
 }

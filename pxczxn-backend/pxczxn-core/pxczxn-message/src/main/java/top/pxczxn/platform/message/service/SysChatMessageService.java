@@ -2,6 +2,7 @@ package top.pxczxn.platform.message.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import top.pxczxn.platform.message.entity.SysChatMessage;
+import top.pxczxn.platform.message.model.ChatContact;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public interface SysChatMessageService {
     /**
      * 发送消息
      */
-    SysChatMessage send(SysChatMessage message);
+    SysChatMessage send(Long senderId, Long receiverId, String content, Integer msgType);
 
     /**
      * 获取聊天记录（两人之间）
@@ -23,7 +24,7 @@ public interface SysChatMessageService {
     /**
      * 获取最近联系人列表
      */
-    List<SysChatMessage> getRecentContacts(Long userId);
+    List<ChatContact> getRecentContacts(Long userId);
 
     /**
      * 标记消息为已读

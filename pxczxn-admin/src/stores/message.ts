@@ -115,6 +115,10 @@ export const useMessageStore = defineStore('message', () => {
     chatCount.value = 0
   }
 
+  function setChatCount(count: number) {
+    chatCount.value = Math.max(0, count)
+  }
+
   // 关闭通知弹窗
   function closeNotification() {
     showNotification.value = false
@@ -140,6 +144,7 @@ export const useMessageStore = defineStore('message', () => {
     setUnreadCount,
     clearNoticeCount,
     clearChatCount,
+    setChatCount,
     closeNotification,
     disconnectWebSocket,
     totalUnread

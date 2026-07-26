@@ -55,7 +55,7 @@ pxczxn:
       sms: false
       wechat: false
       social-login: false
-      chat: false
+      chat: ${PXCZXN_FEATURE_CHAT:false}
       ssh-server: false
       codegen: false
       samples: false

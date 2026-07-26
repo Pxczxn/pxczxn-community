@@ -184,6 +184,10 @@ WHERE group_code = 'login';
             -BaseUrl $BaseUrl
     }
 
+    Invoke-Step "Instant chat E2E" $root {
+        & node.exe (Join-Path $PSScriptRoot "e2e\m2-t010-chat.mjs")
+    }
+
     Invoke-Step "Comments E2E" $root {
         & powershell.exe `
             -NoProfile `

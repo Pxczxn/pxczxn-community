@@ -62,6 +62,9 @@
                   <span class="no-message">暂无消息</span>
                 </div>
               </div>
+              <span v-if="(user.unreadCount || 0) > 0" class="unread-count">
+                {{ Math.min(user.unreadCount || 0, 99) }}
+              </span>
             </div>
             <n-empty v-if="filteredUsers.length === 0" description="暂无联系人" size="small" />
           </div>
@@ -90,6 +93,9 @@
                   <span class="no-message">暂无消息</span>
                 </div>
               </div>
+              <span v-if="(group.unreadCount || 0) > 0" class="unread-count">
+                {{ Math.min(group.unreadCount || 0, 99) }}
+              </span>
             </div>
             <n-empty v-if="filteredGroups.length === 0" description="暂无群聊" size="small" />
           </div>
@@ -186,6 +192,17 @@
               <div v-if="msg.msgType === 2" class="message-image" @click="previewImage(msg.content)">
                 <img :src="msg.content" alt="图片" />
               </div>
+              <!-- 文件消息 -->
+              <a
+                v-else-if="msg.msgType === 3"
+                class="message-file"
+                :href="msg.content"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <n-icon size="20"><DocumentAttachOutline /></n-icon>
+                <span>{{ fileNameFromUrl(msg.content) }}</span>
+              </a>
               <!-- 文本消息 -->
               <div v-else class="message-bubble">{{ msg.content }}</div>
               <div class="message-time">{{ formatTime(msg.sendTime) }}</div>
@@ -239,6 +256,17 @@
               <n-button quaternary circle>
                 <template #icon>
                   <n-icon size="20"><ImageOutline /></n-icon>
+                </template>
+              </n-button>
+            </n-upload>
+            <!-- 文件上传 -->
+            <n-upload
+              :custom-request="handleUploadFile"
+              :show-file-list="false"
+            >
+              <n-button quaternary circle title="发送文件（最大20MB）">
+                <template #icon>
+                  <n-icon size="20"><DocumentAttachOutline /></n-icon>
                 </template>
               </n-button>
             </n-upload>
@@ -344,6 +372,17 @@
                     <div v-if="msg.msgType === 2" class="message-image" @click="previewImage(msg.content)">
                       <img :src="msg.content" alt="图片" />
                     </div>
+                    <!-- 文件消息 -->
+                    <a
+                      v-else-if="msg.msgType === 3"
+                      class="message-file"
+                      :href="msg.content"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <n-icon size="20"><DocumentAttachOutline /></n-icon>
+                      <span>{{ fileNameFromUrl(msg.content) }}</span>
+                    </a>
                     <!-- 文本消息 -->
                     <div v-else class="message-bubble">{{ msg.content }}</div>
                     <div class="message-time">{{ formatTime(msg.sendTime) }}</div>
@@ -398,6 +437,17 @@
                   <n-button quaternary circle>
                     <template #icon>
                       <n-icon size="20"><ImageOutline /></n-icon>
+                    </template>
+                  </n-button>
+                </n-upload>
+                <!-- 文件上传 -->
+                <n-upload
+                  :custom-request="handleUploadGroupFile"
+                  :show-file-list="false"
+                >
+                  <n-button quaternary circle title="发送文件（最大20MB）">
+                    <template #icon>
+                      <n-icon size="20"><DocumentAttachOutline /></n-icon>
                     </template>
                   </n-button>
                 </n-upload>
@@ -568,7 +618,7 @@
       <template #icon>
         <n-icon color="#f0a020"><AlertCircleOutline /></n-icon>
       </template>
-      确定要清空与 {{ selectedUser?.nickname }} 的所有聊天记录吗？此操作不可恢复。
+      确定要从自己的会话中清空与 {{ selectedUser?.nickname }} 的聊天记录吗？对方的记录不会受影响。
     </n-modal>
     
     <!-- 拉黑用户确认弹窗 -->
@@ -582,18 +632,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch, h } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMessage, NIcon, type UploadCustomRequestOptions } from 'naive-ui'
-import { SearchOutline, ImageOutline, HappyOutline, ExpandOutline, ContractOutline, FlashOutline, AddOutline, SettingsOutline, EllipsisVerticalOutline, AlertCircleOutline, PersonOutline, TrashOutline, BanOutline } from '@vicons/ionicons5'
+import { SearchOutline, ImageOutline, DocumentAttachOutline, HappyOutline, ExpandOutline, ContractOutline, FlashOutline, AddOutline, SettingsOutline, EllipsisVerticalOutline, AlertCircleOutline, PersonOutline, TrashOutline, BanOutline } from '@vicons/ionicons5'
 import { chatApi, groupChatApi, type ChatMessage, type ChatUser, type ChatGroup, type ChatGroupMember, type ChatGroupMessage } from '@/api/message'
 import { fileApi } from '@/api/system'
 import { useUserStore } from '@/stores/user'
+import { useMessageStore } from '@/stores/message'
 import { wsManager } from '@/utils/websocket'
 
 const route = useRoute()
 const message = useMessage()
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 const currentUserId = computed(() => userStore.user?.id)
 
 // 聊天模式
@@ -610,6 +662,8 @@ const messages = ref<ChatMessage[]>([])
 const inputContent = ref('')
 const loadingHistory = ref(false)
 const messageListRef = ref<HTMLElement | null>(null)
+const privateMessagePage = ref(1)
+const privateHasMore = ref(true)
 
 // 群聊相关
 const groups = ref<ChatGroup[]>([])
@@ -619,6 +673,8 @@ const groupInputContent = ref('')
 const groupInputRef = ref<any>(null)
 const groupMessageListRef = ref<HTMLElement | null>(null)
 const groupMembers = ref<ChatGroupMember[]>([])
+const groupMessagePage = ref(1)
+const groupHasMore = ref(true)
 
 // 创建群聊
 const showCreateGroup = ref(false)
@@ -788,9 +844,8 @@ const isGroupOwner = computed(() => {
 async function loadUsers() {
   try {
     users.value = await chatApi.getUsers()
-    // 检查在线状态
-    users.value.forEach(async user => {
-      onlineStatus.value[user.id] = await chatApi.isOnline(user.id)
+    users.value.forEach(user => {
+      onlineStatus.value[user.id] = Boolean(user.online)
     })
   } catch (error) {
     // 错误已在拦截器处理
@@ -802,20 +857,36 @@ async function selectUser(user: ChatUser) {
   selectedGroup.value = null
   selectedUser.value = user
   messages.value = []
+  privateMessagePage.value = 1
+  privateHasMore.value = true
   await loadMessages()
-  // 标记已读
   await chatApi.markAsRead(user.id)
+  user.unreadCount = 0
+  await refreshChatUnreadCount()
 }
 
 // 加载消息
-async function loadMessages() {
-  if (!selectedUser.value) return
+async function loadMessages(append = false) {
+  if (!selectedUser.value || loadingHistory.value) return
+  const listElement = messageListRef.value
+  const previousHeight = listElement?.scrollHeight || 0
   loadingHistory.value = true
   try {
-    const res = await chatApi.getHistory(selectedUser.value.id, { page: 1, pageSize: 50 })
-    messages.value = res.list.reverse()
+    const res = await chatApi.getHistory(selectedUser.value.id, {
+      page: privateMessagePage.value,
+      pageSize: 50
+    })
+    const chronological = [...res.list].reverse()
+    messages.value = append
+      ? [...chronological, ...messages.value]
+      : chronological
+    privateHasMore.value = messages.value.length < res.total
     await nextTick()
-    scrollToBottom()
+    if (append && listElement) {
+      listElement.scrollTop = listElement.scrollHeight - previousHeight
+    } else {
+      scrollToBottom()
+    }
   } catch (error) {
     // 错误已在拦截器处理
   } finally {
@@ -827,7 +898,8 @@ async function loadMessages() {
 function updateUserLastMessage(userId: number, content: string, msgType: number = 1) {
   const user = users.value.find(u => u.id === userId)
   if (user) {
-    user.lastMessage = msgType === 2 ? '[图片]' : content
+    user.lastMessage = msgType === 2 ? '[图片]' : (msgType === 3 ? '[文件]' : content)
+    user.lastMessageTime = new Date().toISOString()
   }
 }
 
@@ -835,8 +907,21 @@ function updateUserLastMessage(userId: number, content: string, msgType: number 
 function updateGroupLastMessage(groupId: number, senderName: string, content: string, msgType: number = 1) {
   const group = groups.value.find(g => g.id === groupId)
   if (group) {
-    const displayContent = msgType === 2 ? '[图片]' : (msgType === 4 ? '[系统消息] ' + content : content)
+    const displayContent = msgType === 2
+      ? '[图片]'
+      : (msgType === 3
+        ? '[文件]'
+        : (msgType === 4 ? '[系统消息] ' + content : content))
     group.lastMessage = senderName + ': ' + displayContent
+    group.lastMessageTime = new Date().toISOString()
+  }
+}
+
+async function refreshChatUnreadCount() {
+  try {
+    messageStore.setChatCount(await chatApi.getUnreadCount())
+  } catch (error) {
+    // 错误已在拦截器处理
   }
 }
 
@@ -887,6 +972,43 @@ async function handleUploadImage(options: UploadCustomRequestOptions) {
 
     options.onFinish()
     message.success('图片发送成功')
+  } catch (error) {
+    options.onError()
+  }
+}
+
+async function handleUploadFile(options: UploadCustomRequestOptions) {
+  if (!selectedUser.value) {
+    message.warning('请先选择联系人')
+    options.onError()
+    return
+  }
+  const file = options.file.file
+  if (!file) {
+    message.error('未读取到文件')
+    options.onError()
+    return
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    message.warning('聊天文件不能超过20MB')
+    options.onError()
+    return
+  }
+
+  try {
+    const result = await fileApi.upload(file)
+    const fileUrl = withFileName(result.url, result.originalName)
+    const msg = await chatApi.send({
+      receiverId: selectedUser.value.id,
+      content: fileUrl,
+      msgType: 3
+    })
+    messages.value.push(msg)
+    updateUserLastMessage(selectedUser.value.id, fileUrl, 3)
+    await nextTick()
+    scrollToBottom()
+    options.onFinish()
+    message.success('文件发送成功')
   } catch (error) {
     options.onError()
   }
@@ -965,19 +1087,38 @@ async function selectGroup(group: ChatGroup) {
   selectedUser.value = null
   selectedGroup.value = group
   groupMessages.value = []
+  groupMessagePage.value = 1
+  groupHasMore.value = true
   await loadGroupMessages()
   await loadGroupMembers()
+  await groupChatApi.markAsRead(group.id!)
+  group.unreadCount = 0
+  await refreshChatUnreadCount()
 }
 
 // 加载群消息
-async function loadGroupMessages() {
-  if (!selectedGroup.value) return
+async function loadGroupMessages(append = false) {
+  if (!selectedGroup.value || loadingHistory.value) return
+  const listElement = groupMessageListRef.value
+  const previousHeight = listElement?.scrollHeight || 0
   loadingHistory.value = true
   try {
-    const res = await groupChatApi.getMessages(selectedGroup.value.id!, 1, 50)
-    groupMessages.value = res.list.reverse()
+    const res = await groupChatApi.getMessages(
+      selectedGroup.value.id!,
+      groupMessagePage.value,
+      50
+    )
+    const chronological = [...res.list].reverse()
+    groupMessages.value = append
+      ? [...chronological, ...groupMessages.value]
+      : chronological
+    groupHasMore.value = groupMessages.value.length < res.total
     await nextTick()
-    scrollGroupToBottom()
+    if (append && listElement) {
+      listElement.scrollTop = listElement.scrollHeight - previousHeight
+    } else {
+      scrollGroupToBottom()
+    }
   } catch (error) {
     // 错误已在拦截器处理
   } finally {
@@ -1042,6 +1183,66 @@ async function handleUploadGroupImage(options: UploadCustomRequestOptions) {
   }
 }
 
+async function handleUploadGroupFile(options: UploadCustomRequestOptions) {
+  if (!selectedGroup.value) {
+    message.warning('请先选择群聊')
+    options.onError()
+    return
+  }
+  const file = options.file.file
+  if (!file) {
+    message.error('未读取到文件')
+    options.onError()
+    return
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    message.warning('聊天文件不能超过20MB')
+    options.onError()
+    return
+  }
+
+  try {
+    const result = await fileApi.upload(file)
+    const fileUrl = withFileName(result.url, result.originalName)
+    const msg = await groupChatApi.sendMessage(
+      selectedGroup.value.id!,
+      fileUrl,
+      3
+    )
+    groupMessages.value.push(msg)
+    updateGroupLastMessage(
+      selectedGroup.value.id!,
+      msg.senderName || '我',
+      fileUrl,
+      3
+    )
+    await nextTick()
+    scrollGroupToBottom()
+    options.onFinish()
+    message.success('文件发送成功')
+  } catch (error) {
+    options.onError()
+  }
+}
+
+function withFileName(url: string, originalName: string): string {
+  const separator = url.includes('#') ? '&' : '#'
+  return `${url}${separator}filename=${encodeURIComponent(originalName)}`
+}
+
+function fileNameFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    const hash = new URLSearchParams(parsed.hash.slice(1))
+    const namedFile = hash.get('filename')
+    if (namedFile) return namedFile
+    const pathName = parsed.pathname.split('/').filter(Boolean).at(-1)
+    return pathName ? decodeURIComponent(pathName) : '下载文件'
+  } catch {
+    return '下载文件'
+  }
+}
+
 // 滚动群消息到底部
 function scrollGroupToBottom() {
   if (groupMessageListRef.value) {
@@ -1070,7 +1271,7 @@ async function handleCreateGroup() {
     newGroupMembers.value = []
     chatMode.value = 'group'
     await loadGroups()
-    selectGroup(group)
+    await selectGroup(group)
   } catch (error) {
     // 错误已在拦截器处理
   }
@@ -1380,9 +1581,18 @@ async function handleClearMessages() {
   }
 }
 
-// 处理滚动（加载更多）
-function handleScroll() {
-  // 可以在这里实现加载更多历史消息
+// 滚动到顶部时加载更早的历史消息
+function handleScroll(event: Event) {
+  const target = event.target as HTMLElement
+  if (target.scrollTop > 40 || loadingHistory.value) return
+
+  if (selectedUser.value && privateHasMore.value) {
+    privateMessagePage.value++
+    void loadMessages(true)
+  } else if (selectedGroup.value && groupHasMore.value) {
+    groupMessagePage.value++
+    void loadGroupMessages(true)
+  }
 }
 
 // 格式化时间
@@ -1435,55 +1645,86 @@ function formatListTime(time?: string): string {
   return `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`
 }
 
+interface PrivateChatRealtimeEvent {
+  id: number
+  senderId: number
+  senderName?: string
+  senderAvatar?: string
+  receiverId: number
+  content: string
+  msgType: number
+  sendTime?: string
+}
+
+interface GroupChatRealtimeEvent {
+  id: number
+  groupId: number
+  senderId: number
+  senderName?: string
+  senderAvatar?: string
+  content: string
+  msgType: number
+  sendTime?: string
+}
+
+function handlePrivateRealtime(data: PrivateChatRealtimeEvent) {
+  updateUserLastMessage(data.senderId, data.content, data.msgType || 1)
+  const user = users.value.find(item => item.id === data.senderId)
+
+  if (selectedUser.value && data.senderId === selectedUser.value.id) {
+    messages.value.push({
+      id: data.id,
+      senderId: data.senderId,
+      senderName: data.senderName,
+      senderAvatar: data.senderAvatar,
+      receiverId: data.receiverId,
+      content: data.content,
+      msgType: data.msgType || 1,
+      sendTime: data.sendTime || new Date().toISOString()
+    })
+    void nextTick(() => scrollToBottom())
+    void chatApi.markAsRead(data.senderId).then(refreshChatUnreadCount)
+  } else if (user) {
+    user.unreadCount = (user.unreadCount || 0) + 1
+  }
+}
+
+function handleGroupRealtime(data: GroupChatRealtimeEvent) {
+  updateGroupLastMessage(
+    data.groupId,
+    data.senderName || '用户',
+    data.content,
+    data.msgType || 1
+  )
+  const group = groups.value.find(item => item.id === data.groupId)
+
+  if (selectedGroup.value && data.groupId === selectedGroup.value.id) {
+    groupMessages.value.push({
+      id: data.id,
+      groupId: data.groupId,
+      senderId: data.senderId,
+      senderName: data.senderName,
+      senderAvatar: data.senderAvatar,
+      content: data.content,
+      msgType: data.msgType || 1,
+      sendTime: data.sendTime || new Date().toISOString()
+    })
+    void nextTick(() => scrollGroupToBottom())
+    void groupChatApi.markAsRead(data.groupId).then(refreshChatUnreadCount)
+  } else if (group) {
+    group.unreadCount = (group.unreadCount || 0) + 1
+  }
+}
+
 // 监听WebSocket消息
 function setupWebSocket() {
-  // 私聊消息
-  wsManager.on('chat', (data) => {
-    // 更新联系人列表的最新消息
-    updateUserLastMessage(data.senderId, data.content, data.msgType || 1)
-    
-    // 如果是当前聊天对象的消息
-    if (selectedUser.value && data.senderId === selectedUser.value.id) {
-      messages.value.push({
-        id: Date.now(),
-        senderId: data.senderId,
-        senderName: data.senderName,
-        receiverId: currentUserId.value!,
-        content: data.content,
-        msgType: data.msgType || 1,
-        sendTime: new Date().toISOString()
-      })
-      nextTick(() => scrollToBottom())
-      // 标记已读
-      chatApi.markAsRead(data.senderId)
-    }
-  })
-  
-  // 群聊消息
-  wsManager.on('groupChat', (data) => {
-    // 更新群聊列表的最新消息
-    updateGroupLastMessage(data.groupId, data.senderName, data.content, data.msgType || 1)
-    
-    // 如果是当前群聊的消息
-    if (selectedGroup.value && data.groupId === selectedGroup.value.id) {
-      groupMessages.value.push({
-        id: Date.now(),
-        groupId: data.groupId,
-        senderId: data.senderId,
-        senderName: data.senderName,
-        senderAvatar: data.senderAvatar,
-        content: data.content,
-        msgType: data.msgType || 1,
-        sendTime: new Date().toISOString()
-      })
-      nextTick(() => scrollGroupToBottom())
-    }
-  })
+  wsManager.on('chat', handlePrivateRealtime)
+  wsManager.on('groupChat', handleGroupRealtime)
 }
 
 onMounted(async () => {
   await loadUsers()
-  loadGroups()
+  await loadGroups()
   setupWebSocket()
   
   // 检查是否有指定的群ID（从群聊通知跳转过来）
@@ -1493,7 +1734,7 @@ onMounted(async () => {
     const targetGroup = groups.value.find(g => g.id === groupId)
     if (targetGroup) {
       chatMode.value = 'group'
-      selectGroup(targetGroup)
+      await selectGroup(targetGroup)
     }
   }
   // 检查是否有指定的用户ID（从私聊通知跳转过来）
@@ -1504,10 +1745,15 @@ onMounted(async () => {
       const targetUser = users.value.find(u => u.id === userId)
       if (targetUser) {
         chatMode.value = 'private'
-        selectUser(targetUser)
+        await selectUser(targetUser)
       }
     }
   }
+})
+
+onUnmounted(() => {
+  wsManager.off('chat', handlePrivateRealtime)
+  wsManager.off('groupChat', handleGroupRealtime)
 })
 </script>
 
@@ -1708,6 +1954,19 @@ onMounted(async () => {
   border-radius: 10px;
 }
 
+.unread-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #d03050;
+  color: #fff;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .contact-status {
   font-size: 12px;
   margin-top: 2px;
@@ -1828,6 +2087,34 @@ onMounted(async () => {
 
 .message-image:hover {
   opacity: 0.9;
+}
+
+.message-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  padding: 10px 14px;
+  color: #1677ff;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  text-decoration: none;
+}
+
+.message-file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-file:hover {
+  text-decoration: underline;
+}
+
+.message-self .message-file {
+  color: #fff;
+  background: #18a058;
 }
 
 .message-time {

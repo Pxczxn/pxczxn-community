@@ -12,7 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.io.IOException;
 
 /**
- * 在脚手架能力删除前提供默认关闭的 HTTP 边界。
+ * 为保留但尚未启用的脚手架能力提供 HTTP 边界。
  */
 @Component
 @RequiredArgsConstructor

@@ -42,6 +42,16 @@ public class ChatGroupMember {
      * 是否禁言：0-否 1-是
      */
     private Integer muted;
+
+    /**
+     * 最后已读群消息ID。
+     */
+    private Long lastReadMessageId;
+
+    /**
+     * 最近一次标记已读时间。
+     */
+    private LocalDateTime lastReadTime;
     
     /**
      * 加入时间

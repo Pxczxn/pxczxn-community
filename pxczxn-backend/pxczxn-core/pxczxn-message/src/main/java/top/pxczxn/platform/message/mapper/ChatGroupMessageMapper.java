@@ -17,4 +17,7 @@ public interface ChatGroupMessageMapper extends BaseMapper<ChatGroupMessage> {
      */
     @Select("SELECT * FROM sys_chat_group_message WHERE group_id = #{groupId} ORDER BY send_time DESC LIMIT 1")
     ChatGroupMessage selectLatestMessage(@Param("groupId") Long groupId);
+
+    @Select("SELECT COALESCE(MAX(id), 0) FROM sys_chat_group_message WHERE group_id = #{groupId}")
+    long selectLatestMessageId(@Param("groupId") Long groupId);
 }

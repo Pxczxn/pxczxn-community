@@ -55,6 +55,16 @@ public class SysChatMessage implements Serializable {
     private Integer isRead;
 
     /**
+     * 发送方是否已从自己的会话中清除。
+     */
+    private Integer senderDeleted;
+
+    /**
+     * 接收方是否已从自己的会话中清除。
+     */
+    private Integer receiverDeleted;
+
+    /**
      * 发送时间
      */
     private LocalDateTime sendTime;

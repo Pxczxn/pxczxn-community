@@ -88,4 +88,10 @@ public class ChatGroup {
      */
     @TableField(exist = false)
     private LocalDateTime lastMessageTime;
+
+    /**
+     * 当前查询用户的群未读消息数（非数据库字段）。
+     */
+    @TableField(exist = false)
+    private Integer unreadCount;
 }

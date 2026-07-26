@@ -1,204 +1,207 @@
 package top.pxczxn.platform.admin.controller.message;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.platform.admin.websocket.MessageWebSocketHandler;
+import top.pxczxn.platform.common.exception.BusinessException;
 import top.pxczxn.platform.common.result.PageResult;
 import top.pxczxn.platform.common.result.Result;
 import top.pxczxn.platform.message.entity.ChatGroup;
 import top.pxczxn.platform.message.entity.ChatGroupMember;
 import top.pxczxn.platform.message.entity.ChatGroupMessage;
 import top.pxczxn.platform.message.service.ChatGroupService;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * 群聊控制器
+ * 群聊 API。
  */
 @RestController
 @RequestMapping("/chat/group")
 @RequiredArgsConstructor
+@SaCheckPermission("sys:chat:list")
 public class ChatGroupController {
 
     private final ChatGroupService groupService;
     private final MessageWebSocketHandler webSocketHandler;
 
-    /**
-     * 创建群聊
-     */
     @PostMapping("/create")
     public Result<ChatGroup> create(@RequestBody CreateGroupRequest request) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        ChatGroup group = groupService.createGroup(request.getName(), userId, request.getMemberIds());
-        return Result.ok(group);
+        if (request == null) {
+            throw new BusinessException(400, "创建群请求不能为空");
+        }
+        return Result.ok(groupService.createGroup(
+                request.getName(),
+                currentUserId(),
+                request.getMemberIds()));
     }
 
-    /**
-     * 获取我的群列表
-     */
     @GetMapping("/list")
     public Result<List<ChatGroup>> list() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        return Result.ok(groupService.getUserGroups(userId));
+        return Result.ok(groupService.getUserGroups(currentUserId()));
     }
 
-    /**
-     * 获取群详情
-     */
     @GetMapping("/{groupId}")
     public Result<ChatGroup> detail(@PathVariable Long groupId) {
-        return Result.ok(groupService.getGroupDetail(groupId));
+        return Result.ok(groupService.getGroupDetail(groupId, currentUserId()));
     }
 
-    /**
-     * 更新群信息
-     */
     @PutMapping("/update")
-    public Result<Void> update(@RequestBody ChatGroup group) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        ChatGroup existing = groupService.getGroupDetail(group.getId());
-        if (existing == null) {
-            return Result.fail("群不存在");
+    public Result<Void> update(@RequestBody UpdateGroupRequest request) {
+        if (request == null) {
+            throw new BusinessException(400, "群信息请求不能为空");
         }
-        // 只有群主和管理员可以修改
-        ChatGroupMember member = groupService.getGroupMembers(group.getId()).stream()
-                .filter(m -> m.getUserId().equals(userId))
-                .findFirst().orElse(null);
-        if (member == null || member.getRole() < 1) {
-            return Result.fail("没有权限修改群信息");
-        }
-        groupService.updateGroup(group);
+        groupService.updateGroup(
+                request.getId(),
+                currentUserId(),
+                request.getName(),
+                request.getAnnouncement());
         return Result.ok();
     }
 
-    /**
-     * 解散群聊
-     */
     @DeleteMapping("/{groupId}")
     public Result<Void> dissolve(@PathVariable Long groupId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.dissolveGroup(groupId, userId);
+        groupService.dissolveGroup(groupId, currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 退出群聊
-     */
     @PostMapping("/{groupId}/quit")
     public Result<Void> quit(@PathVariable Long groupId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.quitGroup(groupId, userId);
+        groupService.quitGroup(groupId, currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 获取群成员列表
-     */
     @GetMapping("/{groupId}/members")
     public Result<List<ChatGroupMember>> members(@PathVariable Long groupId) {
-        return Result.ok(groupService.getGroupMembers(groupId));
+        return Result.ok(groupService.getGroupMembers(groupId, currentUserId()));
     }
 
-    /**
-     * 添加群成员
-     */
     @PostMapping("/{groupId}/members")
-    public Result<Void> addMembers(@PathVariable Long groupId, @RequestBody MemberIdsRequest request) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.addMembers(groupId, request.getUserIds(), userId);
+    public Result<Void> addMembers(@PathVariable Long groupId,
+                                   @RequestBody MemberIdsRequest request) {
+        if (request == null) {
+            throw new BusinessException(400, "成员请求不能为空");
+        }
+        groupService.addMembers(
+                groupId,
+                request.getUserIds(),
+                currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 移除群成员
-     */
     @DeleteMapping("/{groupId}/members/{memberId}")
-    public Result<Void> removeMember(@PathVariable Long groupId, @PathVariable Long memberId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.removeMember(groupId, memberId, userId);
+    public Result<Void> removeMember(@PathVariable Long groupId,
+                                     @PathVariable Long memberId) {
+        groupService.removeMember(groupId, memberId, currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 设置/取消管理员
-     */
     @PostMapping("/{groupId}/admin/{memberId}")
-    public Result<Void> setAdmin(@PathVariable Long groupId, @PathVariable Long memberId,
-                                  @RequestParam boolean isAdmin) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.setAdmin(groupId, memberId, isAdmin, userId);
+    public Result<Void> setAdmin(@PathVariable Long groupId,
+                                 @PathVariable Long memberId,
+                                 @RequestParam boolean isAdmin) {
+        groupService.setAdmin(
+                groupId,
+                memberId,
+                isAdmin,
+                currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 设置/取消禁言
-     */
     @PostMapping("/{groupId}/mute/{memberId}")
-    public Result<Void> setMuted(@PathVariable Long groupId, @PathVariable Long memberId,
-                                  @RequestParam boolean muted) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.setMuted(groupId, memberId, muted, userId);
+    public Result<Void> setMuted(@PathVariable Long groupId,
+                                 @PathVariable Long memberId,
+                                 @RequestParam boolean muted) {
+        groupService.setMuted(
+                groupId,
+                memberId,
+                muted,
+                currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 转让群主
-     */
     @PostMapping("/{groupId}/transfer/{newOwnerId}")
-    public Result<Void> transferOwner(@PathVariable Long groupId, @PathVariable Long newOwnerId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        groupService.transferOwner(groupId, newOwnerId, userId);
+    public Result<Void> transferOwner(@PathVariable Long groupId,
+                                      @PathVariable Long newOwnerId) {
+        groupService.transferOwner(
+                groupId,
+                newOwnerId,
+                currentUserId());
         return Result.ok();
     }
 
-    /**
-     * 发送群消息
-     */
     @PostMapping("/{groupId}/message")
-    public Result<ChatGroupMessage> sendMessage(@PathVariable Long groupId,
-                                                 @RequestBody SendMessageRequest request) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        ChatGroupMessage message = groupService.sendMessage(groupId, userId, request.getContent(), request.getMsgType());
-
-        // 通过WebSocket推送给所有群成员
-        List<Long> memberIds = groupService.getMemberIds(groupId);
-        String msgJson = "{\"type\":\"groupChat\",\"groupId\":" + groupId +
-                ",\"senderId\":" + message.getSenderId() +
-                ",\"senderName\":\"" + message.getSenderName() + "\"" +
-                ",\"senderAvatar\":\"" + (message.getSenderAvatar() != null ? message.getSenderAvatar() : "") + "\"" +
-                ",\"content\":\"" + message.getContent().replace("\"", "\\\"") + "\"" +
-                ",\"msgType\":" + message.getMsgType() +
-                ",\"time\":" + System.currentTimeMillis() + "}";
-
-        for (Long memberId : memberIds) {
-            if (!memberId.equals(userId)) {
-                webSocketHandler.sendToUser(memberId, msgJson);
+    public Result<ChatGroupMessage> sendMessage(
+            @PathVariable Long groupId,
+            @RequestBody SendMessageRequest request) {
+        if (request == null) {
+            throw new BusinessException(400, "消息请求不能为空");
+        }
+        Long senderId = currentUserId();
+        ChatGroupMessage message = groupService.sendMessage(
+                groupId,
+                senderId,
+                request.getContent(),
+                request.getMsgType());
+        for (Long memberId : groupService.getMemberIds(groupId)) {
+            if (!memberId.equals(senderId)) {
+                webSocketHandler.sendEvent(memberId, "groupChat", message);
             }
         }
-
         return Result.ok(message);
     }
 
-    /**
-     * 获取群消息历史
-     */
     @GetMapping("/{groupId}/messages")
-    public Result<PageResult<ChatGroupMessage>> messages(@PathVariable Long groupId,
-                                                     @RequestParam(defaultValue = "1") int page,
-                                                     @RequestParam(defaultValue = "50") int pageSize) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        if (!groupService.isMember(groupId, userId)) {
-            return Result.fail("你不是该群成员");
-        }
-        return Result.ok(PageResult.of(groupService.getMessageHistory(groupId, page, pageSize)));
+    public Result<PageResult<ChatGroupMessage>> messages(
+            @PathVariable Long groupId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "50") int pageSize) {
+        return Result.ok(PageResult.of(groupService.getMessageHistory(
+                groupId,
+                currentUserId(),
+                page,
+                pageSize)));
+    }
+
+    @PostMapping("/{groupId}/read")
+    public Result<Void> markAsRead(@PathVariable Long groupId) {
+        groupService.markAsRead(groupId, currentUserId());
+        return Result.ok();
+    }
+
+    @GetMapping("/{groupId}/unread-count")
+    public Result<Integer> unreadCount(@PathVariable Long groupId) {
+        return Result.ok(groupService.getUnreadCount(
+                groupId,
+                currentUserId()));
+    }
+
+    private Long currentUserId() {
+        return StpUtil.getLoginIdAsLong();
     }
 
     @Data
     public static class CreateGroupRequest {
         private String name;
         private List<Long> memberIds;
+    }
+
+    @Data
+    public static class UpdateGroupRequest {
+        private Long id;
+        private String name;
+        private String announcement;
     }
 
     @Data

@@ -251,17 +251,17 @@
                   </template>
                   <!-- 聊天消息列表 -->
                   <template v-else>
-                    <div v-for="item in recentChats" :key="item.senderId || item.id" class="message-item" @click="handleChatClick(item)">
+                    <div v-for="item in recentChats" :key="item.userId" class="message-item" @click="handleChatClick(item)">
                       <div class="message-item-row">
-                        <n-avatar round size="small" :src="item.senderAvatar">
-                          {{ item.senderName?.charAt(0) || 'U' }}
+                        <n-avatar round size="small" :src="item.avatar">
+                          {{ item.nickname?.charAt(0) || 'U' }}
                         </n-avatar>
                         <div class="message-item-content">
                           <div class="message-item-header">
-                            <span class="message-sender">{{ item.senderName || '用户' }}</span>
-                            <span class="message-time">{{ formatMessageTime(item.sendTime) }}</span>
+                            <span class="message-sender">{{ item.nickname || '用户' }}</span>
+                            <span class="message-time">{{ formatMessageTime(item.lastMessageTime) }}</span>
                           </div>
-                          <div class="message-content">{{ item.content }}</div>
+                          <div class="message-content">{{ formatChatSummary(item) }}</div>
                         </div>
                       </div>
                     </div>
@@ -375,7 +375,7 @@ import ProfileModal from '@/components/ProfileModal.vue'
 import PasswordModal from '@/components/PasswordModal.vue'
 import MessageNotification from '@/components/MessageNotification.vue'
 import TabBar from '@/components/TabBar.vue'
-import { noticeApi, chatApi, type SysNotice, type ChatMessage } from '@/api/message'
+import { noticeApi, chatApi, type SysNotice, type ChatContact } from '@/api/message'
 import { iconMap as externalIconMap } from '@/utils/icons'
 
 const route = useRoute()
@@ -412,7 +412,7 @@ watch(
 // 消息相关
 const messageLoading = ref(false)
 const recentNotices = ref<SysNotice[]>([])
-const recentChats = ref<ChatMessage[]>([])
+const recentChats = ref<ChatContact[]>([])
 const messagePage = ref(1)
 const hasMoreMessages = ref(true)
 // 搜索相关
@@ -615,18 +615,24 @@ async function handleNoticeClick(item: SysNotice) {
 }
 
 // 点击聊天
-async function handleChatClick(item: ChatMessage) {
+async function handleChatClick(item: ChatContact) {
   // 标记已读
-  if (item.senderId) {
+  if (item.userId) {
     try {
-      await chatApi.markAsRead(item.senderId)
+      await chatApi.markAsRead(item.userId)
       // 刷新未读数量
       loadUnreadCount()
     } catch (error) {
       // 忽略
     }
   }
-  router.push({ path: '/message/chat', query: { userId: item.senderId?.toString() } })
+  router.push({ path: '/message/chat', query: { userId: item.userId.toString() } })
+}
+
+function formatChatSummary(item: ChatContact): string {
+  if (item.lastMessageType === 2) return '[图片]'
+  if (item.lastMessageType === 3) return '[文件]'
+  return item.lastMessage || ''
 }
 
 // 搜索菜单
