@@ -1,6 +1,6 @@
 # 开发状态
 
-> 更新日期：2026-07-27
+> 更新日期：2026-07-28
 
 ## 路线状态总览
 
@@ -9,8 +9,8 @@
 | V1（M1 + M2） | 完成 | 个人博客、发布审核、社区互动、通知、运营治理均已验收 |
 | 即时聊天 | 完成 | 单聊、群聊、未读状态与安全 WebSocket Ticket 已纳入当前基线 |
 | M2.5 产品语义与信息架构校正 | 完成 | 发现页、入口回跳、动态路由、管理端运营信息架构及运行时演示文案已完成收口 |
-| M3 团队博客与协作创作 | 已规划 | 团队、投稿、系列、共创 |
-| M4 平台治理与内容安全 | 已规划 | 举报、屏蔽、申诉、处罚、反滥用 |
+| M3 团队博客与协作创作 | 完成 | 团队、投稿、系列、共创已通过完整生命周期验收 |
+| M4 平台治理与内容安全 | 开发中 | 举报中心已完成；屏蔽、申诉、处罚、反滥用待继续交付 |
 | M5 发现、搜索与创作者体验 | 已规划 | 搜索、可解释发现、SEO、RSS、统计、性能 |
 | M6 公网发布与持续运营 | 已规划 | 生产环境、CI/CD、备份、监控、灰度 |
 
@@ -902,11 +902,11 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 当前版本
 
-星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正和 M3-T001/T002，状态：持续开发中。
+星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力和 M4-T001 举报中心，状态：持续开发中。
 
 M2.5 已将已有内容、互动、通知和聊天能力放到正确的平台入口与导航中：首次进入博客端为社区发现页，进入管理端为社区运营中心；原型团队、动态和协作文章不再作为写死产品路由运行。
 
-M3 已完成团队权限地基与团队博客申请审核闭环，下一项为 **M3-T003 团队成员与邀请**；之后按 M3 的依赖顺序再进入 M4 → M5 → M6，阶段不得并行混入同一提交。
+M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 当前从举报中心继续，下一项为 **M4-T002 屏蔽与黑名单**。
 
 ## M3-T002 团队博客申请与平台审核
 
@@ -929,6 +929,30 @@ Blog typecheck / lint / test: PASS / PASS / 5 passed
 Admin typecheck / lint / test / production build: PASS / PASS with existing warnings / PASS / PASS
 Browser: /team-applications renders navigation, empty/error state and submit entry; console errors: 0
 Database migration: script review PASS; real execution requires local MySQL credentials and was not run
+```
+
+## M4-T001 举报中心
+
+状态：完成
+
+交付内容：
+
+- V030 创建 `community_report` 与 `community_report_event`，支持文章、动态、评论、博客、用户、团队和聊天七类举报对象；活动举报以生成列唯一索引实现同一用户、对象和原因的去重。
+- 社区端提供创建举报及“我的举报”查询；提交时校验目标真实存在、禁止举报自己、校验证据 JSON 与长度，并保留原因和说明。
+- 管理端提供待处理/已领取队列、领取、处理完成与驳回动作，全部使用权限 `community:report:list` / `community:report:handle` 和乐观锁；V030 同步写入菜单和 admin 授权。
+- 每次创建、领取、处理写入仅追加的 `community_report_event`；数据库触发器拒绝事件更新和删除。
+- 博客端 `/reports` 和管理端 `/community/reports` 接入真实 API，包含创建、列表、筛选、领取、处理和驳回操作。
+
+验证结果：
+
+```text
+Backend package: 26-module Maven reactor SUCCESS
+Web test: build + 6 tests PASS
+Admin test: 7 tests PASS
+V030 disposable database verification: 2 report tables / 2 append-only triggers / report indexes PASS
+M4 report E2E on backend port 8861: register users, create, active duplicate 409, admin queue, claim, stale-lock 409, resolve, reporter final state PASS
+Event audit: CREATED / CLAIMED / RESOLVED = 1 / 1 / 1
+Append-only event UPDATE / DELETE: MySQL 45000 rejected / PASS
 ```
 
 ## 当前工程债务与后续处理
