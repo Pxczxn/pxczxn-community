@@ -902,11 +902,34 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 当前版本
 
-星语社区当前基线为 V1（M1 + M2）加即时聊天和 M2.5 产品语义与信息架构校正，状态：完成。
+星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正和 M3-T001/T002，状态：持续开发中。
 
 M2.5 已将已有内容、互动、通知和聊天能力放到正确的平台入口与导航中：首次进入博客端为社区发现页，进入管理端为社区运营中心；原型团队、动态和协作文章不再作为写死产品路由运行。
 
-下一阶段为 **M3 团队博客与协作创作**，之后按 M4 → M5 → M6 顺序继续推进；阶段不得并行混入同一提交。
+M3 已完成团队权限地基与团队博客申请审核闭环，下一项为 **M3-T003 团队成员与邀请**；之后按 M3 的依赖顺序再进入 M4 → M5 → M6，阶段不得并行混入同一提交。
+
+## M3-T002 团队博客申请与平台审核
+
+状态：完成（本地数据库迁移待在具备凭据的环境执行）
+
+交付内容：
+
+- 社区用户可提交、查看和撤销团队博客申请；相同幂等键重放返回同一申请，申请人与 slug 的有效占用均受数据库约束保护。
+- 平台审核员可在“团队申请审核”中查看待审项、批准或拒绝；批准操作在一个事务内创建团队博客、团队、OWNER 成员、默认设置、默认分类与不可变审计事件。
+- 审核结果在主事务提交后以独立事务创建站内通知，通知失败不会回滚审核决定。
+- 博客端 `/team-applications` 与管理端审核页面均接入真实 API，并提供加载、空、错误与权限状态。
+- V024 增加有效 slug 的条件唯一索引、审核菜单、按钮权限及 admin 授权，并提供 verify、rollback 与无凭据示例的执行说明。
+
+验证结果：
+
+```text
+Backend full test reports: 320 passed / 0 failed / 0 errors / 0 skipped
+M3-T002 focused service tests: 15 passed
+Blog typecheck / lint / test: PASS / PASS / 5 passed
+Admin typecheck / lint / test / production build: PASS / PASS with existing warnings / PASS / PASS
+Browser: /team-applications renders navigation, empty/error state and submit entry; console errors: 0
+Database migration: script review PASS; real execution requires local MySQL credentials and was not run
+```
 
 ## 当前工程债务与后续处理
 
