@@ -30,16 +30,13 @@ records the evidence that has been executed against a disposable MySQL runtime.
 - Real API E2E: `scripts/e2e/m3-team-lifecycle.mjs` passed against the
   disposable `pxczxn_m3_t011_runtime` database.
 
-The E2E creates actual community users, performs application idempotency,
-admin approval, invitation idempotency, outsider authorization rejection,
-invitation acceptance, and ownership transfer. It is intentionally run only
-against a disposable database because team audit events are append-only.
+The E2E creates actual community users, performs application and invitation
+idempotency, admin approval, outsider authorization rejection, invitation
+acceptance, ownership transfer, member leave, and former-owner authorization
+revocation. It also creates a real personal article, verifies collaboration
+acceptance and rejection, submits that article's fixed version to the team,
+executes team and platform approval through publication, and creates, orders,
+submits, and approves a team series.
 
-## Remaining M3 Acceptance Work
-
-- Cross-role real E2E for member leave after ownership transfer.
-- Fixed-version external submission and team/platform review through publish.
-- Series chapter ordering and platform review.
-- Collaboration invitation accept and reject flows.
-
-M3-T010 remains `开发中` until these cases are exercised against the real APIs.
+It is intentionally run only against a disposable database because team audit
+events are append-only. All M3-T010 acceptance scenarios are now covered.

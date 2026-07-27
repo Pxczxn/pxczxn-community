@@ -64,6 +64,52 @@ try {
   await api(`/api/v1/teams/${teamId}/owner`, { method: 'POST', token: owner, body: { userId: member.id } })
   const members = await api(`/api/v1/teams/${teamId}/members`, { token: member })
   assert(members.data.some((value) => String(value.userId) === String(member.id) && value.roleCode === 'OWNER'), `owner transfer: ${JSON.stringify(members.data)}`)
+  await api(`/api/v1/teams/${teamId}/leave`, { method: 'POST', token: owner })
+  const formerOwner = await api(`/api/v1/teams/${teamId}/members`, { token: owner, codes: [403] })
+  assert(formerOwner.code === 403, 'former owner access revoked after leave')
+  const remaining = await api(`/api/v1/teams/${teamId}/members`, { token: member })
+  assert(remaining.data.length === 1 && String(remaining.data[0].userId) === String(member.id), 'member leave')
+  const article = await api('/api/v1/articles', { method: 'POST', token: owner, body: {
+    title: `M3 collaboration ${stamp}`, slug: `m3-collab-${stamp}`, summary: 'M3 collaboration E2E',
+    contentMode: 'MARKDOWN', markdownContent: 'M3 collaboration acceptance content.', visibility: 'PRIVATE', publishMethod: 'MANUAL'
+  } })
+  const acceptedInvitation = await api(`/api/v1/articles/${article.data.articleId}/collaborators/invitations`, { method: 'POST', token: owner, body: {
+    inviteeUserId: outsider.id, contributionType: 'CO_AUTHOR', canEdit: false, attributionOrder: 1, idempotencyKey: `m3-collab-accept-${stamp}`
+  } })
+  const accepted = await api(`/api/v1/articles/collaboration-invitations/${acceptedInvitation.data.id}/accept`, { method: 'POST', token: outsider, body: { expectedLockVersion: acceptedInvitation.data.lockVersion } })
+  assert(accepted.data.status === 'ACCEPTED' && String(accepted.data.userId) === String(outsider.id), 'collaboration acceptance')
+  const collaborators = await api(`/api/v1/articles/${article.data.articleId}/collaborators`, { token: owner })
+  assert(collaborators.data.some((value) => String(value.userId) === String(outsider.id)), 'accepted collaborator attribution')
+  const rejectedInvitation = await api(`/api/v1/articles/${article.data.articleId}/collaborators/invitations`, { method: 'POST', token: owner, body: {
+    inviteeUserId: member.id, contributionType: 'RESEARCH', canEdit: false, attributionOrder: 2, idempotencyKey: `m3-collab-reject-${stamp}`
+  } })
+  await api(`/api/v1/articles/collaboration-invitations/${rejectedInvitation.data.id}/reject`, { method: 'POST', token: member, body: { expectedLockVersion: rejectedInvitation.data.lockVersion } })
+  const pending = await api('/api/v1/articles/collaboration-invitations/me', { token: member })
+  assert(!pending.data.some((value) => String(value.id) === String(rejectedInvitation.data.id)), 'collaboration rejection')
+  const submission = await api('/api/v1/team-submissions', { method: 'POST', token: owner, body: {
+    sourceArticleId: article.data.articleId, targetTeamId: teamId, idempotencyKey: `m3-submission-${stamp}`
+  } })
+  assert(String(submission.data.fixedSourceVersionId) === String(article.data.currentVersionId), 'fixed submission version')
+  const teamReviewed = await api(`/api/v1/team-submissions/${submission.data.id}/team/approve`, { method: 'POST', token: member, body: {
+    expectedLockVersion: submission.data.lockVersion, comment: 'M3 team review'
+  } })
+  assert(teamReviewed.data.status === 'PLATFORM_PENDING', 'team submission approval')
+  const platformReviewed = await adminApi(`/admin-api/community/team-submissions/${submission.data.id}/approve`, { method: 'POST', token: admin, body: {
+    expectedLockVersion: teamReviewed.data.lockVersion, comment: 'M3 platform review'
+  } })
+  assert(platformReviewed.data.status === 'PUBLISHED' && platformReviewed.data.publishedTeamArticleId, 'platform submission publication')
+  const series = await api(`/api/v1/teams/${teamId}/series`, { method: 'POST', token: member, body: {
+    title: `M3 Series ${stamp}`, slug: `m3-series-${stamp}`, summary: 'M3 series E2E', serializationStatus: 'ONGOING'
+  } })
+  const ordered = await api(`/api/v1/series/${series.data.id}/chapters`, { method: 'POST', token: member, body: {
+    articleIds: [platformReviewed.data.publishedTeamArticleId], expectedLockVersion: series.data.lockVersion
+  } })
+  assert(String(ordered.data.chapters[0].articleId) === String(platformReviewed.data.publishedTeamArticleId), 'series chapter ordering')
+  const submittedSeries = await api(`/api/v1/series/${series.data.id}/submit-review`, { method: 'POST', token: member, body: { expectedLockVersion: ordered.data.lockVersion } })
+  const approvedSeries = await adminApi(`/admin-api/community/series/${series.data.id}/approve`, { method: 'POST', token: admin, body: {
+    expectedLockVersion: submittedSeries.data.lockVersion, comment: 'M3 series review'
+  } })
+  assert(approvedSeries.data.reviewStatus === 'APPROVED', 'series platform approval')
   console.log(`M3 team lifecycle E2E passed: team=${teamId}`)
 } finally {
   // Team audit events are intentionally immutable. Run this script only against
