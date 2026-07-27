@@ -53,3 +53,13 @@ FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'community_report_
 CREATE TRIGGER `community_report_event_prevent_delete` BEFORE DELETE ON `community_report_event`
 FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'community_report_event is append-only: DELETE not allowed'; END$$
 DELIMITER ;
+
+INSERT INTO `sys_menu` (`id`,`parent_id`,`name`,`type`,`path`,`component`,`permission`,`icon`,`sort`,`visible`,`status`,`is_frame`,`create_time`,`update_time`,`create_by`,`update_by`,`deleted`) VALUES
+    (9120, 9110, '举报中心', 2, '/community/reports', '/community/reports/index', 'community:report:list', 'FlagOutline', 20, 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 1, 0),
+    (9121, 9120, '查询举报', 3, NULL, NULL, 'community:report:list', NULL, 1, 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 1, 0),
+    (9122, 9120, '处理举报', 3, NULL, NULL, 'community:report:handle', NULL, 2, 1, 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 1, 0)
+ON DUPLICATE KEY UPDATE `permission`=VALUES(`permission`),`path`=VALUES(`path`),`component`=VALUES(`component`),`update_time`=CURRENT_TIMESTAMP;
+
+INSERT INTO `sys_role_menu` (`role_id`,`menu_id`)
+SELECT r.id, values_to_grant.menu_id FROM `sys_role` r CROSS JOIN (SELECT 9120 AS menu_id UNION ALL SELECT 9121 UNION ALL SELECT 9122) values_to_grant
+WHERE r.code='admin' AND r.deleted=0 AND NOT EXISTS (SELECT 1 FROM `sys_role_menu` existing WHERE existing.role_id=r.id AND existing.menu_id=values_to_grant.menu_id);
