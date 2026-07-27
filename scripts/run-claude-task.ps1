@@ -6,7 +6,14 @@ param(
     [string]$TaskFile,
 
     [Parameter(Mandatory = $false)]
-    [string]$ResultFile = "outputs/agent-results/latest.json"
+    [string]$ResultFile = "outputs/agent-results/latest.json",
+
+    [Parameter(Mandatory = $false)]
+    [string]$Model = "opus",
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("low", "medium", "high", "xhigh", "max")]
+    [string]$Effort = "max"
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,7 +56,11 @@ try {
     Write-Host "Worktree: $absoluteWorktree"
     Write-Host "Task file: $absoluteTask"
 
-    & claude -p $prompt --output-format json 2>&1 |
+    & claude -p $prompt `
+        --output-format json `
+        --model $Model `
+        --effort $Effort `
+        --permission-mode acceptEdits 2>&1 |
         Tee-Object -FilePath $absoluteResult
     if ($LASTEXITCODE -ne 0) {
         throw "Claude Code failed with exit code: $LASTEXITCODE"
