@@ -49,9 +49,9 @@ test("server-renders formal community routes without fixed prototype content", a
   const routes = [
     ["/discover", "发现值得阅读的内容"],
     ["/articles", "按公开时间浏览社区文章"],
-    ["/teams", "团队申请、成员、投稿、系列和共创会在 M3"],
-    ["/teams/ai-explorers", "不会回退到硬编码原型团队"],
-    ["/workspace/team", "当前不再保留写死的团队"],
+    ["/teams", "团队博客"],
+    ["/teams/ai-explorers", "团队"],
+    ["/workspace/team", "团队工作台"],
     ["/submissions/ai-agent", "当前不会展示虚构的投稿审核记录"],
     ["/collaboration/articles/agent-patterns", "文章共创"],
     ["/moments/agent-architecture", "星语社区"],
@@ -90,6 +90,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
   }
   assert.doesNotMatch(topbar, /ai-explorers|agent-architecture|agent-patterns/);
   assert.match(workspace, /M3 团队协作创作/);
+  assert.match(workspace, /communityApi\.teamWorkspace/);
   assert.doesNotMatch(workspace, /待处理投稿|AI探索者团队/);
 });
 

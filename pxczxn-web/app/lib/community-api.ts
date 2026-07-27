@@ -532,6 +532,11 @@ export interface TeamInvitation {
   createdAt: string;
 }
 
+export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: number; followerCount: number; }
+export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
+export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
+export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
+
 export interface SubmitTeamApplicationInput {
   teamName: string;
   teamSlug: string;
@@ -1016,4 +1021,7 @@ export const communityApi = {
       method: "POST",
     });
   },
+  teams() { return communityRequest<TeamSummary[]>("/api/v1/teams"); },
+  team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`); },
+  teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
 };
