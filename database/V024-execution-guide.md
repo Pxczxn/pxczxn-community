@@ -7,14 +7,14 @@
 
 ### 1. 执行 V024 迁移
 ```bash
-mysql -h localhost -P 3306 -u root -proot pxczxn_community < database/migrations/V024__m3_team_application_review.sql
+mysql -h localhost -P 3306 -u root -p pxczxn_community < database/migrations/V024__m3_team_application_review.sql
 ```
 
 **预期结果**: 无错误输出
 
 ### 2. 验证迁移结果
 ```bash
-mysql -h localhost -P 3306 -u root -proot pxczxn_community < database/verify/V024__verify_team_application_review.sql
+mysql -h localhost -P 3306 -u root -p pxczxn_community < database/verify/V024__verify_team_application_review.sql
 ```
 
 **预期输出**:
@@ -60,7 +60,7 @@ mysql -h localhost -P 3306 -u root -proot pxczxn_community < database/verify/V02
 
 ### 3. 检查唯一索引是否创建成功
 ```bash
-mysql -h localhost -P 3306 -u root -proot pxczxn_community -e "SHOW INDEX FROM team_application WHERE Key_name = 'uk_team_slug_active';"
+mysql -h localhost -P 3306 -u root -p pxczxn_community -e "SHOW INDEX FROM team_application WHERE Key_name = 'uk_team_slug_active';"
 ```
 
 **预期输出**: 应显示 `uk_team_slug_active` 索引，包含 `team_slug` 和 `is_slug_active` 两个列；
@@ -88,7 +88,7 @@ DELETE FROM team_application WHERE team_slug = 'test-slug';
 
 ## 如果需要回滚
 ```bash
-mysql -h localhost -P 3306 -u root -proot pxczxn_community < database/rollback/R024__rollback_team_application_review.sql
+mysql -h localhost -P 3306 -u root -p pxczxn_community < database/rollback/R024__rollback_team_application_review.sql
 ```
 
 ## 故障排查

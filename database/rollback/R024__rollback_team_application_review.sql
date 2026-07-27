@@ -11,7 +11,7 @@ SET NAMES utf8mb4;
 ALTER TABLE `team_application`
     DROP INDEX IF EXISTS `uk_team_slug_active`,
     DROP COLUMN IF EXISTS `is_slug_active`,
-    ADD KEY `idx_application_slug` (`team_slug`);
+    ADD KEY IF NOT EXISTS `idx_application_slug` (`team_slug`);
 
 -- Remove admin role menu mappings for team application review
 DELETE FROM `sys_role_menu`

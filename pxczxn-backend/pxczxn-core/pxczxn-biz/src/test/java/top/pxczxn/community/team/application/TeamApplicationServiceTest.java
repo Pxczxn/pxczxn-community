@@ -47,7 +47,7 @@ class TeamApplicationServiceTest {
 
         CommunityUser user = new CommunityUser();
         user.setId(1L);
-        user.setStatus("ACTIVE");
+        user.setStatus("NORMAL");
 
         when(communityUserMapper.selectById(1L)).thenReturn(user);
         when(teamApplicationMapper.findPendingByApplicant(1L)).thenReturn(null);
@@ -100,7 +100,7 @@ class TeamApplicationServiceTest {
 
         CommunityUser user = new CommunityUser();
         user.setId(1L);
-        user.setStatus("ACTIVE");
+        user.setStatus("NORMAL");
 
         TeamApplication existingApp = new TeamApplication();
         existingApp.setId(99L);
@@ -128,7 +128,7 @@ class TeamApplicationServiceTest {
 
         CommunityUser user = new CommunityUser();
         user.setId(1L);
-        user.setStatus("ACTIVE");
+        user.setStatus("NORMAL");
 
         TeamApplication existingApp = new TeamApplication();
         existingApp.setId(99L);
@@ -156,7 +156,7 @@ class TeamApplicationServiceTest {
 
         CommunityUser user = new CommunityUser();
         user.setId(1L);
-        user.setStatus("ACTIVE");
+        user.setStatus("NORMAL");
 
         Blog existingBlog = new Blog();
         existingBlog.setId(1L);

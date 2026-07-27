@@ -54,13 +54,13 @@ export interface CommunityBlog {
 }
 
 export interface TeamApplication {
-  id: number
-  applicantUserId: number
+  id: string
+  applicantUserId: string
   teamName: string
   teamSlug: string
   description?: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
-  reviewerUserId?: number
+  reviewerUserId?: string
   reviewComment?: string
   reviewedAt?: string
   createdAt: string
@@ -72,7 +72,7 @@ export interface TeamApplicationReviewRequest {
 }
 
 export interface TeamApplicationApprovalResponse {
-  teamId: number
+  teamId: string
 }
 
 export interface CommunityArticle {
@@ -440,19 +440,19 @@ export const communityApi = {
     url: '/admin-api/community/team-applications',
     method: 'get'
   }),
-  getTeamApplicationDetail: (applicationId: number) => request<TeamApplication>({
+  getTeamApplicationDetail: (applicationId: string) => request<TeamApplication>({
     ...adminConfig,
     url: `/admin-api/community/team-applications/${applicationId}`,
     method: 'get'
   }),
-  approveTeamApplication: (applicationId: number, data: TeamApplicationReviewRequest) =>
+  approveTeamApplication: (applicationId: string, data: TeamApplicationReviewRequest) =>
     request<TeamApplicationApprovalResponse>({
       ...adminConfig,
       url: `/admin-api/community/team-applications/${applicationId}/approve`,
       method: 'post',
       data
     }),
-  rejectTeamApplication: (applicationId: number, data: TeamApplicationReviewRequest) =>
+  rejectTeamApplication: (applicationId: string, data: TeamApplicationReviewRequest) =>
     request<void>({
       ...adminConfig,
       url: `/admin-api/community/team-applications/${applicationId}/reject`,

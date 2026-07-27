@@ -13,6 +13,7 @@ import top.pxczxn.community.user.persistence.CommunityUserMapper;
 import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * Implementation of team application service.
@@ -20,6 +21,8 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class TeamApplicationServiceImpl implements TeamApplicationService {
+
+    private static final Set<String> ACTIVE_USER_STATUSES = Set.of("NORMAL", "LIMITED");
 
     private final TeamApplicationMapper teamApplicationMapper;
     private final CommunityUserMapper communityUserMapper;
@@ -44,7 +47,7 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
         if (user == null) {
             throw new BusinessException("User not found");
         }
-        if (!"ACTIVE".equals(user.getStatus())) {
+        if (!ACTIVE_USER_STATUSES.contains(user.getStatus())) {
             throw new BusinessException("User is not active and cannot submit team application");
         }
 
