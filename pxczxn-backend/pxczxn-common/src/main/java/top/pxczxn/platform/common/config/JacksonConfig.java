@@ -1,5 +1,6 @@
 package top.pxczxn.platform.common.config;
 
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
@@ -23,6 +24,10 @@ public class JacksonConfig {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         return builder -> {
+            // Preserve 64-bit snowflake identifiers when consumed by JavaScript clients.
+            builder.serializerByType(Long.class, ToStringSerializer.instance);
+            builder.serializerByType(Long.TYPE, ToStringSerializer.instance);
+
             // LocalDateTime 序列化/反序列化
             builder.serializers(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)));
             builder.deserializers(new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN)));

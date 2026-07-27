@@ -509,13 +509,13 @@ export interface UnreadNotificationCount {
 }
 
 export interface TeamApplication {
-  id: number;
-  applicantUserId: number;
+  id: string;
+  applicantUserId: string;
   teamName: string;
   teamSlug: string;
   description?: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
-  reviewerUserId?: number;
+  reviewerUserId?: string;
   reviewComment?: string;
   reviewedAt?: string;
   createdAt: string;
@@ -532,7 +532,7 @@ export interface TeamInvitation {
   createdAt: string;
 }
 
-export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: number; followerCount: number; }
+export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: string; followerCount: string; }
 export interface TeamSubmission { id: string; sourceArticleId: string; sourceArticleTitle: string; fixedSourceVersionId: string; targetTeamId: string; submittedByUserId: string; supersedesSubmissionId: string | null; status: string; teamReviewerUserId: string | null; teamReviewComment: string | null; teamReviewedAt: string | null; platformReviewerAdminId: string | null; platformReviewComment: string | null; platformReviewedAt: string | null; publishedTeamArticleId: string | null; lockVersion: number; createdAt: string; updatedAt: string; }
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
@@ -1001,12 +1001,12 @@ export const communityApi = {
   myTeamApplication() {
     return communityRequest<TeamApplication | null>("/api/v1/team-applications/me");
   },
-  getTeamApplication(applicationId: number) {
+  getTeamApplication(applicationId: string) {
     return communityRequest<TeamApplication>(
       `/api/v1/team-applications/${applicationId}`,
     );
   },
-  cancelTeamApplication(applicationId: number) {
+  cancelTeamApplication(applicationId: string) {
     return communityRequest<void>(
       `/api/v1/team-applications/${applicationId}`,
       { method: "DELETE" },
@@ -1026,7 +1026,7 @@ export const communityApi = {
       method: "POST",
     });
   },
-  teams() { return communityRequest<TeamSummary[]>("/api/v1/teams"); },
+  teams() { return communityRequest<TeamSummary[]>("/api/v1/teams", {}, false); },
   series() { return communityRequest<TeamSeries[]>("/api/v1/series", {}, false); },
   seriesDetail(seriesId: string) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}`, {}, false); },
   teamSeries(teamId: string) { return communityRequest<TeamSeries[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/series`); },
@@ -1044,7 +1044,7 @@ export const communityApi = {
   myCollaborationInvitations() { return communityRequest<ArticleCollaboration[]>("/api/v1/articles/collaboration-invitations/me"); },
   respondToCollaboration(invitationId: string, action: "accept" | "reject", expectedLockVersion: number) { return communityRequest<ArticleCollaboration | void>(`/api/v1/articles/collaboration-invitations/${encodeURIComponent(invitationId)}/${action}`, { method: "POST", body: JSON.stringify({ expectedLockVersion }) }); },
   revokeCollaborator(articleId: string, collaboratorId: string, expectedLockVersion: number) { return communityRequest<void>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators/${encodeURIComponent(collaboratorId)}?expectedLockVersion=${expectedLockVersion}`, { method: "DELETE" }); },
-  team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`); },
+  team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`, {}, false); },
   teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
   chatHistory(peerId: string) { return communityRequest<CommunityChatMessage[]>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}`); },
   sendChatMessage(recipientUserId: string, contentText: string) { return communityRequest<CommunityChatMessage>("/api/v1/chat/messages", { method: "POST", body: JSON.stringify({ recipientUserId, contentText }) }); },

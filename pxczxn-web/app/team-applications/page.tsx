@@ -95,7 +95,7 @@ export default function TeamApplicationsPage() {
     }
   }
 
-  async function handleCancel(applicationId: number) {
+  async function handleCancel(applicationId: string) {
     if (!confirm("确定要撤销申请吗？撤销后可以重新提交。")) {
       return;
     }

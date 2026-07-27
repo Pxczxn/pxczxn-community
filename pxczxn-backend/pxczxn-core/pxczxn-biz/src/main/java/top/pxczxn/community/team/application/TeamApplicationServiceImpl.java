@@ -51,12 +51,6 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
             throw new BusinessException("User is not active and cannot submit team application");
         }
 
-        // Check for duplicate pending application by this user
-        TeamApplication existingPending = teamApplicationMapper.findPendingByApplicant(command.getApplicantUserId());
-        if (existingPending != null) {
-            throw new BusinessException("User already has a pending team application");
-        }
-
         // Check if idempotency key already exists
         if (command.getIdempotencyKey() != null && !command.getIdempotencyKey().trim().isEmpty()) {
             TeamApplication existingIdempotent = teamApplicationMapper.findByIdempotencyKey(command.getIdempotencyKey());
@@ -64,6 +58,12 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
                 // Return existing application ID (idempotent)
                 return existingIdempotent.getId();
             }
+        }
+
+        // Reject a distinct request while preserving a same-key replay above.
+        TeamApplication existingPending = teamApplicationMapper.findPendingByApplicant(command.getApplicantUserId());
+        if (existingPending != null) {
+            throw new BusinessException("User already has a pending team application");
         }
 
         // Check if slug is already taken by an existing blog

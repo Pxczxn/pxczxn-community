@@ -135,7 +135,7 @@ class TeamApplicationServiceTest {
         existingApp.setIdempotencyKey("existing-key");
 
         when(communityUserMapper.selectById(1L)).thenReturn(user);
-        when(teamApplicationMapper.findPendingByApplicant(1L)).thenReturn(null);
+        when(teamApplicationMapper.findPendingByApplicant(1L)).thenReturn(existingApp);
         when(teamApplicationMapper.findByIdempotencyKey("existing-key")).thenReturn(existingApp);
 
         // When

@@ -6,7 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vinext dev --port 8847",
+    "dev": "vinext dev --port 8847 --strictPort",
     "typecheck": "tsc --noEmit",
     "build": "vinext build",
     "start": "vinext start --port 8847",

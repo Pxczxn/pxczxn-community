@@ -24,6 +24,8 @@ public class CommunityPublicRoutePolicy {
             "/api/v1/tags",
             "/api/v1/series",
             "/api/v1/series/*",
+            "/api/v1/teams",
+            "/api/v1/teams/slug/*",
             "/api/v1/interactions/*/*/comments",
             "/api/v1/comments/*/replies",
             "/api/v1/interactions/*/*/like",
