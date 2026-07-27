@@ -84,6 +84,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '文章审核', icon: 'ShieldOutline', permission: 'community:review:list' }
       },
       {
+        path: 'community/team-applications',
+        name: 'TeamApplications',
+        component: () => import('@/views/community/team-applications/index.vue'),
+        meta: { title: '团队申请审核', icon: 'PeopleOutline', permission: 'community:team:review' }
+      },
+      {
         path: 'community/tags',
         name: 'CommunityTags',
         component: () => import('@/views/community/tags/index.vue'),

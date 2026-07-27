@@ -508,6 +508,27 @@ export interface UnreadNotificationCount {
   categories: Partial<Record<NotificationCategory, number>>;
 }
 
+export interface TeamApplication {
+  id: number;
+  applicantUserId: number;
+  teamName: string;
+  teamSlug: string;
+  description?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  reviewerUserId?: number;
+  reviewComment?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmitTeamApplicationInput {
+  teamName: string;
+  teamSlug: string;
+  description?: string;
+  idempotencyKey?: string;
+}
+
 export class CommunityApiError extends Error {
   constructor(
     message: string,
@@ -948,5 +969,27 @@ export const communityApi = {
       affectedNotifications: number;
       unreadCount: number;
     }>(`/api/v1/notifications/read-all${suffix}`, { method: "PATCH" });
+  },
+
+  // Team applications
+  submitTeamApplication(input: SubmitTeamApplicationInput) {
+    return communityRequest<TeamApplication>("/api/v1/team-applications", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+  myTeamApplication() {
+    return communityRequest<TeamApplication | null>("/api/v1/team-applications/me");
+  },
+  getTeamApplication(applicationId: number) {
+    return communityRequest<TeamApplication>(
+      `/api/v1/team-applications/${applicationId}`,
+    );
+  },
+  cancelTeamApplication(applicationId: number) {
+    return communityRequest<void>(
+      `/api/v1/team-applications/${applicationId}`,
+      { method: "DELETE" },
+    );
   },
 };
