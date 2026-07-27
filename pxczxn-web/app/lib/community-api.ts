@@ -537,6 +537,8 @@ export interface TeamSubmission { id: string; sourceArticleId: string; sourceArt
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
 export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
+export interface TeamSeriesChapter { articleId: string; title: string; slug: string; publishStatus: string; chapterOrder: number; }
+export interface TeamSeries { id: string; teamId: string; title: string; slug: string; summary: string | null; coverFileId: string | null; serializationStatus: "ONGOING" | "COMPLETED" | "PAUSED"; reviewStatus: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED"; reviewComment: string | null; lockVersion: number; publishedAt: string | null; updatedAt: string; chapters: TeamSeriesChapter[]; }
 export interface CommunityChatMessage { id: string; senderUserId: string; recipientUserId: string; contentText: string; status: string; readAt: string | null; createdAt: string; }
 export interface ArticleCollaboration { id: string; articleId: string; userId: string; username: string | null; displayName: string | null; contributionType: string; canEdit: boolean; attributionOrder: number; status: string; lockVersion: number; createdAt: string; expiresAt: string | null; }
 
@@ -1025,6 +1027,14 @@ export const communityApi = {
     });
   },
   teams() { return communityRequest<TeamSummary[]>("/api/v1/teams"); },
+  series() { return communityRequest<TeamSeries[]>("/api/v1/series", {}, false); },
+  seriesDetail(seriesId: string) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}`, {}, false); },
+  teamSeries(teamId: string) { return communityRequest<TeamSeries[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/series`); },
+  teamSeriesArticles(teamId: string) { return communityRequest<TeamSeriesChapter[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/series/articles`); },
+  createTeamSeries(teamId: string, input: { title: string; slug?: string; summary?: string; coverFileId?: string | null; serializationStatus?: TeamSeries["serializationStatus"] }) { return communityRequest<TeamSeries>(`/api/v1/teams/${encodeURIComponent(teamId)}/series`, { method: "POST", body: JSON.stringify(input) }); },
+  updateTeamSeries(seriesId: string, input: { title: string; slug?: string; summary?: string; coverFileId?: string | null; serializationStatus?: TeamSeries["serializationStatus"]; expectedLockVersion: number }) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}`, { method: "PATCH", body: JSON.stringify(input) }); },
+  saveSeriesChapters(seriesId: string, articleIds: string[], expectedLockVersion: number) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}/chapters`, { method: "POST", body: JSON.stringify({ articleIds, expectedLockVersion }) }); },
+  submitSeriesReview(seriesId: string, expectedLockVersion: number) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}/submit-review`, { method: "POST", body: JSON.stringify({ expectedLockVersion }) }); },
   myTeamSubmissions() { return communityRequest<TeamSubmission[]>("/api/v1/team-submissions/me"); },
   createTeamSubmission(input: { sourceArticleId: string; targetTeamId: string; supersedesSubmissionId?: string | null; idempotencyKey?: string }) { const idempotencyKey = input.idempotencyKey || `team-submission-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; return communityRequest<TeamSubmission>("/api/v1/team-submissions", { method: "POST", body: JSON.stringify({ ...input, idempotencyKey }) }); },
   teamSubmissions(teamId: string) { return communityRequest<TeamSubmission[]>(`/api/v1/team-submissions/teams/${encodeURIComponent(teamId)}`); },

@@ -110,8 +110,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'community/series',
         name: 'CommunitySeries',
-        component: () => import('@/views/community/planned/index.vue'),
-        meta: { title: '系列管理', icon: 'AlbumsOutline', permission: 'community:series:list' }
+        component: () => import('@/views/community/series/index.vue'),
+        meta: { title: '系列审核', icon: 'AlbumsOutline', permission: 'community:series:review' }
       },
       {
         path: 'community/analytics',

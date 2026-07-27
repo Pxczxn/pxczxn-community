@@ -27,7 +27,8 @@ import org.mybatis.spring.annotation.MapperScan;
         "top.pxczxn.community.team.persistence",
         "top.pxczxn.community.team.submission.persistence",
         "top.pxczxn.community.collaboration.persistence",
-        "top.pxczxn.community.chat.persistence"
+        "top.pxczxn.community.chat.persistence",
+        "top.pxczxn.community.series.persistence"
 })
 @EnableScheduling
 public class PxczxnCommunityApplication {

@@ -96,6 +96,21 @@ export interface TeamSubmission {
   updatedAt: string
 }
 
+export interface CommunitySeries {
+  id: string
+  teamId: string
+  title: string
+  slug: string
+  summary?: string
+  serializationStatus: 'ONGOING' | 'COMPLETED' | 'PAUSED'
+  reviewStatus: 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+  reviewComment?: string
+  lockVersion: number
+  publishedAt?: string
+  updatedAt: string
+  chapters: Array<{ articleId: string; title: string; slug: string; publishStatus: string; chapterOrder: number }>
+}
+
 export interface CommunityArticle {
   id: string
   blogId: string
@@ -481,5 +496,7 @@ export const communityApi = {
       data
     }),
   teamSubmissions: () => request<TeamSubmission[]>({ ...adminConfig, url: '/admin-api/community/team-submissions', method: 'get' }),
-  decideTeamSubmission: (submissionId: string, action: 'approve' | 'revision' | 'reject', expectedLockVersion: number, comment?: string) => request<TeamSubmission>({ ...adminConfig, url: `/admin-api/community/team-submissions/${submissionId}/${action}`, method: 'post', data: { expectedLockVersion, comment } })
+  decideTeamSubmission: (submissionId: string, action: 'approve' | 'revision' | 'reject', expectedLockVersion: number, comment?: string) => request<TeamSubmission>({ ...adminConfig, url: `/admin-api/community/team-submissions/${submissionId}/${action}`, method: 'post', data: { expectedLockVersion, comment } }),
+  series: () => request<CommunitySeries[]>({ ...adminConfig, url: '/admin-api/community/series', method: 'get' }),
+  decideSeries: (seriesId: string, action: 'approve' | 'reject', expectedLockVersion: number, comment?: string) => request<CommunitySeries>({ ...adminConfig, url: `/admin-api/community/series/${seriesId}/${action}`, method: 'post', data: { expectedLockVersion, comment } })
 }

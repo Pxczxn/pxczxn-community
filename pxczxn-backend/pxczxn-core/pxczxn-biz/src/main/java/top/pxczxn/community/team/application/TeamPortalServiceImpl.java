@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TeamPortalServiceImpl implements TeamPortalService {
     private static final Map<String, List<String>> CAPABILITIES = Map.of(
-            "OWNER", List.of("OVERVIEW", "ARTICLES", "MEMBERS", "CATEGORIES", "SETTINGS"),
-            "ADMIN", List.of("OVERVIEW", "ARTICLES", "MEMBERS", "CATEGORIES"),
-            "EDITOR", List.of("OVERVIEW", "ARTICLES", "CATEGORIES"),
+            "OWNER", List.of("OVERVIEW", "ARTICLES", "MEMBERS", "CATEGORIES", "SERIES", "SETTINGS"),
+            "ADMIN", List.of("OVERVIEW", "ARTICLES", "MEMBERS", "CATEGORIES", "SERIES"),
+            "EDITOR", List.of("OVERVIEW", "ARTICLES", "CATEGORIES", "SERIES"),
             "AUTHOR", List.of("OVERVIEW", "ARTICLES"));
     private final TeamMapper teamMapper;
     private final TeamMemberMapper memberMapper;

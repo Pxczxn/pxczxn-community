@@ -22,6 +22,8 @@ public class CommunityPublicRoutePolicy {
             "/api/v1/auth/check-email",
             "/api/v1/public/**",
             "/api/v1/tags",
+            "/api/v1/series",
+            "/api/v1/series/*",
             "/api/v1/interactions/*/*/comments",
             "/api/v1/comments/*/replies",
             "/api/v1/interactions/*/*/like",
