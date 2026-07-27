@@ -104,7 +104,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'community/teams',
         name: 'CommunityTeams',
-        component: () => import('@/views/community/planned/index.vue'),
+        component: () => import('@/views/community/teams/index.vue'),
         meta: { title: '团队管理', icon: 'PeopleOutline', permission: 'community:team:list' }
       },
       {

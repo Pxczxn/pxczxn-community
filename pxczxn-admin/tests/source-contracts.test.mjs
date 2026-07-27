@@ -26,6 +26,20 @@ test('community governance routes and APIs remain registered', async () => {
   }
 })
 
+test('team governance and collaboration queries use real admin APIs', async () => {
+  const [router, api, teams] = await Promise.all([
+    source('src/router/index.ts'),
+    source('src/api/community.ts'),
+    source('src/views/community/teams/index.vue')
+  ])
+
+  assert.match(router, /views\/community\/teams\/index\.vue/)
+  assert.match(api, /\/admin-api\/community\/teams/)
+  assert.match(api, /\/admin-api\/community\/collaborations/)
+  assert.match(teams, /communityApi\.teams/)
+  assert.match(teams, /communityApi\.collaborations/)
+})
+
 test('the three supported visual themes remain available', async () => {
   const themeStore = await source('src/stores/theme.ts')
 
