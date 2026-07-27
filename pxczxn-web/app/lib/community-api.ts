@@ -522,6 +522,20 @@ export interface TeamApplication {
   updatedAt: string;
 }
 
+export interface CommunityReport {
+  id: string;
+  reporterUserId: string;
+  targetType: "ARTICLE" | "MOMENT" | "COMMENT" | "BLOG" | "USER" | "TEAM" | "CHAT";
+  targetId: string;
+  reasonCode: string;
+  description: string | null;
+  evidenceJson: string | null;
+  status: "PENDING" | "ASSIGNED" | "RESOLVED" | "DISMISSED";
+  resolutionCode: string | null;
+  resolutionNote: string | null;
+  lockVersion: number;
+}
+
 export interface TeamInvitation {
   id: string;
   teamId: string;
@@ -990,6 +1004,11 @@ export const communityApi = {
       unreadCount: number;
     }>(`/api/v1/notifications/read-all${suffix}`, { method: "PATCH" });
   },
+
+  createReport(input: { targetType: CommunityReport["targetType"]; targetId: string; reasonCode: string; description?: string; evidenceJson?: string }) {
+    return communityRequest<CommunityReport>("/api/v1/reports", { method: "POST", body: JSON.stringify(input) });
+  },
+  myReports() { return communityRequest<CommunityReport[]>("/api/v1/reports/me"); },
 
   // Team applications
   submitTeamApplication(input: SubmitTeamApplicationInput) {
