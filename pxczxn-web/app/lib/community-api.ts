@@ -537,6 +537,7 @@ export interface TeamSubmission { id: string; sourceArticleId: string; sourceArt
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
 export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
+export interface CommunityChatMessage { id: string; senderUserId: string; recipientUserId: string; contentText: string; status: string; readAt: string | null; createdAt: string; }
 export interface ArticleCollaboration { id: string; articleId: string; userId: string; username: string | null; displayName: string | null; contributionType: string; canEdit: boolean; attributionOrder: number; status: string; lockVersion: number; createdAt: string; expiresAt: string | null; }
 
 export interface SubmitTeamApplicationInput {
@@ -1035,4 +1036,8 @@ export const communityApi = {
   revokeCollaborator(articleId: string, collaboratorId: string, expectedLockVersion: number) { return communityRequest<void>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators/${encodeURIComponent(collaboratorId)}?expectedLockVersion=${expectedLockVersion}`, { method: "DELETE" }); },
   team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`); },
   teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
+  chatHistory(peerId: string) { return communityRequest<CommunityChatMessage[]>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}`); },
+  sendChatMessage(recipientUserId: string, contentText: string) { return communityRequest<CommunityChatMessage>("/api/v1/chat/messages", { method: "POST", body: JSON.stringify({ recipientUserId, contentText }) }); },
+  markChatRead(peerId: string) { return communityRequest<void>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}/read`, { method: "POST" }); },
+  chatTicket() { return communityRequest<{ ticket: string; expiresInSeconds: number }>("/api/v1/chat/websocket-ticket", { method: "POST" }); },
 };

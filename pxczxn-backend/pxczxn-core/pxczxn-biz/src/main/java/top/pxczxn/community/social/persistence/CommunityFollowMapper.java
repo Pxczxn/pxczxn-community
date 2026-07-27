@@ -75,4 +75,22 @@ public interface CommunityFollowMapper extends BaseMapper<CommunityFollow> {
             @Param("userId") Long userId,
             @Param("personalBlogId") Long personalBlogId
     );
+
+    @Select("""
+            SELECT COUNT(*)
+            FROM community_follow outbound
+            INNER JOIN community_follow inbound
+                    ON inbound.follower_user_id = #{peerUserId}
+                   AND inbound.target_type = 'BLOG'
+                   AND inbound.target_id = #{actorBlogId}
+            WHERE outbound.follower_user_id = #{actorUserId}
+              AND outbound.target_type = 'BLOG'
+              AND outbound.target_id = #{peerBlogId}
+            """)
+    long countMutualBlogPair(
+            @Param("actorUserId") Long actorUserId,
+            @Param("actorBlogId") Long actorBlogId,
+            @Param("peerUserId") Long peerUserId,
+            @Param("peerBlogId") Long peerBlogId
+    );
 }

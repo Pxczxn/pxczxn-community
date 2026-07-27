@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,6 +26,7 @@ public class WebSocketTicketService {
 
     private static final String REDIS_KEY_PREFIX = "pxczxn:websocket:ticket:";
     private static final int TICKET_BYTES = 32;
+    private static final Set<String> AUDIENCES = Set.of("ADMIN", "COMMUNITY");
 
     private final StringRedisTemplate redisTemplate;
     private final WebSocketTicketProperties properties;
@@ -51,6 +53,13 @@ public class WebSocketTicketService {
     }
 
     public IssuedTicket issue(Long userId) {
+        return issue("ADMIN", userId);
+    }
+
+    public IssuedTicket issue(String audience, Long userId) {
+        if (!AUDIENCES.contains(audience) || userId == null || userId <= 0) {
+            throw new IllegalArgumentException("WebSocket ticket audience and user ID are required");
+        }
         byte[] randomBytes = new byte[TICKET_BYTES];
         secureRandom.nextBytes(randomBytes);
         String ticket = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
@@ -60,7 +69,7 @@ public class WebSocketTicketService {
             try {
                 redisTemplate.opsForValue().set(
                         storageKey,
-                        userId.toString(),
+                        audience + ":" + userId,
                         properties.getTtl()
                 );
                 return new IssuedTicket(ticket, properties.getTtl().toSeconds());
@@ -71,13 +80,27 @@ public class WebSocketTicketService {
 
         localTickets.put(
                 storageKey,
-                new LocalTicket(userId, Instant.now().plus(properties.getTtl()))
+                new LocalTicket(audience, userId, Instant.now().plus(properties.getTtl()))
         );
         removeExpiredLocalTickets();
         return new IssuedTicket(ticket, properties.getTtl().toSeconds());
     }
 
     public Long consume(String ticket) {
+        return consume("ADMIN", ticket);
+    }
+
+    public Long consume(String audience, String ticket) {
+        if (!AUDIENCES.contains(audience)) {
+            return null;
+        }
+        TicketPrincipal principal = consumePrincipal(ticket);
+        return principal != null && audience.equals(principal.audience())
+                ? principal.userId()
+                : null;
+    }
+
+    public TicketPrincipal consumePrincipal(String ticket) {
         if (!StringUtils.hasText(ticket)) {
             return null;
         }
@@ -85,8 +108,8 @@ public class WebSocketTicketService {
 
         if (redisAvailable) {
             try {
-                String userId = redisTemplate.opsForValue().getAndDelete(storageKey);
-                return userId == null ? null : Long.valueOf(userId);
+                String stored = redisTemplate.opsForValue().getAndDelete(storageKey);
+                return parsePrincipal(stored);
             } catch (RuntimeException exception) {
                 handleRedisFailure(exception);
             }
@@ -96,7 +119,7 @@ public class WebSocketTicketService {
         if (localTicket == null || !localTicket.expiresAt().isAfter(Instant.now())) {
             return null;
         }
-        return localTicket.userId();
+        return new TicketPrincipal(localTicket.audience(), localTicket.userId());
     }
 
     private void handleRedisFailure(RuntimeException exception) {
@@ -132,6 +155,31 @@ public class WebSocketTicketService {
     public record IssuedTicket(String ticket, long expiresInSeconds) {
     }
 
-    private record LocalTicket(Long userId, Instant expiresAt) {
+    private static TicketPrincipal parsePrincipal(String stored) {
+        if (!StringUtils.hasText(stored)) {
+            return null;
+        }
+        int separator = stored.indexOf(':');
+        if (separator < 1 || separator == stored.length() - 1) {
+            return null;
+        }
+        String audience = stored.substring(0, separator);
+        if (!AUDIENCES.contains(audience)) {
+            return null;
+        }
+        try {
+            return new TicketPrincipal(
+                    audience,
+                    Long.valueOf(stored.substring(separator + 1))
+            );
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    public record TicketPrincipal(String audience, Long userId) {
+    }
+
+    private record LocalTicket(String audience, Long userId, Instant expiresAt) {
     }
 }

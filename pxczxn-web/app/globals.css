@@ -4188,3 +4188,61 @@ button {
     animation-iteration-count: 1 !important;
   }
 }
+
+.community-chat-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 1.7fr);
+  min-height: 500px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.community-chat-contacts {
+  border-right: 1px solid var(--border-default);
+  padding: 16px;
+}
+
+.community-chat-conversation {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 20px;
+}
+
+.community-chat-messages {
+  display: grid;
+  flex: 1;
+  gap: 10px;
+  min-height: 300px;
+  overflow-y: auto;
+  padding: 20px 0;
+}
+
+.community-chat-bubble {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  justify-self: start;
+  max-width: 78%;
+  padding: 12px;
+}
+
+.community-chat-bubble[data-own-message="true"] {
+  background: color-mix(in srgb, var(--primary) 14%, var(--bg-surface));
+  justify-self: end;
+}
+
+@media (max-width: 760px) {
+  .community-chat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .community-chat-contacts {
+    border-bottom: 1px solid var(--border-default);
+    border-right: 0;
+  }
+
+  .community-chat-messages {
+    min-height: 260px;
+  }
+}

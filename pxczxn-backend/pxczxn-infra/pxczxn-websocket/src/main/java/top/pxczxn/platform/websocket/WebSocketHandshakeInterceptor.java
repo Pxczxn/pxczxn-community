@@ -32,7 +32,7 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
         try {
             if (request instanceof ServletServerHttpRequest servletRequest) {
                 String ticket = servletRequest.getServletRequest().getParameter("ticket");
-                Long userId = ticketService.consume(ticket);
+                Long userId = ticketService.consume("ADMIN", ticket);
                 if (userId != null) {
                     attributes.put("userId", userId);
                     log.info("WebSocket handshake accepted for userId={}", userId);

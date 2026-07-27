@@ -44,6 +44,22 @@ class WebSocketTicketServiceTest {
                 .hasMessageContaining("Redis is required");
     }
 
+    @Test
+    void audienceScopedTicketsCannotAuthenticateASeparateWebSocketChannel() {
+        WebSocketTicketService service = new WebSocketTicketService(
+                unavailableRedis(),
+                properties(false)
+        );
+
+        WebSocketTicketService.IssuedTicket community = service.issue("COMMUNITY", 42L);
+        WebSocketTicketService.IssuedTicket admin = service.issue("ADMIN", 42L);
+
+        assertThat(service.consume("ADMIN", community.ticket())).isNull();
+        assertThat(service.consume("COMMUNITY", admin.ticket())).isNull();
+        assertThat(service.consume("COMMUNITY", community.ticket())).isNull();
+        assertThat(service.consume("ADMIN", admin.ticket())).isNull();
+    }
+
     @SuppressWarnings("unchecked")
     private StringRedisTemplate unavailableRedis() {
         StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
