@@ -17,11 +17,10 @@ SET NAMES utf8mb4;
 -- A plain (team_slug, status) unique key is insufficient because it permits one PENDING and
 -- one APPROVED row with the same slug at the same time.
 ALTER TABLE `team_application`
-    DROP INDEX IF EXISTS `idx_application_slug`,
-    ADD COLUMN IF NOT EXISTS `is_slug_active` TINYINT
+    ADD COLUMN `is_slug_active` TINYINT
         AS (IF(`status` IN ('PENDING', 'APPROVED'), 1, NULL)) STORED
         COMMENT 'Generated: 1 for slug-reserving application statuses, NULL otherwise',
-    ADD UNIQUE KEY IF NOT EXISTS `uk_team_slug_active` (`team_slug`, `is_slug_active`) USING BTREE
+    ADD UNIQUE KEY `uk_team_slug_active` (`team_slug`, `is_slug_active`) USING BTREE
         COMMENT 'Prevents duplicate slug across active applications';
 
 -- Insert team application review menu under "审核中心" (9110)

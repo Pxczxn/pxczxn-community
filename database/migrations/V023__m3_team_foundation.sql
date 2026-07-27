@@ -13,9 +13,9 @@ SET NAMES utf8mb4;
 
 -- Team table: 1:1 with TEAM type blog
 CREATE TABLE IF NOT EXISTS `team` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Team ID (same as blog_id)',
-    `blog_id` BIGINT NOT NULL COMMENT 'Unique foreign key to blog table',
-    `owner_user_id` BIGINT NOT NULL COMMENT 'Current team owner',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Team ID (same as blog_id)',
+    `blog_id` BIGINT UNSIGNED NOT NULL COMMENT 'Unique foreign key to blog table',
+    `owner_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Current team owner',
     `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE/DISBANDED',
     `lock_version` INT NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
@@ -31,13 +31,13 @@ CREATE TABLE IF NOT EXISTS `team` (
 -- Team member table: team membership with roles
 -- Fix NULL uniqueness: use generated column to enforce only one active member per team+user
 CREATE TABLE IF NOT EXISTS `team_member` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Member record ID',
-    `team_id` BIGINT NOT NULL COMMENT 'Team ID',
-    `user_id` BIGINT NOT NULL COMMENT 'User ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Member record ID',
+    `team_id` BIGINT UNSIGNED NOT NULL COMMENT 'Team ID',
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT 'User ID',
     `role_code` VARCHAR(20) NOT NULL COMMENT 'OWNER/ADMIN/EDITOR/AUTHOR',
     `joined_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Join timestamp',
     `left_at` DATETIME NULL DEFAULT NULL COMMENT 'Leave timestamp (null = active)',
-    `invited_by_user_id` BIGINT NULL DEFAULT NULL COMMENT 'Inviter user ID',
+    `invited_by_user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT 'Inviter user ID',
     `lock_version` INT NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
     `is_active` TINYINT AS (IF(left_at IS NULL, 1, NULL)) STORED COMMENT 'Generated: 1 if active, NULL if left',
     PRIMARY KEY (`id`),
@@ -51,13 +51,13 @@ CREATE TABLE IF NOT EXISTS `team_member` (
 -- Team invitation table: token-based invitations
 -- Prevent duplicate pending invitations for same team/user/role using generated column
 CREATE TABLE IF NOT EXISTS `team_invitation` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Invitation ID',
-    `team_id` BIGINT NOT NULL COMMENT 'Team ID',
-    `invitee_user_id` BIGINT NOT NULL COMMENT 'Invited user ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Invitation ID',
+    `team_id` BIGINT UNSIGNED NOT NULL COMMENT 'Team ID',
+    `invitee_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Invited user ID',
     `role_code` VARCHAR(20) NOT NULL COMMENT 'Target role',
     `token_hash` VARCHAR(64) NOT NULL COMMENT 'SHA-256 hash of random token',
     `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/ACCEPTED/REJECTED/EXPIRED',
-    `invited_by_user_id` BIGINT NOT NULL COMMENT 'Inviter user ID',
+    `invited_by_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Inviter user ID',
     `expires_at` DATETIME NOT NULL COMMENT 'Expiration time',
     `accepted_at` DATETIME NULL DEFAULT NULL COMMENT 'Acceptance timestamp',
     `rejected_at` DATETIME NULL DEFAULT NULL COMMENT 'Rejection timestamp',
@@ -92,12 +92,12 @@ CREATE TABLE IF NOT EXISTS `team_permission` (
 
 -- Team audit event table: append-only audit log
 CREATE TABLE IF NOT EXISTS `team_audit_event` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Event ID',
-    `team_id` BIGINT NOT NULL COMMENT 'Team ID',
-    `actor_user_id` BIGINT NULL DEFAULT NULL COMMENT 'Actor user ID (null for system)',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Event ID',
+    `team_id` BIGINT UNSIGNED NOT NULL COMMENT 'Team ID',
+    `actor_user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT 'Actor user ID (null for system)',
     `event_type` VARCHAR(50) NOT NULL COMMENT 'Event type code',
     `target_type` VARCHAR(50) NULL DEFAULT NULL COMMENT 'Target entity type',
-    `target_id` BIGINT NULL DEFAULT NULL COMMENT 'Target entity ID',
+    `target_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT 'Target entity ID',
     `request_id` VARCHAR(64) NULL DEFAULT NULL COMMENT 'Request trace ID',
     `before_snapshot` JSON NULL DEFAULT NULL COMMENT 'State before change',
     `after_snapshot` JSON NULL DEFAULT NULL COMMENT 'State after change',
@@ -110,37 +110,39 @@ CREATE TABLE IF NOT EXISTS `team_audit_event` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Team audit events (append-only)';
 
 -- Trigger to prevent UPDATE on team_audit_event (append-only protection)
-DROP TRIGGER IF EXISTS `team_audit_event_prevent_update`;
+DELIMITER $$
+DROP TRIGGER IF EXISTS `team_audit_event_prevent_update`$$
 CREATE TRIGGER `team_audit_event_prevent_update`
 BEFORE UPDATE ON `team_audit_event`
 FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'team_audit_event is append-only: UPDATE not allowed';
-END;
+END$$
 
 -- Trigger to prevent DELETE on team_audit_event (append-only protection)
-DROP TRIGGER IF EXISTS `team_audit_event_prevent_delete`;
+DROP TRIGGER IF EXISTS `team_audit_event_prevent_delete`$$
 CREATE TRIGGER `team_audit_event_prevent_delete`
 BEFORE DELETE ON `team_audit_event`
 FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'team_audit_event is append-only: DELETE not allowed';
-END;
+END$$
+DELIMITER ;
 
 -- Team application table: team blog creation requests
 -- Add resource JSON and idempotency; enforce one pending application per user
 CREATE TABLE IF NOT EXISTS `team_application` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'Application ID',
-    `applicant_user_id` BIGINT NOT NULL COMMENT 'Applicant user ID',
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Application ID',
+    `applicant_user_id` BIGINT UNSIGNED NOT NULL COMMENT 'Applicant user ID',
     `team_name` VARCHAR(100) NOT NULL COMMENT 'Requested team name',
     `team_slug` VARCHAR(100) NOT NULL COMMENT 'Requested team slug',
     `description` TEXT NULL DEFAULT NULL COMMENT 'Application description',
     `application_data` JSON NULL DEFAULT NULL COMMENT 'Additional application metadata',
     `idempotency_key` VARCHAR(64) NULL DEFAULT NULL COMMENT 'Client idempotency key',
     `status` VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/APPROVED/REJECTED/CANCELLED',
-    `reviewer_user_id` BIGINT NULL DEFAULT NULL COMMENT 'Reviewer user ID',
+    `reviewer_user_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT 'Reviewer user ID',
     `review_comment` TEXT NULL DEFAULT NULL COMMENT 'Review feedback',
     `reviewed_at` DATETIME NULL DEFAULT NULL COMMENT 'Review timestamp',
     `lock_version` INT NOT NULL DEFAULT 0 COMMENT 'Optimistic lock version',
@@ -185,9 +187,7 @@ VALUES
     ('ADMIN', 'VIEW_AUDIT'),
     -- EDITOR: content only, no member management
     ('EDITOR', 'EDIT_ALL_ARTICLES'),
-    ('EDITOR', 'DELETE_ALL_ARTICLES'),
     ('EDITOR', 'MANAGE_SUBMISSIONS'),
     ('EDITOR', 'MANAGE_SERIES'),
     -- AUTHOR: own articles only
-    ('AUTHOR', 'EDIT_OWN_ARTICLES'),
-    ('AUTHOR', 'DELETE_OWN_ARTICLES');
+    ('AUTHOR', 'EDIT_OWN_ARTICLES');

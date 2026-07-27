@@ -153,13 +153,18 @@ class TeamAuthorityServiceTest {
     }
 
     @Test
-    void canDeleteArticleFollowsSameLogicAsEditArticle() {
+    void canDeleteArticleAllowsOnlyOwnerAndAdmin() {
         TeamMember author = new TeamMember();
         author.setRoleCode("AUTHOR");
         when(teamMemberMapper.findActiveMember(1L, 100L)).thenReturn(author);
 
-        assertThat(service.canDeleteArticle(100L, 1L, 100L)).isTrue();
+        assertThat(service.canDeleteArticle(100L, 1L, 100L)).isFalse();
         assertThat(service.canDeleteArticle(100L, 1L, 999L)).isFalse();
+
+        TeamMember admin = new TeamMember();
+        admin.setRoleCode("ADMIN");
+        when(teamMemberMapper.findActiveMember(1L, 200L)).thenReturn(admin);
+        assertThat(service.canDeleteArticle(200L, 1L, 999L)).isTrue();
     }
 
     @Test

@@ -9,9 +9,8 @@ SET NAMES utf8mb4;
 
 -- Restore the V023 non-unique slug lookup index after removing V024's active-slug constraint.
 ALTER TABLE `team_application`
-    DROP INDEX IF EXISTS `uk_team_slug_active`,
-    DROP COLUMN IF EXISTS `is_slug_active`,
-    ADD KEY IF NOT EXISTS `idx_application_slug` (`team_slug`);
+    DROP INDEX `uk_team_slug_active`,
+    DROP COLUMN `is_slug_active`;
 
 -- Remove admin role menu mappings for team application review
 DELETE FROM `sys_role_menu`

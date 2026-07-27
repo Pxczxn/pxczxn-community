@@ -113,7 +113,12 @@ public class TeamAuthorityService {
      * Same logic as edit.
      */
     public boolean canDeleteArticle(Long userId, Long teamId, Long articleAuthorId) {
-        return canEditArticle(userId, teamId, articleAuthorId);
+        if (userId == null || teamId == null) {
+            return false;
+        }
+        TeamMember member = teamMemberMapper.findActiveMember(teamId, userId);
+        return member != null && ("OWNER".equals(member.getRoleCode())
+                || "ADMIN".equals(member.getRoleCode()));
     }
 
     /**

@@ -24,6 +24,8 @@ public class TeamInvitation {
 
     private String tokenHash;
 
+    private String idempotencyKey;
+
     private String status;
 
     private Long invitedByUserId;

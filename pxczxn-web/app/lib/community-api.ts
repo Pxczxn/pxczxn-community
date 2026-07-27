@@ -522,6 +522,16 @@ export interface TeamApplication {
   updatedAt: string;
 }
 
+export interface TeamInvitation {
+  id: string;
+  teamId: string;
+  inviteeUserId: string;
+  roleCode: "OWNER" | "ADMIN" | "EDITOR" | "AUTHOR";
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface SubmitTeamApplicationInput {
   teamName: string;
   teamSlug: string;
@@ -991,5 +1001,19 @@ export const communityApi = {
       `/api/v1/team-applications/${applicationId}`,
       { method: "DELETE" },
     );
+  },
+
+  myTeamInvitations() {
+    return communityRequest<TeamInvitation[]>("/api/v1/teams/invitations/me");
+  },
+  acceptTeamInvitation(invitationId: string) {
+    return communityRequest<void>(`/api/v1/teams/invitations/${encodeURIComponent(invitationId)}/accept`, {
+      method: "POST",
+    });
+  },
+  rejectTeamInvitation(invitationId: string) {
+    return communityRequest<void>(`/api/v1/teams/invitations/${encodeURIComponent(invitationId)}/reject`, {
+      method: "POST",
+    });
   },
 };

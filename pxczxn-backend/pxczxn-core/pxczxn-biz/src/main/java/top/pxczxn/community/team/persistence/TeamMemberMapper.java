@@ -27,4 +27,12 @@ public interface TeamMemberMapper extends BaseMapper<TeamMember> {
     int updateRoleWithOptimisticLock(@Param("id") Long id,
                                       @Param("roleCode") String roleCode,
                                       @Param("lockVersion") Integer lockVersion);
+
+    @Update("UPDATE team_member SET left_at = NOW(), lock_version = lock_version + 1 "
+            + "WHERE id = #{id} AND left_at IS NULL AND lock_version = #{lockVersion}")
+    int leaveWithOptimisticLock(@Param("id") Long id, @Param("lockVersion") Integer lockVersion);
+
+    @Update("UPDATE team_member SET left_at = NOW(), lock_version = lock_version + 1 "
+            + "WHERE team_id = #{teamId} AND left_at IS NULL")
+    int leaveAllActive(@Param("teamId") Long teamId);
 }

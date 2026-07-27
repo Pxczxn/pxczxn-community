@@ -19,4 +19,11 @@ public interface TeamMapper extends BaseMapper<Team> {
                                        @Param("currentOwnerId") Long currentOwnerId,
                                        @Param("newOwnerId") Long newOwnerId,
                                        @Param("lockVersion") Integer lockVersion);
+
+    @Update("UPDATE team SET status = 'DISBANDED', lock_version = lock_version + 1, updated_at = NOW() "
+            + "WHERE id = #{teamId} AND owner_user_id = #{ownerUserId} AND status = 'ACTIVE' "
+            + "AND lock_version = #{lockVersion}")
+    int disbandWithOptimisticLock(@Param("teamId") Long teamId,
+                                  @Param("ownerUserId") Long ownerUserId,
+                                  @Param("lockVersion") Integer lockVersion);
 }
