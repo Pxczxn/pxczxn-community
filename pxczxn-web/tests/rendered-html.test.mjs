@@ -128,6 +128,17 @@ test("keeps M1 user flows connected to the real community API", async () => {
   assert.match(css, /prefers-reduced-motion/);
 });
 
+test("fails instead of changing the configured development port", async () => {
+  const [packageJson, viteConfig] = await Promise.all([
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(packageJson, /vinext dev --port 8847 --strictPort/);
+  assert.match(viteConfig, /port:\s*8847/);
+  assert.match(viteConfig, /strictPort:\s*true/);
+});
+
 test("keeps M2 moments, social relationships and notifications on real APIs", async () => {
   const [api, moments, social, notifications, topbar] = await Promise.all([
     readFile(new URL("../app/lib/community-api.ts", import.meta.url), "utf8"),

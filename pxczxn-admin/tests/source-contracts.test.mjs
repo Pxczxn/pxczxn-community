@@ -10,6 +10,7 @@ test('development ports target the accepted local topology', async () => {
   const viteConfig = await source('vite.config.ts')
 
   assert.match(viteConfig, /port:\s*8848/)
+  assert.match(viteConfig, /strictPort:\s*true/)
   assert.match(viteConfig, /http:\/\/localhost:8849/)
   assert.match(viteConfig, /['"]\/admin-api['"]/)
 })
