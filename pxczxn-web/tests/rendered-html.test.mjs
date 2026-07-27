@@ -78,7 +78,8 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
     readFile(new URL("../app/workspace/team/page.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(home, /redirect\("\/discover"\)/);
+  assert.match(home, /return <DiscoverPage \/>;/);
+  assert.match(topbar, /<Link href="\/">首页<\/Link>/);
   assert.match(auth, /new URLSearchParams\(window\.location\.search\)\.get\("returnTo"\)/);
   assert.match(auth, /: "\/discover"/);
   assert.match(discover, /communityApi\.discoverArticles/);

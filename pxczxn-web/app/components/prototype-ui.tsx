@@ -88,7 +88,7 @@ export function UserTopbar({ title }: { title?: string }) {
         {title && <strong>{title}</strong>}
       </div>
       <nav className="community-primary-nav" aria-label="星语社区主导航">
-        <Link href="/discover">首页</Link>
+        <Link href="/">首页</Link>
         <Link href="/discover">发现</Link>
         <Link href="/articles">文章</Link>
         <Link href="/moments">动态</Link>
