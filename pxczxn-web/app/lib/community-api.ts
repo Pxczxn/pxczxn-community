@@ -537,6 +537,7 @@ export interface TeamSubmission { id: string; sourceArticleId: string; sourceArt
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
 export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
+export interface ArticleCollaboration { id: string; articleId: string; userId: string; username: string | null; displayName: string | null; contributionType: string; canEdit: boolean; attributionOrder: number; status: string; lockVersion: number; createdAt: string; expiresAt: string | null; }
 
 export interface SubmitTeamApplicationInput {
   teamName: string;
@@ -1027,6 +1028,11 @@ export const communityApi = {
   createTeamSubmission(input: { sourceArticleId: string; targetTeamId: string; supersedesSubmissionId?: string | null; idempotencyKey?: string }) { const idempotencyKey = input.idempotencyKey || `team-submission-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; return communityRequest<TeamSubmission>("/api/v1/team-submissions", { method: "POST", body: JSON.stringify({ ...input, idempotencyKey }) }); },
   teamSubmissions(teamId: string) { return communityRequest<TeamSubmission[]>(`/api/v1/team-submissions/teams/${encodeURIComponent(teamId)}`); },
   decideTeamSubmission(submissionId: string, action: "approve" | "revision" | "reject", expectedLockVersion: number, comment?: string) { return communityRequest<TeamSubmission>(`/api/v1/team-submissions/${encodeURIComponent(submissionId)}/team/${action}`, { method: "POST", body: JSON.stringify({ expectedLockVersion, comment }) }); },
+  collaborators(articleId: string) { return communityRequest<ArticleCollaboration[]>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators`); },
+  inviteCollaborator(articleId: string, input: { inviteeUserId: string; contributionType: string; canEdit: boolean; attributionOrder: number }) { const idempotencyKey = `article-collaboration-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; return communityRequest<ArticleCollaboration>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators/invitations`, { method: "POST", body: JSON.stringify({ ...input, idempotencyKey }) }); },
+  myCollaborationInvitations() { return communityRequest<ArticleCollaboration[]>("/api/v1/articles/collaboration-invitations/me"); },
+  respondToCollaboration(invitationId: string, action: "accept" | "reject", expectedLockVersion: number) { return communityRequest<ArticleCollaboration | void>(`/api/v1/articles/collaboration-invitations/${encodeURIComponent(invitationId)}/${action}`, { method: "POST", body: JSON.stringify({ expectedLockVersion }) }); },
+  revokeCollaborator(articleId: string, collaboratorId: string, expectedLockVersion: number) { return communityRequest<void>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators/${encodeURIComponent(collaboratorId)}?expectedLockVersion=${expectedLockVersion}`, { method: "DELETE" }); },
   team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`); },
   teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
 };

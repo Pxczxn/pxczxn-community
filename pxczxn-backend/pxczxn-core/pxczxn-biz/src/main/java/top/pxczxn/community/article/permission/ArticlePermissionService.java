@@ -59,6 +59,7 @@ public class ArticlePermissionService {
     private final CommunityUserMapper userMapper;
     private final CommunityAuth communityAuth;
     private final List<BlogArticleRoleResolver> roleResolvers;
+    private final List<ArticleCollaborationEditResolver> collaborationEditResolvers;
     private final List<BlogFollowerResolver> followerResolvers;
     private final PlatformArticleAuthority platformAuthority;
 
@@ -68,6 +69,7 @@ public class ArticlePermissionService {
             CommunityUserMapper userMapper,
             CommunityAuth communityAuth,
             List<BlogArticleRoleResolver> roleResolvers,
+            List<ArticleCollaborationEditResolver> collaborationEditResolvers,
             List<BlogFollowerResolver> followerResolvers,
             PlatformArticleAuthority platformAuthority
     ) {
@@ -76,6 +78,7 @@ public class ArticlePermissionService {
         this.userMapper = userMapper;
         this.communityAuth = communityAuth;
         this.roleResolvers = roleResolvers == null ? List.of() : List.copyOf(roleResolvers);
+        this.collaborationEditResolvers = collaborationEditResolvers == null ? List.of() : List.copyOf(collaborationEditResolvers);
         this.followerResolvers =
                 followerResolvers == null ? List.of() : List.copyOf(followerResolvers);
         this.platformAuthority = platformAuthority;
@@ -211,9 +214,11 @@ public class ArticlePermissionService {
         boolean owner = role == BlogArticleRole.OWNER;
         boolean administrator = role == BlogArticleRole.ADMIN;
         boolean editor = role == BlogArticleRole.EDITOR;
+        boolean collaboratorCanEdit = (action == ArticleAction.VIEW_EDITOR || action == ArticleAction.EDIT)
+                && collaborationEditResolvers.stream().anyMatch(resolver -> resolver.canEdit(actor, article));
         boolean roleAllowed = switch (action) {
-            case VIEW_EDITOR, EDIT, SUBMIT_REVIEW, WITHDRAW_REVIEW ->
-                    author || owner || administrator || editor;
+            case VIEW_EDITOR, EDIT -> author || owner || administrator || editor || collaboratorCanEdit;
+            case SUBMIT_REVIEW, WITHDRAW_REVIEW -> author || owner || administrator || editor;
             case DELETE -> author || owner || administrator;
             case PUBLISH -> "PERSONAL".equals(blog.getBlogType())
                     ? author || owner

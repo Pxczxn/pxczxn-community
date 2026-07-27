@@ -87,6 +87,26 @@ class ArticlePermissionServiceTest {
     }
 
     @Test
+    void explicitArticleCollaboratorCanEditButCannotPublishOrDelete() {
+        ArticlePermissionService collaboratorService = new ArticlePermissionService(
+                articleMapper, blogMapper, userMapper, communityAuth, List.of(),
+                List.of((actor, candidate) -> actor != null && actor.getId().equals(101L)
+                        && candidate != null && candidate.getId().equals(300L)),
+                List.of(), platformAuthority
+        );
+
+        assertThat(collaboratorService.decideCommunity(
+                ArticleAction.EDIT, other, personalBlog, article, null
+        ).allowed()).isTrue();
+        assertThat(collaboratorService.decideCommunity(
+                ArticleAction.PUBLISH, other, personalBlog, article, null
+        ).failure()).isEqualTo(ArticlePermissionFailure.FORBIDDEN);
+        assertThat(collaboratorService.decideCommunity(
+                ArticleAction.DELETE, other, personalBlog, article, null
+        ).failure()).isEqualTo(ArticlePermissionFailure.FORBIDDEN);
+    }
+
+    @Test
     void pendingReviewEditAndDeleteAreStateConflicts() {
         article.setPublishStatus("PENDING_REVIEW");
 
@@ -363,6 +383,7 @@ class ArticlePermissionServiceTest {
                 userMapper,
                 communityAuth,
                 roles,
+                List.of(),
                 followers,
                 platformAuthority
         );
