@@ -32,6 +32,7 @@ $absoluteWorktree = (Resolve-Path -LiteralPath $Worktree).Path
 $absoluteTask = (Resolve-Path -LiteralPath $TaskFile).Path
 $absoluteResult = [System.IO.Path]::GetFullPath($ResultFile)
 $resultParent = Split-Path -Parent $absoluteResult
+$taskContents = Get-Content -LiteralPath $absoluteTask -Raw
 
 if ($resultParent) {
     New-Item -ItemType Directory -Path $resultParent -Force | Out-Null
@@ -40,8 +41,12 @@ if ($resultParent) {
 $prompt = @"
 Read CLAUDE.md in the project root first.
 
-Then read the task file:
-@$absoluteTask
+The task requirements are included below. Treat them as the highest-priority
+task scope and do not read or modify the orchestrator worktree.
+
+--- BEGIN TASK REQUIREMENTS ---
+$taskContents
+--- END TASK REQUIREMENTS ---
 
 Implement only the task-file requirements. When finished:
 1. Inspect git diff.
