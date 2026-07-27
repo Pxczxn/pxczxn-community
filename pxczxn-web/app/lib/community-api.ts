@@ -533,6 +533,7 @@ export interface TeamInvitation {
 }
 
 export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: number; followerCount: number; }
+export interface TeamSubmission { id: string; sourceArticleId: string; sourceArticleTitle: string; fixedSourceVersionId: string; targetTeamId: string; submittedByUserId: string; supersedesSubmissionId: string | null; status: string; teamReviewerUserId: string | null; teamReviewComment: string | null; teamReviewedAt: string | null; platformReviewerAdminId: string | null; platformReviewComment: string | null; platformReviewedAt: string | null; publishedTeamArticleId: string | null; lockVersion: number; createdAt: string; updatedAt: string; }
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
 export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
@@ -1022,6 +1023,10 @@ export const communityApi = {
     });
   },
   teams() { return communityRequest<TeamSummary[]>("/api/v1/teams"); },
+  myTeamSubmissions() { return communityRequest<TeamSubmission[]>("/api/v1/team-submissions/me"); },
+  createTeamSubmission(input: { sourceArticleId: string; targetTeamId: string; supersedesSubmissionId?: string | null; idempotencyKey?: string }) { const idempotencyKey = input.idempotencyKey || `team-submission-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; return communityRequest<TeamSubmission>("/api/v1/team-submissions", { method: "POST", body: JSON.stringify({ ...input, idempotencyKey }) }); },
+  teamSubmissions(teamId: string) { return communityRequest<TeamSubmission[]>(`/api/v1/team-submissions/teams/${encodeURIComponent(teamId)}`); },
+  decideTeamSubmission(submissionId: string, action: "approve" | "revision" | "reject", expectedLockVersion: number, comment?: string) { return communityRequest<TeamSubmission>(`/api/v1/team-submissions/${encodeURIComponent(submissionId)}/team/${action}`, { method: "POST", body: JSON.stringify({ expectedLockVersion, comment }) }); },
   team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`); },
   teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
 };

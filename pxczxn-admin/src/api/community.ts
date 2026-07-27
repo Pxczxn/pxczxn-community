@@ -75,6 +75,27 @@ export interface TeamApplicationApprovalResponse {
   teamId: string
 }
 
+export interface TeamSubmission {
+  id: string
+  sourceArticleId: string
+  sourceArticleTitle: string
+  fixedSourceVersionId: string
+  targetTeamId: string
+  submittedByUserId: string
+  supersedesSubmissionId?: string
+  status: string
+  teamReviewerUserId?: string
+  teamReviewComment?: string
+  teamReviewedAt?: string
+  platformReviewerAdminId?: string
+  platformReviewComment?: string
+  platformReviewedAt?: string
+  publishedTeamArticleId?: string
+  lockVersion: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface CommunityArticle {
   id: string
   blogId: string
@@ -458,5 +479,7 @@ export const communityApi = {
       url: `/admin-api/community/team-applications/${applicationId}/reject`,
       method: 'post',
       data
-    })
+    }),
+  teamSubmissions: () => request<TeamSubmission[]>({ ...adminConfig, url: '/admin-api/community/team-submissions', method: 'get' }),
+  decideTeamSubmission: (submissionId: string, action: 'approve' | 'revision' | 'reject', expectedLockVersion: number, comment?: string) => request<TeamSubmission>({ ...adminConfig, url: `/admin-api/community/team-submissions/${submissionId}/${action}`, method: 'post', data: { expectedLockVersion, comment } })
 }

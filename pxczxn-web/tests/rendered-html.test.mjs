@@ -60,6 +60,7 @@ test("server-renders formal community routes without fixed prototype content", a
     ["/settings", "主题设置"],
     ["/editor/new", "创作中心"],
   ];
+  routes[5][1] = "外部投稿";
 
   for (const [path, marker] of routes) {
     const response = await render(path);
