@@ -67,6 +67,19 @@ export interface TeamApplication {
   updatedAt: string
 }
 
+export interface CommunityReport {
+  id: string
+  targetType: string
+  targetId: string
+  reasonCode: string
+  description?: string
+  status: 'PENDING' | 'ASSIGNED' | 'RESOLVED' | 'DISMISSED'
+  assigneeAdminId?: string
+  resolutionCode?: string
+  resolutionNote?: string
+  lockVersion: number
+}
+
 export interface TeamApplicationReviewRequest {
   reviewComment?: string
 }
@@ -507,4 +520,7 @@ export const communityApi = {
   teams: (params: Record<string, unknown>) => request<PageResult<CommunityTeam>>({ ...adminConfig, url: '/admin-api/community/teams', method: 'get', params }),
   team: (teamId: string) => request<CommunityTeam>({ ...adminConfig, url: `/admin-api/community/teams/${teamId}`, method: 'get' }),
   collaborations: (params: Record<string, unknown>) => request<PageResult<CommunityCollaboration>>({ ...adminConfig, url: '/admin-api/community/collaborations', method: 'get', params })
+  ,reports: (status?: 'PENDING' | 'ASSIGNED') => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports', method: 'get', params: status ? { status } : undefined })
+  ,claimReport: (reportId: string, expectedLockVersion: number) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/claim`, method: 'post', data: { expectedLockVersion } })
+  ,resolveReport: (reportId: string, expectedLockVersion: number, resolutionCode: string, resolutionNote?: string, dismiss = false) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/${dismiss ? 'dismiss' : 'resolve'}`, method: 'post', data: { expectedLockVersion, resolutionCode, resolutionNote } })
 }
