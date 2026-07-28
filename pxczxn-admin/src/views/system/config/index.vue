@@ -235,52 +235,12 @@
                   </n-card>
                 </div>
 
-                <!-- 右侧：测试与记录 -->
+                <!-- 右侧：能力状态 -->
                 <div class="sms-config-right">
-                  <n-card title="测试发送" size="small">
-                    <n-form label-placement="left" label-width="80">
-                      <n-form-item label="手机号">
-                        <n-input-group>
-                          <n-input v-model:value="testSmsPhone" placeholder="请输入手机号" />
-                          <n-button type="primary" :loading="smsTesting" @click="handleTestSms">发送</n-button>
-                        </n-input-group>
-                      </n-form-item>
-                    </n-form>
-                    <n-alert type="info" :bordered="false" style="margin-top: 8px">
-                      将发送一条随机验证码到该手机，用于测试短信配置是否正确
+                  <n-card title="能力状态" size="small">
+                    <n-alert type="info" :bordered="false">
+                      当前社区版本未启用短信服务。短信发送与发送记录接口已在服务端关闭，因此此处不提供测试或查询操作。
                     </n-alert>
-                  </n-card>
-
-                  <n-card size="small" style="margin-top: 16px">
-                    <template #header>
-                      <div style="display: flex; justify-content: space-between; align-items: center">
-                        <span>发送记录</span>
-                        <n-button text type="primary" size="small" @click="handleShowAllSmsLogs">查看全部</n-button>
-                      </div>
-                    </template>
-                    <n-table :bordered="true" :single-line="false" size="small" v-if="recentSmsLogs.length > 0">
-                      <thead>
-                        <tr>
-                          <th>手机号</th>
-                          <th>验证码</th>
-                          <th>状态</th>
-                          <th>时间</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="log in recentSmsLogs" :key="log.id">
-                          <td>{{ log.phone }}</td>
-                          <td>{{ log.content }}</td>
-                          <td>
-                            <n-tag :type="log.status === 1 ? 'success' : log.status === 2 ? 'error' : 'warning'" size="small">
-                              {{ log.status === 1 ? '成功' : log.status === 2 ? '失败' : '发送中' }}
-                            </n-tag>
-                          </td>
-                          <td>{{ log.createTime }}</td>
-                        </tr>
-                      </tbody>
-                    </n-table>
-                    <n-empty v-else description="暂无发送记录" size="small" />
                   </n-card>
                 </div>
               </div>
@@ -884,48 +844,14 @@
       </n-tabs>
     </n-card>
 
-    <!-- 短信记录模态框 -->
-    <n-modal v-model:show="showSmsLogsModal" preset="card" title="短信发送记录" style="width: 800px">
-      <n-space vertical>
-        <n-space>
-          <n-input v-model:value="smsLogsSearch.phone" placeholder="手机号" style="width: 180px" @keyup.enter="handleSearchSmsLogs" />
-          <n-select
-            v-model:value="smsLogsSearch.status"
-            placeholder="发送状态"
-            :options="[
-              { label: '全部', value: null },
-              { label: '成功', value: 1 },
-              { label: '失败', value: 2 },
-              { label: '发送中', value: 0 }
-            ]"
-            style="width: 120px"
-          />
-          <n-button type="primary" @click="handleSearchSmsLogs">搜索</n-button>
-          <n-button @click="handleResetSmsLogsSearch">重置</n-button>
-        </n-space>
-        <n-data-table
-          :columns="smsLogsColumns"
-          :data="smsLogsData"
-          :loading="smsLogsLoading"
-          :bordered="true"
-          size="small"
-        />
-        <n-pagination
-          v-model:page="smsLogsPagination.page"
-          :page-count="smsLogsPagination.pageCount"
-          :item-count="smsLogsPagination.itemCount"
-          @update:page="handleSmsLogsPageChange"
-        />
-      </n-space>
-    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, h } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useMessage, type UploadCustomRequestOptions } from 'naive-ui'
 import { ImageOutline, CloseOutline, AddOutline, TrashOutline } from '@vicons/ionicons5'
-import { configGroupApi, type SysConfigGroup, type SmsLog } from '@/api/org'
+import { configGroupApi, type SysConfigGroup } from '@/api/org'
 import { fileApi } from '@/api/system'
 import { wechatApi } from '@/api/wechat'
 import { useSiteStore } from '@/stores/site'
@@ -1076,47 +1002,6 @@ function formatDuration(seconds: number): string {
 const emailTesting = ref(false)
 const testEmailAddress = ref('')
 
-// 短信测试相关
-const smsTesting = ref(false)
-const testSmsPhone = ref('')
-const recentSmsLogs = ref<SmsLog[]>([])
-const showSmsLogsModal = ref(false)
-const smsLogsLoading = ref(false)
-const smsLogsData = ref<SmsLog[]>([])
-const smsLogsPagination = reactive({
-  page: 1,
-  pageSize: 10,
-  itemCount: 0,
-  pageCount: 0
-})
-const smsLogsSearch = reactive({
-  phone: '',
-  status: null as number | null
-})
-
-// 短信记录表格列
-const smsLogsColumns = [
-  { title: '手机号', key: 'phone', width: 130 },
-  { title: '验证码', key: 'content', width: 100 },
-  { title: '服务商', key: 'provider', width: 80 },
-  {
-    title: '状态',
-    key: 'status',
-    width: 80,
-    render: (row: SmsLog) => {
-      const statusMap: Record<number, { text: string; type: 'success' | 'error' | 'warning' }> = {
-        1: { text: '成功', type: 'success' },
-        2: { text: '失败', type: 'error' },
-        0: { text: '发送中', type: 'warning' }
-      }
-      const status = statusMap[row.status] || { text: '未知', type: 'warning' }
-      return h('span', { class: `status-${status.type}` }, status.text)
-    }
-  },
-  { title: '结果信息', key: 'resultMsg', ellipsis: { tooltip: true } },
-  { title: '发送时间', key: 'createTime', width: 170 }
-]
-
 // 密钥生成相关
 const generatingKeys = ref(false)
 
@@ -1165,88 +1050,6 @@ async function handleTestEmail() {
   } finally {
     emailTesting.value = false
   }
-}
-
-// 测试发送短信
-async function handleTestSms() {
-  if (!testSmsPhone.value) {
-    message.warning('请输入手机号')
-    return
-  }
-
-  const phoneRegex = /^1[3-9]\d{9}$/
-  if (!phoneRegex.test(testSmsPhone.value)) {
-    message.warning('请输入正确的手机号格式')
-    return
-  }
-
-  smsTesting.value = true
-  try {
-    await configGroupApi.testSms(testSmsPhone.value)
-    message.success('测试短信发送成功')
-    // 刷新最近记录
-    await loadRecentSmsLogs()
-  } catch (error: any) {
-    message.error(error.message || '发送测试短信失败')
-  } finally {
-    smsTesting.value = false
-  }
-}
-
-// 加载最近5条短信记录
-async function loadRecentSmsLogs() {
-  try {
-    recentSmsLogs.value = await configGroupApi.getRecentSmsLogs(5)
-  } catch (error: any) {
-    console.error('加载短信记录失败', error)
-  }
-}
-
-// 查看全部短信记录
-function handleShowAllSmsLogs() {
-  showSmsLogsModal.value = true
-  smsLogsPagination.page = 1
-  loadSmsLogs()
-}
-
-// 加载短信记录分页数据
-async function loadSmsLogs() {
-  smsLogsLoading.value = true
-  try {
-    const res = await configGroupApi.getSmsLogs({
-      page: smsLogsPagination.page,
-      size: smsLogsPagination.pageSize,
-      phone: smsLogsSearch.phone || undefined,
-      status: smsLogsSearch.status ?? undefined
-    })
-    smsLogsData.value = res.records
-    smsLogsPagination.itemCount = res.total
-    smsLogsPagination.pageCount = res.pages
-  } catch (error: any) {
-    message.error(error.message || '加载短信记录失败')
-  } finally {
-    smsLogsLoading.value = false
-  }
-}
-
-// 短信记录分页变化
-function handleSmsLogsPageChange(page: number) {
-  smsLogsPagination.page = page
-  loadSmsLogs()
-}
-
-// 短信记录搜索
-function handleSearchSmsLogs() {
-  smsLogsPagination.page = 1
-  loadSmsLogs()
-}
-
-// 重置短信记录搜索
-function handleResetSmsLogsSearch() {
-  smsLogsSearch.phone = ''
-  smsLogsSearch.status = null
-  smsLogsPagination.page = 1
-  loadSmsLogs()
 }
 
 // 公众号菜单操作相关
@@ -1669,7 +1472,6 @@ async function handleLogoUpload(options: UploadCustomRequestOptions) {
 
 onMounted(() => {
   loadGroups()
-  loadRecentSmsLogs()
 })
 
 // 记录是否已加载过菜单

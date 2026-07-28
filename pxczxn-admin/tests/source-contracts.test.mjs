@@ -27,6 +27,18 @@ test('community governance routes and APIs remain registered', async () => {
   }
 })
 
+test('disabled SMS capability does not expose admin calls or automatic polling', async () => {
+  const [configApi, configPage] = await Promise.all([
+    source('src/api/org.ts'),
+    source('src/views/system/config/index.vue')
+  ])
+
+  assert.doesNotMatch(configApi, /\/sys\/config-group\/test-sms/)
+  assert.doesNotMatch(configApi, /\/sys\/config-group\/sms-logs/)
+  assert.doesNotMatch(configPage, /loadRecentSmsLogs|handleTestSms|handleShowAllSmsLogs/)
+  assert.match(configPage, /当前社区版本未启用短信服务/)
+})
+
 test('team governance and collaboration queries use real admin APIs', async () => {
   const [router, api, teams] = await Promise.all([
     source('src/router/index.ts'),
