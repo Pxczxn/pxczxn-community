@@ -46,7 +46,11 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
         .catch(() => [] as PublicArticleSummary[])
       : Promise.resolve([] as PublicArticleSummary[]);
     Promise.all([
-      communityApi.discoverArticles(1, 20),
+      communityApi.discoverRankedArticles(
+        tab === "recommended" ? "QUALITY" : tab === "popular" ? "LIKES" : "LATEST",
+        1,
+        20,
+      ),
       articlesOnly ? Promise.resolve({ records: [] as Moment[] }) : communityApi.moments(1, 20),
       communityApi.tags(),
       followingRequest,
@@ -63,7 +67,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [articlesOnly]);
+  }, [articlesOnly, tab]);
 
   const feed = useMemo(() => {
     const values: FeedItem[] = [
@@ -73,15 +77,15 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
         occurredAt: value.publishedAt,
         heat: value.likeCount + value.favoriteCount * 2 + value.commentCount * 3,
       })),
-      ...(tab === "following" ? [] : moments).map((value) => ({
+      ...(tab === "latest" ? moments : []).map((value) => ({
         kind: "moment" as const,
         value,
         occurredAt: value.createdAt,
         heat: value.likeCount + value.favoriteCount * 2 + value.commentCount * 3 + value.repostCount * 2,
       })),
     ];
-    if (tab === "popular") return values.sort((left, right) => right.heat - left.heat || +new Date(right.occurredAt) - +new Date(left.occurredAt));
-    return values.sort((left, right) => +new Date(right.occurredAt) - +new Date(left.occurredAt));
+    if (tab === "following") return values.sort((left, right) => +new Date(right.occurredAt) - +new Date(left.occurredAt));
+    return values;
   }, [articles, followingArticles, moments, tab]);
 
   const creators = useMemo(() => {

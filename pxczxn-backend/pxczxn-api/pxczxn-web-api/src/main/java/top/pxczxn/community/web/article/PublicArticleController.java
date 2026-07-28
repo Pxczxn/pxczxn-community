@@ -38,6 +38,15 @@ public class PublicArticleController {
         ));
     }
 
+    @GetMapping("/discover/articles")
+    public Result<PublicDiscoveryPageResponse> rankedDiscover(
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize
+    ) {
+        return Result.ok(PublicDiscoveryPageResponse.from(articleService.discoverRanked(sort, new PublicArticleQuery(null, pageNum, pageSize))));
+    }
+
     @GetMapping("/blogs/{blogSlug}/articles")
     public Result<PublicArticlePageResponse> page(
             @PathVariable String blogSlug,

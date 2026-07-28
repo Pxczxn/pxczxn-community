@@ -265,6 +265,21 @@ public class PublicArticleService {
     }
 
     @Transactional(readOnly = true)
+    public PublicDiscoveryPageView discoverRanked(
+            String rawSort,
+            PublicArticleQuery rawQuery
+    ) {
+        PublicArticleQuery query = normalizeQuery(rawQuery);
+        PublicDiscoverySort sort = PublicDiscoverySort.parse(rawSort);
+        IPage<Article> result = articleMapper.selectDiscoverRankedPage(
+                new Page<>(query.pageNum(), query.pageSize()), sort.name());
+        List<PublicArticleSummaryView> records = (result.getRecords() == null ? List.<Article>of() : result.getRecords())
+                .stream().filter(article -> !isBlocked(article)).map(Article::getId).map(this::detail)
+                .map(detail -> new PublicArticleSummaryView(detail.articleId(), detail.title(), detail.slug(), detail.summary(), detail.coverFileId(), detail.contentMode(), detail.author(), detail.category(), detail.tags(), detail.publishedAt(), detail.updatedAt(), detail.wordCount(), detail.readingTimeMinutes(), detail.viewCount(), detail.likeCount(), detail.favoriteCount(), detail.commentCount(), detail.canonicalPath())).toList();
+        return new PublicDiscoveryPageView(new PublicArticlePageView(records, result.getTotal(), query.pageNum(), query.pageSize()), sort);
+    }
+
+    @Transactional(readOnly = true)
     public List<PublicArticleCategoryView> categories(String blogSlug) {
         BlogAccess access = requirePublicBlog(blogSlug);
         return categoryMapper.selectList(

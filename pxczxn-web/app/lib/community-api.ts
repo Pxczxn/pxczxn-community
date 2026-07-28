@@ -148,6 +148,9 @@ export interface PublicArticlePage {
   pageSize: number;
 }
 
+export type DiscoverySort = "LATEST" | "VIEWS" | "LIKES" | "FAVORITES" | "COMMENTS" | "QUALITY" | "RISK";
+export interface PublicDiscoveryPage extends PublicArticlePage { sort: DiscoverySort; sortExplanation: string; }
+
 export type UnifiedSearchType = "ALL" | "ARTICLE" | "MOMENT" | "BLOG" | "SERIES" | "TAG" | "USER";
 
 export interface UnifiedSearchResult {
@@ -793,6 +796,9 @@ export const communityApi = {
       {},
       false,
     );
+  },
+  discoverRankedArticles(sort: DiscoverySort = "LATEST", pageNum = 1, pageSize = 20) {
+    return communityRequest<PublicDiscoveryPage>(`/api/v1/public/discover/articles?sort=${sort}&pageNum=${pageNum}&pageSize=${pageSize}`, {}, false);
   },
   search(keyword: string, type: UnifiedSearchType = "ALL", pageNum = 1, pageSize = 20) {
     const query = new URLSearchParams({ keyword, type, pageNum: String(pageNum), pageSize: String(pageSize) });
