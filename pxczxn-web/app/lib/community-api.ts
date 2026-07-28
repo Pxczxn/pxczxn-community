@@ -380,6 +380,9 @@ export interface SocialProfilePage {
   pageSize: number;
 }
 
+export interface FollowingFeedItem { itemType: "ARTICLE" | "MOMENT" | "SERIES" | "TAG_ARTICLE"; targetId: string; title: string; excerpt: string | null; canonicalPath: string; authorName: string | null; blogName: string | null; tagName: string | null; occurredAt: string; }
+export interface FollowingFeedPage { records: FollowingFeedItem[]; total: number; pageNum: number; pageSize: number; }
+
 export interface MomentAuthor {
   userId: string;
   username: string;
@@ -989,6 +992,9 @@ export const communityApi = {
     return communityRequest<SocialProfilePage>(
       `/api/v1/social/me/following?pageNum=${pageNum}&pageSize=${pageSize}`,
     );
+  },
+  followingFeed(pageNum = 1, pageSize = 20) {
+    return communityRequest<FollowingFeedPage>(`/api/v1/social/me/following-feed?pageNum=${pageNum}&pageSize=${pageSize}`);
   },
   myFollowers(pageNum = 1, pageSize = 20) {
     return communityRequest<SocialProfilePage>(

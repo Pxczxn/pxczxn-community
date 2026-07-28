@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.social.application.BlogFollowRelationshipView;
 import top.pxczxn.community.social.application.BlogFollowService;
+import top.pxczxn.community.social.application.FollowingFeedService;
 import top.pxczxn.community.social.application.UpdateBlogFollowCommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,7 +20,7 @@ class BlogFollowControllerTest {
     @BeforeEach
     void setUp() {
         service = mock(BlogFollowService.class);
-        controller = new BlogFollowController(service);
+        controller = new BlogFollowController(service, mock(FollowingFeedService.class));
     }
 
     @Test

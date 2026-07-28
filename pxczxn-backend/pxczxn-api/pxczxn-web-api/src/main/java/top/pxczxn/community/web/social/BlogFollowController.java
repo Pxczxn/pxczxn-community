@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.social.application.BlogFollowService;
+import top.pxczxn.community.social.application.FollowingFeedService;
 import top.pxczxn.community.social.application.UpdateBlogFollowCommand;
 
 @RestController
@@ -20,6 +21,7 @@ import top.pxczxn.community.social.application.UpdateBlogFollowCommand;
 public class BlogFollowController {
 
     private final BlogFollowService service;
+    private final FollowingFeedService followingFeedService;
 
     @PostMapping("/blogs/{blogId}/follow")
     public Result<BlogFollowRelationshipResponse> follow(
@@ -72,6 +74,14 @@ public class BlogFollowController {
         return Result.ok(SocialProfilePageResponse.from(
                 service.myFollowing(pageNum, pageSize)
         ));
+    }
+
+    @GetMapping("/social/me/following-feed")
+    public Result<FollowingFeedResponse> followingFeed(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize
+    ) {
+        return Result.ok(FollowingFeedResponse.from(followingFeedService.page(pageNum, pageSize)));
     }
 
     @GetMapping("/social/me/followers")
