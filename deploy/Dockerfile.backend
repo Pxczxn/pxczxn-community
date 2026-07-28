@@ -1,7 +1,8 @@
 FROM node:22.13-bookworm-slim AS admin-build
 WORKDIR /workspace
 COPY pxczxn-admin/package.json pxczxn-admin/package-lock.json ./pxczxn-admin/
-RUN npm --prefix pxczxn-admin ci --no-audit --no-fund
+ARG NPM_REGISTRY=https://registry.npmjs.org
+RUN npm --prefix pxczxn-admin ci --no-audit --no-fund --registry=${NPM_REGISTRY}
 COPY pxczxn-admin ./pxczxn-admin
 COPY pxczxn-backend/pxczxn-starter/src/main/resources ./pxczxn-backend/pxczxn-starter/src/main/resources
 RUN npm --prefix pxczxn-admin run build
