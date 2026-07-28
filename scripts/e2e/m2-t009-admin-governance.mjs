@@ -441,7 +441,7 @@ try {
        risk_level, hit_action, status, description, sort_order)
     VALUES
       (${ruleId}, ${sqlString(reviewKeyword)},
-       ${sqlString(reviewKeyword)}, 'REVIEW', 'ARTICLE',
+       ${sqlString(reviewKeyword)}, 'REVIEW', 'COMMENT,MOMENT',
        'HIGH', 'MANUAL_REVIEW', 'ACTIVE',
        ${sqlString(`M2-T009 E2E ${stamp}`)}, 1);
   `)
@@ -530,8 +530,8 @@ try {
       + `?keyword=${reviewKeyword}&pageNum=1&pageSize=50`
     )
   ).data
-  assertEqual(commentPage.total, 2, 'pending comment admin total')
-  assertEqual(momentPage.total, 1, 'pending moment admin total')
+  assertEqual(Number(commentPage.total), 2, 'pending comment admin total')
+  assertEqual(Number(momentPage.total), 1, 'pending moment admin total')
 
   const pendingCommentRow = commentPage.list.find(
     (item) => item.id === String(pendingComment.data.commentId)

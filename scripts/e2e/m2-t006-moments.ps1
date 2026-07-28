@@ -390,6 +390,17 @@ SET publish_restricted_until = NULL
 WHERE id = $userAId;
 "@
 
+    # The shape, visibility, and moderation checks above intentionally create
+    # several moments. Start the independent moderation scenario with a fresh
+    # mutable rate window so it verifies policy behavior rather than tripping
+    # the preceding scenario's publish-rate threshold. Audit events remain
+    # append-only and are not deleted.
+    $null = Invoke-MySql -Sql @"
+DELETE FROM community_abuse_window
+WHERE actor_key IN ('USER:$userAId', 'USER:$userBId')
+  AND action_type = 'MOMENT_PUBLISH';
+"@
+
     $null = Invoke-MySql -Sql @"
 INSERT INTO content_keyword_rule
     (id, keyword, normalized_keyword, severity, content_scopes, risk_level, hit_action, status, description, sort_order)
@@ -642,6 +653,8 @@ SET personal_blog_id = NULL
 WHERE id IN (@user_a, @user_b);
 DELETE FROM blog
 WHERE id IN (@blog_a, @blog_b);
+DELETE FROM community_abuse_window
+WHERE actor_key IN (CONCAT('USER:', @user_a), CONCAT('USER:', @user_b));
 DELETE FROM community_user
 WHERE id IN (@user_a, @user_b);
 "@

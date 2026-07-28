@@ -5,7 +5,9 @@ param(
     [string]$MySqlPath = "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe",
     [string]$MavenPath = "D:\Coding\software\environment\apache-maven-3.9.9\bin\mvn.cmd",
     [string]$BaseUrl = "http://127.0.0.1:8849",
-    [string]$AdminPassword = "admin123"
+    [string]$AdminPassword = "admin123",
+    [int]$ServerPort = 8849,
+    [switch]$ResetE2EAbuseWindows
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,6 +27,7 @@ $oldBaseUrl = $env:PXCZXN_BASE_URL
 $oldDbName = $env:PXCZXN_DB_NAME
 $oldMySqlPath = $env:PXCZXN_MYSQL_PATH
 $oldAdminPassword = $env:PXCZXN_ADMIN_PASSWORD
+$oldServerPort = $env:PXCZXN_SERVER_PORT
 
 function Invoke-Step {
     param(
@@ -78,6 +81,22 @@ function Test-BackendReady {
     }
 }
 
+function Reset-E2EAbuseWindows {
+    if (-not $ResetE2EAbuseWindows) {
+        return
+    }
+    if ($Database -eq "pxczxn_community") {
+        throw "Refusing to reset abuse windows in the primary database. Use an isolated verification database."
+    }
+
+    Invoke-MySqlScalar @"
+DELETE FROM community_abuse_window
+WHERE actor_key = 'IP:127.0.0.1'
+  AND action_type IN ('REGISTER', 'LOGIN');
+"@ | Out-Null
+    Write-Host "[PASS] Reset local E2E register/login abuse windows"
+}
+
 try {
     if (-not (Test-Path -LiteralPath $MavenPath -PathType Leaf)) {
         throw "Maven executable not found: $MavenPath"
@@ -123,6 +142,7 @@ try {
     $env:PXCZXN_DB_NAME = $Database
     $env:PXCZXN_MYSQL_PATH = $MySqlPath
     $env:PXCZXN_ADMIN_PASSWORD = $AdminPassword
+    $env:PXCZXN_SERVER_PORT = $ServerPort
 
     $captchaOriginal = Invoke-MySqlScalar @"
 SELECT JSON_UNQUOTE(JSON_EXTRACT(config_value, '$.captchaEnabled'))
@@ -185,10 +205,12 @@ WHERE group_code = 'login';
     }
 
     Invoke-Step "Instant chat E2E" $root {
+        Reset-E2EAbuseWindows
         & node.exe (Join-Path $PSScriptRoot "e2e\m2-t010-chat.mjs")
     }
 
     Invoke-Step "Comments E2E" $root {
+        Reset-E2EAbuseWindows
         & powershell.exe `
             -NoProfile `
             -ExecutionPolicy Bypass `
@@ -200,6 +222,7 @@ WHERE group_code = 'login';
             -MySqlPath $MySqlPath
     }
     Invoke-Step "Moments E2E" $root {
+        Reset-E2EAbuseWindows
         & powershell.exe `
             -NoProfile `
             -ExecutionPolicy Bypass `
@@ -211,6 +234,7 @@ WHERE group_code = 'login';
             -MySqlPath $MySqlPath
     }
     Invoke-Step "Notifications E2E" $root {
+        Reset-E2EAbuseWindows
         & powershell.exe `
             -NoProfile `
             -ExecutionPolicy Bypass `
@@ -223,6 +247,7 @@ WHERE group_code = 'login';
     }
 
     Invoke-Step "Governance E2E" $root {
+        Reset-E2EAbuseWindows
         & node.exe (Join-Path $PSScriptRoot "e2e\m2-t009-admin-governance.mjs")
     }
 
@@ -258,4 +283,5 @@ WHERE group_code = 'login';
     $env:PXCZXN_DB_NAME = $oldDbName
     $env:PXCZXN_MYSQL_PATH = $oldMySqlPath
     $env:PXCZXN_ADMIN_PASSWORD = $oldAdminPassword
+    $env:PXCZXN_SERVER_PORT = $oldServerPort
 }
