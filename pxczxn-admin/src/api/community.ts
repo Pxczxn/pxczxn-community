@@ -12,6 +12,8 @@ export interface CommunityDailyMetric {
   userCount: number
   articleCount: number
 }
+export interface CommunityGovernanceDailyMetric { date: string; reportCount: number; sanctionCount: number; abuseRejectCount: number }
+export interface CommunityGovernanceAudit { source: string; eventType: string; actorType: string; actorId?: string; referenceId?: string; occurredAt: string }
 
 export interface CommunityDashboard {
   userCount: number
@@ -23,6 +25,13 @@ export interface CommunityDashboard {
   publishFailedCount: number
   pendingReviewCount: number
   dailyMetrics: CommunityDailyMetric[]
+  pendingReportCount: number
+  pendingAppealCount: number
+  activeSanctionCount: number
+  rejectedAbuseCount: number
+  averageReportResolutionMinutes: number
+  governanceDailyMetrics: CommunityGovernanceDailyMetric[]
+  recentGovernanceAudits: CommunityGovernanceAudit[]
 }
 
 export interface CommunityUser {

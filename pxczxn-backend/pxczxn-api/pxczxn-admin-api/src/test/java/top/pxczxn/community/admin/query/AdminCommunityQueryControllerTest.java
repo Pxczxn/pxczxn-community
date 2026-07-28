@@ -36,13 +36,16 @@ class AdminCommunityQueryControllerTest {
         var today = LocalDate.now();
         when(service.dashboard()).thenReturn(new AdminCommunityDashboardView(
                 20, 18, 4, 32, 16, 2, 1, 5,
-                List.of(new AdminCommunityDailyMetricView(today, 3, 7))
+                List.of(new AdminCommunityDailyMetricView(today, 3, 7)),
+                4, 2, 3, 6, 45, List.of(), List.of()
         ));
 
         var result = controller.dashboard();
 
         assertThat(result.getCode()).isEqualTo(200);
         assertThat(result.getData().activeUserCount()).isEqualTo(18);
+        assertThat(result.getData().pendingReportCount()).isEqualTo(4);
+        assertThat(result.getData().averageReportResolutionMinutes()).isEqualTo(45);
         assertThat(result.getData().dailyMetrics()).singleElement()
                 .satisfies(metric -> {
                     assertThat(metric.date()).isEqualTo(today);

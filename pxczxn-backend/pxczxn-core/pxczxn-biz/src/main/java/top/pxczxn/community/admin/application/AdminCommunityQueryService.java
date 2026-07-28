@@ -25,10 +25,27 @@ import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.model.CommunityUserLoginAccount;
 import top.pxczxn.community.user.persistence.CommunityUserLoginAccountMapper;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
+import top.pxczxn.community.report.model.CommunityReport;
+import top.pxczxn.community.report.model.CommunityReportEvent;
+import top.pxczxn.community.report.persistence.CommunityReportMapper;
+import top.pxczxn.community.report.persistence.CommunityReportEventMapper;
+import top.pxczxn.community.appeal.model.CommunityAppeal;
+import top.pxczxn.community.appeal.model.CommunityAppealEvent;
+import top.pxczxn.community.appeal.persistence.CommunityAppealMapper;
+import top.pxczxn.community.appeal.persistence.CommunityAppealEventMapper;
+import top.pxczxn.community.sanction.model.CommunitySanction;
+import top.pxczxn.community.sanction.model.CommunitySanctionEvent;
+import top.pxczxn.community.sanction.persistence.CommunitySanctionMapper;
+import top.pxczxn.community.sanction.persistence.CommunitySanctionEventMapper;
+import top.pxczxn.community.abuse.model.CommunityAbuseEvent;
+import top.pxczxn.community.abuse.persistence.CommunityAbuseEventMapper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +64,13 @@ public class AdminCommunityQueryService {
     private final ArticleTagMapper articleTagMapper;
     private final PlatformTagMapper tagMapper;
     private final ContentReviewTaskMapper reviewTaskMapper;
+    private final CommunityReportMapper reportMapper;
+    private final CommunityReportEventMapper reportEventMapper;
+    private final CommunityAppealMapper appealMapper;
+    private final CommunityAppealEventMapper appealEventMapper;
+    private final CommunitySanctionMapper sanctionMapper;
+    private final CommunitySanctionEventMapper sanctionEventMapper;
+    private final CommunityAbuseEventMapper abuseEventMapper;
 
     @Transactional(readOnly = true)
     public AdminCommunityDashboardView dashboard() {
@@ -67,6 +91,16 @@ public class AdminCommunityQueryService {
                 1
         );
 
+        LocalDateTime governanceFrom = from;
+        List<CommunityReport> recentReports = reportMapper.selectList(
+                Wrappers.<CommunityReport>lambdaQuery().ge(CommunityReport::getCreatedAt, governanceFrom)
+        );
+        List<CommunitySanction> recentSanctions = sanctionMapper.selectList(
+                Wrappers.<CommunitySanction>lambdaQuery().ge(CommunitySanction::getCreatedAt, governanceFrom)
+        );
+        List<CommunityAbuseEvent> recentAbuseEvents = abuseEventMapper.selectList(
+                Wrappers.<CommunityAbuseEvent>lambdaQuery().ge(CommunityAbuseEvent::getOccurredAt, governanceFrom)
+        );
         return new AdminCommunityDashboardView(
                 userMapper.selectCount(null),
                 userMapper.selectCount(
@@ -127,8 +161,43 @@ public class AdminCommunityQueryService {
                                 entry.getValue()[0],
                                 entry.getValue()[1]
                         ))
-                        .toList()
+                        .toList(),
+                reportMapper.selectCount(Wrappers.<CommunityReport>lambdaQuery().in(CommunityReport::getStatus, "PENDING", "ASSIGNED")),
+                appealMapper.selectCount(Wrappers.<CommunityAppeal>lambdaQuery().eq(CommunityAppeal::getStatus, "PENDING")),
+                sanctionMapper.selectCount(Wrappers.<CommunitySanction>lambdaQuery().eq(CommunitySanction::getStatus, "ACTIVE")),
+                recentAbuseEvents.stream().filter(event -> "REJECT".equals(event.getDecision())).count(),
+                averageResolutionMinutes(recentReports),
+                governanceMetrics(today, recentReports, recentSanctions, recentAbuseEvents),
+                recentGovernanceAudits()
         );
+    }
+
+    private List<AdminCommunityGovernanceDailyMetricView> governanceMetrics(LocalDate today, List<CommunityReport> reports, List<CommunitySanction> sanctions, List<CommunityAbuseEvent> abuseEvents) {
+        Map<LocalDate, long[]> values = new LinkedHashMap<>();
+        for (int offset = 6; offset >= 0; offset--) values.put(today.minusDays(offset), new long[3]);
+        reports.forEach(value -> increment(values, value.getCreatedAt(), 0));
+        sanctions.forEach(value -> increment(values, value.getCreatedAt(), 1));
+        abuseEvents.stream().filter(value -> "REJECT".equals(value.getDecision())).forEach(value -> increment(values, value.getOccurredAt(), 2));
+        return values.entrySet().stream().map(entry -> new AdminCommunityGovernanceDailyMetricView(entry.getKey(), entry.getValue()[0], entry.getValue()[1], entry.getValue()[2])).toList();
+    }
+
+    private List<AdminCommunityGovernanceAuditView> recentGovernanceAudits() {
+        List<AdminCommunityGovernanceAuditView> results = new ArrayList<>();
+        reportEventMapper.selectList(Wrappers.<CommunityReportEvent>lambdaQuery().orderByDesc(CommunityReportEvent::getOccurredAt).last("LIMIT 10")).forEach(event -> results.add(new AdminCommunityGovernanceAuditView("REPORT", event.getEventType(), event.getActorType(), event.getActorId(), event.getReportId(), event.getOccurredAt())));
+        appealEventMapper.selectList(Wrappers.<CommunityAppealEvent>lambdaQuery().orderByDesc(CommunityAppealEvent::getOccurredAt).last("LIMIT 10")).forEach(event -> results.add(new AdminCommunityGovernanceAuditView("APPEAL", event.getEventType(), event.getActorType(), event.getActorId(), event.getAppealId(), event.getOccurredAt())));
+        sanctionEventMapper.selectList(Wrappers.<CommunitySanctionEvent>lambdaQuery().orderByDesc(CommunitySanctionEvent::getOccurredAt).last("LIMIT 10")).forEach(event -> results.add(new AdminCommunityGovernanceAuditView("SANCTION", event.getEventType(), event.getActorType(), event.getActorId(), event.getSanctionId(), event.getOccurredAt())));
+        abuseEventMapper.selectList(Wrappers.<CommunityAbuseEvent>lambdaQuery().eq(CommunityAbuseEvent::getDecision, "REJECT").orderByDesc(CommunityAbuseEvent::getOccurredAt).last("LIMIT 10")).forEach(event -> results.add(new AdminCommunityGovernanceAuditView("ABUSE", event.getActionType(), "SYSTEM", null, event.getId(), event.getOccurredAt())));
+        return results.stream().filter(event -> event.occurredAt() != null).sorted(Comparator.comparing(AdminCommunityGovernanceAuditView::occurredAt).reversed()).limit(20).toList();
+    }
+
+    private static long averageResolutionMinutes(List<CommunityReport> reports) {
+        return Math.round(reports.stream().filter(value -> value.getCreatedAt() != null && value.getResolvedAt() != null).mapToLong(value -> Math.max(0, Duration.between(value.getCreatedAt(), value.getResolvedAt()).toMinutes())).average().orElse(0));
+    }
+
+    private static void increment(Map<LocalDate, long[]> values, LocalDateTime occurredAt, int index) {
+        if (occurredAt == null) return;
+        long[] row = values.get(occurredAt.toLocalDate());
+        if (row != null) row[index]++;
     }
 
     @Transactional(readOnly = true)

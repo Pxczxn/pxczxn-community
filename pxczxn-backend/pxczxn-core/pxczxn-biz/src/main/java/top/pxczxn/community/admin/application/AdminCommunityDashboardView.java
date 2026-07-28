@@ -11,6 +11,13 @@ public record AdminCommunityDashboardView(
         long scheduledArticleCount,
         long publishFailedCount,
         long pendingReviewCount,
-        List<AdminCommunityDailyMetricView> dailyMetrics
+        List<AdminCommunityDailyMetricView> dailyMetrics,
+        long pendingReportCount,
+        long pendingAppealCount,
+        long activeSanctionCount,
+        long rejectedAbuseCount,
+        long averageReportResolutionMinutes,
+        List<AdminCommunityGovernanceDailyMetricView> governanceDailyMetrics,
+        List<AdminCommunityGovernanceAuditView> recentGovernanceAudits
 ) {
 }

@@ -13,7 +13,14 @@ public record AdminCommunityDashboardResponse(
         long scheduledArticleCount,
         long publishFailedCount,
         long pendingReviewCount,
-        List<AdminCommunityDailyMetricResponse> dailyMetrics
+        List<AdminCommunityDailyMetricResponse> dailyMetrics,
+        long pendingReportCount,
+        long pendingAppealCount,
+        long activeSanctionCount,
+        long rejectedAbuseCount,
+        long averageReportResolutionMinutes,
+        List<AdminCommunityGovernanceDailyMetricResponse> governanceDailyMetrics,
+        List<AdminCommunityGovernanceAuditResponse> recentGovernanceAudits
 ) {
 
     static AdminCommunityDashboardResponse from(
@@ -30,7 +37,14 @@ public record AdminCommunityDashboardResponse(
                 view.pendingReviewCount(),
                 view.dailyMetrics().stream()
                         .map(AdminCommunityDailyMetricResponse::from)
-                        .toList()
+                        .toList(),
+                view.pendingReportCount(),
+                view.pendingAppealCount(),
+                view.activeSanctionCount(),
+                view.rejectedAbuseCount(),
+                view.averageReportResolutionMinutes(),
+                view.governanceDailyMetrics().stream().map(AdminCommunityGovernanceDailyMetricResponse::from).toList(),
+                view.recentGovernanceAudits().stream().map(AdminCommunityGovernanceAuditResponse::from).toList()
         );
     }
 }

@@ -85,6 +85,34 @@
             </n-card>
           </n-grid-item>
 
+          <n-grid-item :span="12" :l-span="7">
+            <n-card title="治理风险趋势" class="dashboard-panel">
+              <template #header-extra>近 7 日</template>
+              <div ref="governanceChartRef" class="trend-chart" aria-label="举报、处罚与反滥用拒绝趋势图" />
+            </n-card>
+          </n-grid-item>
+          <n-grid-item :span="12" :l-span="5">
+            <n-card title="治理待办" class="dashboard-panel">
+              <div class="health-list">
+                <button type="button" @click="go('/community/reports')"><span><i class="health-dot health-dot--warning" />待处理举报</span><strong>{{ dashboard.pendingReportCount }}</strong></button>
+                <button type="button" @click="go('/community/appeals')"><span><i class="health-dot health-dot--info" />待处理申诉</span><strong>{{ dashboard.pendingAppealCount }}</strong></button>
+                <button type="button" @click="go('/community/sanctions')"><span><i class="health-dot health-dot--error" />有效处罚</span><strong>{{ dashboard.activeSanctionCount }}</strong></button>
+              </div>
+              <n-divider />
+              <div class="governance-summary"><span>近 7 日风险拒绝</span><strong>{{ dashboard.rejectedAbuseCount }}</strong><span>平均举报处置</span><strong>{{ dashboard.averageReportResolutionMinutes }} 分钟</strong></div>
+            </n-card>
+          </n-grid-item>
+
+          <n-grid-item :span="12">
+            <n-card title="最近治理审计" class="dashboard-panel">
+              <n-empty v-if="!dashboard.recentGovernanceAudits.length" size="small" description="暂无治理审计事件" />
+              <n-table v-else :single-line="false" size="small">
+                <thead><tr><th>来源</th><th>动作</th><th>操作者</th><th>关联 ID</th><th>发生时间</th></tr></thead>
+                <tbody><tr v-for="event in dashboard.recentGovernanceAudits" :key="`${event.source}-${event.referenceId}-${event.occurredAt}`"><td>{{ event.source }}</td><td>{{ event.eventType }}</td><td>{{ event.actorType }}{{ event.actorId ? ` #${event.actorId}` : '' }}</td><td>{{ event.referenceId || '-' }}</td><td>{{ event.occurredAt }}</td></tr></tbody>
+              </n-table>
+            </n-card>
+          </n-grid-item>
+
           <n-grid-item :span="12">
             <n-card title="快捷入口">
               <div class="quick-grid">
@@ -141,7 +169,9 @@ const dashboard = ref<CommunityDashboard | null>(null)
 const loading = ref(false)
 const errorMessage = ref('')
 const trendChartRef = ref<HTMLElement | null>(null)
+const governanceChartRef = ref<HTMLElement | null>(null)
 let trendChart: echarts.ECharts | null = null
+let governanceChart: echarts.ECharts | null = null
 
 const headlineMetrics = computed(() => {
   if (!dashboard.value) return []
@@ -213,6 +243,20 @@ function renderChart() {
       }
     ]
   }, true)
+
+  if (!governanceChartRef.value) return
+  if (!governanceChart) governanceChart = echarts.init(governanceChartRef.value)
+  const governance = dashboard.value.governanceDailyMetrics
+  governanceChart.setOption({
+    animationDuration: 500, color: ['#F59E0B', '#EF4444', '#7C3AED'], tooltip: { trigger: 'axis' }, grid: { left: 12, right: 12, top: 20, bottom: 4, containLabel: true },
+    xAxis: { type: 'category', data: governance.map(item => item.date.slice(5)), axisLabel: { color: chartTextColor() } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { color: chartTextColor() } },
+    series: [
+      { name: '举报', type: 'bar', data: governance.map(item => item.reportCount) },
+      { name: '处罚', type: 'bar', data: governance.map(item => item.sanctionCount) },
+      { name: '风险拒绝', type: 'line', smooth: true, data: governance.map(item => item.abuseRejectCount) }
+    ]
+  }, true)
 }
 
 async function loadDashboard() {
@@ -235,6 +279,7 @@ function go(path: string) {
 
 function resizeChart() {
   trendChart?.resize()
+  governanceChart?.resize()
 }
 
 onMounted(() => {
@@ -245,7 +290,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart)
   trendChart?.dispose()
+  governanceChart?.dispose()
   trendChart = null
+  governanceChart = null
 })
 </script>
 
@@ -285,6 +332,17 @@ onBeforeUnmount(() => {
 
 .dashboard-panel {
   height: 100%;
+}
+
+.governance-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  color: var(--community-muted);
+
+  strong {
+    color: var(--community-text);
+  }
 }
 
 .trend-chart {
