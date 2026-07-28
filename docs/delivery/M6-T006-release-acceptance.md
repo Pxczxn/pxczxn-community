@@ -10,6 +10,7 @@
 - 2026-07-29：临时生产 profile 实例在 `127.0.0.1:8861` 通过 `/api/v1/health` 与 `/actuator/prometheus` 检查；`pxczxn_community_review_queue_depth` 和 `pxczxn_community_notification_unread_depth` 均已注册。该临时进程已在验证后停止。
 - 生产 Compose 以替换后的非敏感变量执行 `docker compose config --quiet`：通过。
 - 2026-07-29：Windows 本机直接运行链路已验证。已确认本机 MySQL `pxczxn_community` 为 V001–V038；后端在 `8849` 返回健康 `UP`，博客端 `/discover`（`8847`）与运营端（`8848`）均返回 HTTP 200，`scripts/e2e/m6-public-smoke.mjs` 对健康、公开搜索、RSS ETag/304 与匿名统计权限边界通过。该项是本机联调证据，不替代受控预发/生产发布演练。
+- 2026-07-29：`Release Gates` 工作流已使用标准 YAML 解析器复核；修正 GitHub 表达式在行内映射中的无效写法后，工作流、Compose 配置和 38 个迁移清单均可通过结构校验。
 
 ## 发布前必须在受控生产/预发环境完成
 
