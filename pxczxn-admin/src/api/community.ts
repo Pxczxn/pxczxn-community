@@ -88,6 +88,7 @@ export interface CommunitySanction {
   status: string
   expiresAt: string | null
 }
+export interface ContentRule { id: string; keyword: string; severity: string; contentScopes: string; riskLevel: string; hitAction: string; status: string; description: string | null; sortOrder: number }
 
 export interface TeamApplicationReviewRequest {
   reviewComment?: string
@@ -496,6 +497,10 @@ export const communityApi = {
     url: `/admin-api/community/tags/${tagId}`,
     method: 'delete'
   }),
+  contentRules: (status?: string) => request<ContentRule[]>({ ...adminConfig, url: '/admin-api/community/content-rules', method: 'get', params: status ? { status } : undefined }),
+  createContentRule: (data: Omit<ContentRule, 'id' | 'severity'>) => request<ContentRule>({ ...adminConfig, url: '/admin-api/community/content-rules', method: 'post', data }),
+  updateContentRule: (id: string, data: Partial<Omit<ContentRule, 'id' | 'severity'>>) => request<ContentRule>({ ...adminConfig, url: `/admin-api/community/content-rules/${id}`, method: 'patch', data }),
+  deleteContentRule: (id: string) => request<void>({ ...adminConfig, url: `/admin-api/community/content-rules/${id}`, method: 'delete' }),
 
   // Team application review
   getTeamApplications: () => request<TeamApplication[]>({

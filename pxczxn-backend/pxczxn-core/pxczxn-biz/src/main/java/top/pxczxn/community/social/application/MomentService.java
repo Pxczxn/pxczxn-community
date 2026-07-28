@@ -124,7 +124,7 @@ public class MomentService {
                 valueOrEmpty(linkUrl)
         );
         KeywordReviewOutcome outcome = keywordReviewEngine.review(
-                null, null, reviewText
+                "MOMENT", null, null, reviewText
         );
         if (outcome.decision() == KeywordReviewOutcome.Decision.BLOCK) {
             throw new BusinessException(400, "动态包含禁止内容，无法发布");

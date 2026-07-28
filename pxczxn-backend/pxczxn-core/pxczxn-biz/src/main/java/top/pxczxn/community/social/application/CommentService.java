@@ -340,7 +340,7 @@ public class CommentService {
         RenderedCommentContent rendered =
                 contentRenderer.render(content);
         KeywordReviewOutcome outcome = keywordReviewEngine.review(
-                null, null, rendered.contentText()
+                "COMMENT", null, null, rendered.contentText()
         );
         if (outcome.decision() == KeywordReviewOutcome.Decision.BLOCK) {
             throw new BusinessException(400, "评论包含禁止内容，无法发布");

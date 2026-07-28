@@ -86,6 +86,29 @@ class ArticleKeywordReviewEngineTest {
         assertThat(outcome.resultReason()).doesNotContain("danger phrase");
     }
 
+    @Test
+    void contentScopeAndConfiguredActionControlTheOutcome() {
+        ContentKeywordRule articleOnly = rule(15L, "article-only", "WARN");
+        articleOnly.setContentScopes("ARTICLE");
+        articleOnly.setRiskLevel("CRITICAL");
+        articleOnly.setHitAction("BLOCK");
+        ContentKeywordRule commentRule = rule(16L, "comment-only", "WARN");
+        commentRule.setContentScopes("COMMENT");
+        commentRule.setRiskLevel("HIGH");
+        commentRule.setHitAction("MANUAL_REVIEW");
+        when(ruleMapper.selectList(any())).thenReturn(List.of(articleOnly, commentRule));
+
+        KeywordReviewOutcome moment = engine.review("MOMENT", null, null, "article-only comment-only");
+        KeywordReviewOutcome comment = engine.review("COMMENT", null, null, "comment-only");
+        KeywordReviewOutcome article = engine.review("ARTICLE", null, null, "article-only");
+
+        assertThat(moment.resultCode()).isEqualTo("AUTO_APPROVED");
+        assertThat(comment.decision()).isEqualTo(KeywordReviewOutcome.Decision.MANUAL_REVIEW);
+        assertThat(comment.riskLevel()).isEqualTo("HIGH");
+        assertThat(article.decision()).isEqualTo(KeywordReviewOutcome.Decision.BLOCK);
+        assertThat(article.riskLevel()).isEqualTo("CRITICAL");
+    }
+
     private static ContentKeywordRule rule(
             Long id,
             String keyword,

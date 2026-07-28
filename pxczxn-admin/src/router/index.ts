@@ -97,6 +97,12 @@ const routes: RouteRecordRaw[] = [
       },
       { path: 'community/sanctions', name: 'CommunitySanctions', component: () => import('@/views/community/sanctions/index.vue'), meta: { title: '处罚体系', icon: 'HammerOutline', permission: 'community:sanction:list' } },
       {
+        path: 'community/content-rules',
+        name: 'ContentRules',
+        component: () => import('@/views/community/content-rules/index.vue'),
+        meta: { title: '内容规则', icon: 'FilterOutline', permission: 'community:content-rule:list' }
+      },
+      {
         path: 'community/team-applications',
         name: 'TeamApplications',
         component: () => import('@/views/community/team-applications/index.vue'),

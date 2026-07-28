@@ -22,6 +22,12 @@ public class ContentKeywordRule {
 
     private String severity;
 
+    private String contentScopes;
+
+    private String riskLevel;
+
+    private String hitAction;
+
     private String status;
 
     private String description;
