@@ -15,6 +15,14 @@
     <description>pxczxn 社区启动模块</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
         <!-- 后台接口层 -->
         <dependency>
             <groupId>top.pxczxn</groupId>

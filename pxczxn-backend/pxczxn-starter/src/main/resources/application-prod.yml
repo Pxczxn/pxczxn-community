@@ -74,16 +74,21 @@ management:
     enabled-by-default: false
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       enabled: true
       show-details: never
     info:
       enabled: true
+    prometheus:
+      enabled: true
   info:
     env:
       enabled: false
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 logging:
   level:
