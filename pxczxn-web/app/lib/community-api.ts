@@ -148,6 +148,28 @@ export interface PublicArticlePage {
   pageSize: number;
 }
 
+export type UnifiedSearchType = "ALL" | "ARTICLE" | "MOMENT" | "BLOG" | "SERIES" | "TAG" | "USER";
+
+export interface UnifiedSearchResult {
+  type: Exclude<UnifiedSearchType, "ALL">;
+  targetId: string;
+  title: string;
+  titleHighlightHtml: string;
+  excerptHighlightHtml: string;
+  canonicalPath: string;
+  authorUserId: string | null;
+  authorName: string | null;
+  blogName: string | null;
+  occurredAt: string;
+}
+
+export interface UnifiedSearchPage {
+  records: UnifiedSearchResult[];
+  total: number;
+  pageNum: number;
+  pageSize: number;
+}
+
 export interface PublicArticleDetail extends PublicArticleSummary {
   visibility: string;
   renderedHtml: string;
@@ -771,6 +793,10 @@ export const communityApi = {
       {},
       false,
     );
+  },
+  search(keyword: string, type: UnifiedSearchType = "ALL", pageNum = 1, pageSize = 20) {
+    const query = new URLSearchParams({ keyword, type, pageNum: String(pageNum), pageSize: String(pageSize) });
+    return communityRequest<UnifiedSearchPage>(`/api/v1/public/search?${query}`, {}, false);
   },
   categories() {
     return communityRequest<BlogCategory[]>("/api/v1/blogs/me/categories");
