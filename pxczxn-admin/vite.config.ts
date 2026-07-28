@@ -6,7 +6,7 @@ const backendTarget = process.env.VITE_DEV_BACKEND_URL || 'http://localhost:8849
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/',
+  base: process.env.VITE_PUBLIC_BASE || '/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')

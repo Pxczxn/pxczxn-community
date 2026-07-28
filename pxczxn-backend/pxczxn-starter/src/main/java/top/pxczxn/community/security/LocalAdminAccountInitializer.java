@@ -18,11 +18,11 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 /**
- * Provides the accepted local-only development administrator.
+ * Ensures the explicitly configured bootstrap administrator exists in local and production environments.
  */
 @Slf4j
 @Component
-@Profile("local")
+@Profile({"local", "prod"})
 @RequiredArgsConstructor
 public class LocalAdminAccountInitializer implements ApplicationRunner {
 

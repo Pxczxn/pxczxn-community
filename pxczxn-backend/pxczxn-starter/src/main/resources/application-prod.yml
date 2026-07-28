@@ -49,6 +49,9 @@ mybatis-plus:
 
 pxczxn:
   demo-mode: false
+  local-admin:
+    username: ${PXCZXN_LOCAL_ADMIN_USERNAME}
+    password: ${PXCZXN_LOCAL_ADMIN_PASSWORD}
   features:
     scaffold:
       payment: false
