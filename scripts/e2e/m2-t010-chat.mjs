@@ -226,6 +226,10 @@ async function connectWebSocket(token) {
     'one-time WebSocket ticket was not issued'
   )
   assertTrue(
+    /^[A-Za-z0-9_-]{43}$/.test(ticketResult.data.ticket),
+    'one-time WebSocket ticket was not returned in its opaque wire format'
+  )
+  assertTrue(
     !Object.hasOwn(ticketResult.data, 'token'),
     'WebSocket ticket response leaked a long-lived token'
   )
@@ -482,8 +486,8 @@ try {
       { token: tokenA }
     )
   ).data
-  assertEqual(historyB.total, 0, 'receiver single-party clear')
-  assertEqual(historyA.total, 1, 'sender history retained')
+  assertEqual(Number(historyB.total), 0, 'receiver single-party clear')
+  assertEqual(Number(historyA.total), 1, 'sender history retained')
 
   const createdGroup = (
     await adminRequest('/api/chat/group/create', {

@@ -392,11 +392,11 @@ WHERE id = $userAId;
 
     $null = Invoke-MySql -Sql @"
 INSERT INTO content_keyword_rule
-    (id, keyword, normalized_keyword, severity, status, description, sort_order)
+    (id, keyword, normalized_keyword, severity, content_scopes, risk_level, hit_action, status, description, sort_order)
 VALUES
-    ($blockRuleId, '$blockKeyword', '$blockKeyword', 'BLOCK', 'ACTIVE', 'M2-T006 E2E', 1),
-    ($reviewRuleId, '$reviewKeyword', '$reviewKeyword', 'REVIEW', 'ACTIVE', 'M2-T006 E2E', 2),
-    ($warnRuleId, '$warnKeyword', '$warnKeyword', 'WARN', 'ACTIVE', 'M2-T006 E2E', 3);
+    ($blockRuleId, '$blockKeyword', '$blockKeyword', 'BLOCK', 'MOMENT', 'CRITICAL', 'BLOCK', 'ACTIVE', 'M2-T006 E2E', 1),
+    ($reviewRuleId, '$reviewKeyword', '$reviewKeyword', 'REVIEW', 'MOMENT', 'HIGH', 'MANUAL_REVIEW', 'ACTIVE', 'M2-T006 E2E', 2),
+    ($warnRuleId, '$warnKeyword', '$warnKeyword', 'WARN', 'MOMENT', 'MEDIUM', 'WARN', 'ACTIVE', 'M2-T006 E2E', 3);
 "@
     $blocked = New-Moment `
         -Token $tokenA `

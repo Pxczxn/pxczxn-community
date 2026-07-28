@@ -437,11 +437,12 @@ try {
 
   mysql(`
     INSERT INTO content_keyword_rule
-      (id, keyword, normalized_keyword, severity, status,
-       description, sort_order)
+      (id, keyword, normalized_keyword, severity, content_scopes,
+       risk_level, hit_action, status, description, sort_order)
     VALUES
       (${ruleId}, ${sqlString(reviewKeyword)},
-       ${sqlString(reviewKeyword)}, 'REVIEW', 'ACTIVE',
+       ${sqlString(reviewKeyword)}, 'REVIEW', 'ARTICLE',
+       'HIGH', 'MANUAL_REVIEW', 'ACTIVE',
        ${sqlString(`M2-T009 E2E ${stamp}`)}, 1);
   `)
 

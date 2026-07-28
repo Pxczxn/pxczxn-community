@@ -45,6 +45,24 @@ class WebSocketTicketServiceTest {
     }
 
     @Test
+    void localFallbackStillAcceptsTheFirstTicketWhenRedisFailsOnConsume() {
+        StringRedisTemplate redisTemplate = mock(StringRedisTemplate.class);
+        ValueOperations<String, String> valueOperations = mock(ValueOperations.class);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.getAndDelete(any(String.class)))
+                .thenThrow(new IllegalStateException("offline"));
+        WebSocketTicketService service = new WebSocketTicketService(
+                redisTemplate,
+                properties(false)
+        );
+
+        WebSocketTicketService.IssuedTicket issued = service.issue(42L);
+
+        assertThat(service.consume(issued.ticket())).isEqualTo(42L);
+        assertThat(service.consume(issued.ticket())).isNull();
+    }
+
+    @Test
     void audienceScopedTicketsCannotAuthenticateASeparateWebSocketChannel() {
         WebSocketTicketService service = new WebSocketTicketService(
                 unavailableRedis(),

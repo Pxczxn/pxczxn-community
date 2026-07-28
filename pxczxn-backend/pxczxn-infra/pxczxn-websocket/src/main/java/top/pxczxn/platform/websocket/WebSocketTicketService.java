@@ -64,6 +64,16 @@ public class WebSocketTicketService {
         secureRandom.nextBytes(randomBytes);
         String ticket = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
         String storageKey = storageKey(ticket);
+        LocalTicket localTicket = new LocalTicket(
+                audience,
+                userId,
+                Instant.now().plus(properties.getTtl())
+        );
+
+        if (!properties.isRequireRedis()) {
+            localTickets.put(storageKey, localTicket);
+            removeExpiredLocalTickets();
+        }
 
         if (redisAvailable) {
             try {
@@ -78,10 +88,7 @@ public class WebSocketTicketService {
             }
         }
 
-        localTickets.put(
-                storageKey,
-                new LocalTicket(audience, userId, Instant.now().plus(properties.getTtl()))
-        );
+        localTickets.put(storageKey, localTicket);
         removeExpiredLocalTickets();
         return new IssuedTicket(ticket, properties.getTtl().toSeconds());
     }
@@ -109,6 +116,7 @@ public class WebSocketTicketService {
         if (redisAvailable) {
             try {
                 String stored = redisTemplate.opsForValue().getAndDelete(storageKey);
+                localTickets.remove(storageKey);
                 return parsePrincipal(stored);
             } catch (RuntimeException exception) {
                 handleRedisFailure(exception);

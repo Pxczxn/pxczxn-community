@@ -1,6 +1,6 @@
 import { webcrypto } from 'node:crypto'
 import { createRequire } from 'node:module'
-const requireFromAdmin=createRequire(new URL('../../pxczxn-admin/package.json',import.meta.url));const JSEncrypt=requireFromAdmin('jsencrypt');const base='http://127.0.0.1:8861';const stamp=Date.now();let crypto
+const requireFromAdmin=createRequire(new URL('../../pxczxn-admin/package.json',import.meta.url));const JSEncrypt=requireFromAdmin('jsencrypt');const base=process.env.PXCZXN_BASE_URL||'http://127.0.0.1:8861';const stamp=Date.now();let crypto
 const assert=(v,m)=>{if(!v)throw new Error(m)}
 async function api(path,{method='GET',body,token,codes=[200]}={}){const headers=body?{'Content-Type':'application/json'}:{};if(token)headers[token.name]=token.value;const r=await fetch(base+path,{method,headers,body:body&&JSON.stringify(body)});const p=await r.json();if(!codes.includes(+p.code))throw new Error(`${path} ${JSON.stringify(p)}`);return p}
 async function decrypt(value){if(typeof value!=='string'||!value.includes('.'))return value;const[iv,payload]=value.split('.');const key=await webcrypto.subtle.importKey('raw',Buffer.from(crypto.aesKey,'base64'),{name:'AES-GCM'},false,['decrypt']);const plain=await webcrypto.subtle.decrypt({name:'AES-GCM',iv:Buffer.from(iv,'base64')},key,Buffer.from(payload,'base64'));return JSON.parse(Buffer.from(plain).toString())}
