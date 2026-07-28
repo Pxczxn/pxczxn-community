@@ -166,6 +166,10 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
   const cover = publicFileUrl(article.coverFileId);
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "BlogPosting", headline: article.title, description: article.seo.description || article.summary || undefined, datePublished: article.publishedAt, dateModified: article.updatedAt, mainEntityOfPage: article.canonicalPath, author: { "@type": "Person", name: article.author.displayName || article.author.username }, publisher: { "@type": "Organization", name: article.blog.name } }).replace(/</g, "\\u003c") }}
+      />
       <UserTopbar title={article.blog.name} />
       <main className="article-page page-shell">
         <Link className="article-back link" href={`/blogs/${article.blog.slug}`}>

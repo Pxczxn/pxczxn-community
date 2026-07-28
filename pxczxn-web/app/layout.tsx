@@ -27,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: "%s · 星语社区",
     },
     description,
+    robots: { index: true, follow: true },
     openGraph: {
       type: "website",
       locale: "zh_CN",
