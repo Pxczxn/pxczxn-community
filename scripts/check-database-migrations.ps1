@@ -22,6 +22,23 @@ function Resolve-MySqlCommand {
     return $command.Source
 }
 
+function Get-NormalizedMigrationChecksum {
+    param([System.IO.FileInfo]$File)
+
+    $content = [System.IO.File]::ReadAllText($File.FullName)
+    $normalizedContent = $content.Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($normalizedContent)
+    $hasher = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return (-join ($hasher.ComputeHash($bytes) | ForEach-Object {
+            $_.ToString("x2")
+        })).ToUpperInvariant()
+    }
+    finally {
+        $hasher.Dispose()
+    }
+}
+
 try {
     $MySqlPath = Resolve-MySqlCommand
 
@@ -85,7 +102,7 @@ try {
 
     Write-Host "[PASS] $($migrations.Count) ordered migrations and $($verifyFiles.Count) live verification scripts"
     foreach ($migration in $migrations) {
-        $checksum = (Get-FileHash -LiteralPath $migration.FullName -Algorithm SHA256).Hash
+        $checksum = Get-NormalizedMigrationChecksum $migration
         Write-Host "       $($migration.Name) $checksum"
     }
 

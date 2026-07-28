@@ -6,6 +6,8 @@
 - 博客端 `typecheck`、`lint`、`test`、`build`：通过；测试契约已更新为 M5 的 `discoverRankedArticles` 真实接口。
 - 管理端 `typecheck`、`lint`、`test`、`build`：通过。Lint 报告了既有 `any` warning，未新增 error。
 - `scripts/validate-database-migration-manifest.ps1`：38 个迁移及 verify 文件一一匹配；V036–V038 已在验收数据库执行并通过。
+- 2026-07-29：本机 `pxczxn_community` 已在仓库外一致性备份后从 V022 升级至 V038；`check-database-migrations.ps1` 通过 38 个在线 verify 与全部历史 checksum。迁移校验已按 UTF-8/LF 规范化，避免 Windows CRLF 工作区产生伪 checksum 漂移。
+- 2026-07-29：临时生产 profile 实例在 `127.0.0.1:8861` 通过 `/api/v1/health` 与 `/actuator/prometheus` 检查；`pxczxn_community_review_queue_depth` 和 `pxczxn_community_notification_unread_depth` 均已注册。该临时进程已在验证后停止。
 - 生产 Compose 以替换后的非敏感变量执行 `docker compose config --quiet`：通过。
 
 ## 发布前必须在受控生产/预发环境完成

@@ -26,6 +26,26 @@ function ConvertTo-SqlLiteral {
     return $Value.Replace("'", "''")
 }
 
+function Get-NormalizedMigrationChecksum {
+    param([System.IO.FileInfo]$File)
+
+    # Git may check SQL files out as CRLF on Windows while CI and the original
+    # migration history use LF. Hash normalized UTF-8 text so the immutable
+    # manifest represents the migration content rather than checkout settings.
+    $content = [System.IO.File]::ReadAllText($File.FullName)
+    $normalizedContent = $content.Replace("`r`n", "`n").Replace("`r", "`n")
+    $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($normalizedContent)
+    $hasher = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return (-join ($hasher.ComputeHash($bytes) | ForEach-Object {
+            $_.ToString("x2")
+        })).ToUpperInvariant()
+    }
+    finally {
+        $hasher.Dispose()
+    }
+}
+
 function Resolve-MySqlCommand {
     if (Test-Path -LiteralPath $MySqlPath -PathType Leaf) {
         return (Resolve-Path -LiteralPath $MySqlPath).Path
@@ -159,7 +179,7 @@ CREATE TABLE IF NOT EXISTS pxczxn_schema_version (
 
         $version = $Matches[1]
         $description = $Matches[2].Replace('_', ' ')
-        $checksum = (Get-FileHash -LiteralPath $migration.FullName -Algorithm SHA256).Hash
+        $checksum = Get-NormalizedMigrationChecksum $migration
         $versionLiteral = ConvertTo-SqlLiteral $version
         $rows = @(Invoke-MySqlQuery @"
 SELECT version, checksum, success
