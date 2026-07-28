@@ -1,0 +1,18 @@
+FROM node:22.13-bookworm-slim AS build
+WORKDIR /app
+COPY pxczxn-web/package.json pxczxn-web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY pxczxn-web .
+ARG NEXT_PUBLIC_COMMUNITY_API_BASE_URL
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_COMMUNITY_API_BASE_URL=$NEXT_PUBLIC_COMMUNITY_API_BASE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+RUN npm run build
+
+FROM node:22.13-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app /app
+EXPOSE 8847
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:8847').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["npm", "run", "start"]
