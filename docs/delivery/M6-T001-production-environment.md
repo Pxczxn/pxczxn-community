@@ -15,7 +15,7 @@
 - `docker compose --env-file deploy/.env -f deploy/docker-compose.yml ps` 中所有服务应为 healthy。
 - 从外网验证 `https://<用户域名>/`、登录与发布流程；验证 `https://<管理域名>/` 运营登录。
 - Nginx 和容器日志使用 Docker local logging driver，单文件 10 MiB、保留 5 个文件；使用 `docker compose ... logs --since 15m <service>` 排查。
-- Spring Boot 健康检查仅供 Compose 通过内部网络访问：`http://backend:8849/actuator/health`。
+- Spring Boot 健康检查仅供 Compose 通过内部网络访问：`http://backend:8849/api/v1/health`。
 
 ## 安全边界
 
