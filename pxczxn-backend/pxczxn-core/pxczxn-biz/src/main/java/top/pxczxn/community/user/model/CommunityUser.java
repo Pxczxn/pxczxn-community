@@ -34,6 +34,10 @@ public class CommunityUser {
 
     private LocalDateTime commentRestrictedUntil;
 
+    private LocalDateTime submissionRestrictedUntil;
+
+    private String sanctionOriginalStatus;
+
     private Integer lockVersion;
 
     private LocalDateTime lastLoginAt;

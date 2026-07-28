@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.model.CommunityUserLoginAccount;
 import top.pxczxn.community.user.persistence.CommunityUserLoginAccountMapper;
@@ -33,6 +35,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
     private final CommunityUserLoginAccountMapper loginAccountMapper;
     private final BlogMapper blogMapper;
     private final CommunityAuth communityAuth;
+    private final CommunitySanctionService sanctionService;
 
     @Override
     @Transactional(noRollbackFor = {
@@ -76,6 +79,8 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
             log.error("社区登录账号缺少用户主体, accountId={}", account.getId());
             throw new InvalidCommunityCredentialsException();
         }
+        sanctionService.requireActionAllowed(user.getId(), SanctionAction.LOGIN);
+        user = userMapper.selectById(account.getUserId());
         assertLoginAllowed(user);
 
         boolean passwordMatches;
@@ -140,6 +145,8 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
             communityAuth.logout();
             throw new BusinessException(401, "登录用户不存在");
         }
+        sanctionService.requireActionAllowed(userId, SanctionAction.LOGIN);
+        user = userMapper.selectById(userId);
         assertLoginAllowed(user);
 
         CommunityUserLoginAccount account = loginAccountMapper.selectOne(

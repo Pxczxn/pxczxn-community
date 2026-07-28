@@ -9,6 +9,8 @@ import top.pxczxn.community.blog.model.BlogSetting;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.blog.persistence.BlogSettingMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
@@ -31,6 +33,7 @@ public class CommentScopeService {
     private final CommunityFollowMapper followMapper;
     private final CommunityAuth communityAuth;
     private final List<TeamBlogMemberResolver> teamMemberResolvers;
+    private final CommunitySanctionService sanctionService;
 
     public CommentScopeService(
             CommunityUserMapper userMapper,
@@ -38,7 +41,8 @@ public class CommentScopeService {
             BlogSettingMapper settingMapper,
             CommunityFollowMapper followMapper,
             CommunityAuth communityAuth,
-            List<TeamBlogMemberResolver> teamMemberResolvers
+            List<TeamBlogMemberResolver> teamMemberResolvers,
+            CommunitySanctionService sanctionService
     ) {
         this.userMapper = userMapper;
         this.blogMapper = blogMapper;
@@ -48,14 +52,16 @@ public class CommentScopeService {
         this.teamMemberResolvers = teamMemberResolvers == null
                 ? List.of()
                 : List.copyOf(teamMemberResolvers);
+        this.sanctionService = sanctionService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public CommentActorContext requireCanComment(
             AccessibleContentTarget target
     ) {
         Long actorId = communityAuth.getLoginUserId();
         CommunityUser actor = userMapper.selectById(actorId);
+        sanctionService.requireActionAllowed(actorId, SanctionAction.COMMENT);
         if (actor == null || !ACTIVE_USER_STATUSES.contains(actor.getStatus())) {
             throw new BusinessException(403, "当前账号不能发表评论");
         }

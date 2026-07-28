@@ -17,6 +17,7 @@ import top.pxczxn.community.article.permission.BlogArticleRole;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.moderation.model.ContentReviewTask;
 import top.pxczxn.community.moderation.persistence.ContentReviewTaskMapper;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.user.model.CommunityUser;
 
 import java.time.LocalDateTime;
@@ -58,7 +59,8 @@ class ArticleReviewSubmissionServiceTest {
                 taskMapper,
                 permissionService,
                 reviewEngine,
-                eventPublisher
+                eventPublisher,
+                mock(CommunitySanctionService.class)
         );
 
         CommunityUser actor = new CommunityUser();

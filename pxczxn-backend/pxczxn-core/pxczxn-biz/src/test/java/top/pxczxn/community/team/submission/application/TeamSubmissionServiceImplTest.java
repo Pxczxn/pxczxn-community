@@ -16,6 +16,7 @@ import top.pxczxn.community.team.persistence.TeamAuditEventMapper;
 import top.pxczxn.community.team.persistence.TeamMapper;
 import top.pxczxn.community.team.submission.model.TeamSubmission;
 import top.pxczxn.community.team.submission.persistence.TeamSubmissionMapper;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.util.Objects;
@@ -39,7 +40,7 @@ class TeamSubmissionServiceImplTest {
     void setUp() {
         submissionMapper = mock(TeamSubmissionMapper.class); articleMapper = mock(ArticleMapper.class); versionMapper = mock(ArticleVersionMapper.class);
         teamMapper = mock(TeamMapper.class); blogMapper = mock(BlogMapper.class); authorityService = mock(TeamAuthorityService.class);
-        service = new TeamSubmissionServiceImpl(submissionMapper, articleMapper, versionMapper, teamMapper, blogMapper, authorityService, mock(TeamAuditEventMapper.class), mock(ApplicationEventPublisher.class));
+        service = new TeamSubmissionServiceImpl(submissionMapper, articleMapper, versionMapper, teamMapper, blogMapper, authorityService, mock(TeamAuditEventMapper.class), mock(ApplicationEventPublisher.class), mock(CommunitySanctionService.class));
     }
 
     @Test

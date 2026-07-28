@@ -13,6 +13,8 @@ import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
 import top.pxczxn.community.moderation.application.KeywordReviewOutcome;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
 import top.pxczxn.community.notification.application.MomentPublishedNotificationEvent;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.CommunityMoment;
 import top.pxczxn.community.social.persistence.CommunityContentLikeMapper;
@@ -50,6 +52,7 @@ public class MomentService {
     private final ArticleKeywordReviewEngine keywordReviewEngine;
     private final CommunityAuth communityAuth;
     private final List<MomentBlogPublisherResolver> publisherResolvers;
+    private final CommunitySanctionService sanctionService;
 
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
@@ -64,7 +67,8 @@ public class MomentService {
             MomentContentRenderer contentRenderer,
             ArticleKeywordReviewEngine keywordReviewEngine,
             CommunityAuth communityAuth,
-            List<MomentBlogPublisherResolver> publisherResolvers
+            List<MomentBlogPublisherResolver> publisherResolvers,
+            CommunitySanctionService sanctionService
     ) {
         this.momentMapper = momentMapper;
         this.userMapper = userMapper;
@@ -78,6 +82,7 @@ public class MomentService {
         this.publisherResolvers = publisherResolvers == null
                 ? List.of()
                 : List.copyOf(publisherResolvers);
+        this.sanctionService = sanctionService;
     }
 
     @Transactional
@@ -457,13 +462,21 @@ public class MomentService {
     }
 
     private boolean canView(Long momentId) {
-        return contentAccessService.findAccessible(
-                LikeTargetType.MOMENT, momentId
-        ) != null;
+        try {
+            return contentAccessService.findAccessible(
+                    LikeTargetType.MOMENT, momentId
+            ) != null;
+        } catch (BusinessException exception) {
+            if (Objects.equals(exception.getCode(), 404)) {
+                return false;
+            }
+            throw exception;
+        }
     }
 
     private CommunityUser requirePublishingActor() {
         CommunityUser actor = requireActiveActor();
+        sanctionService.requireActionAllowed(actor.getId(), SanctionAction.PUBLISH);
         if (actor.getPublishRestrictedUntil() != null
                 && actor.getPublishRestrictedUntil().isAfter(
                         LocalDateTime.now(ZoneOffset.UTC)

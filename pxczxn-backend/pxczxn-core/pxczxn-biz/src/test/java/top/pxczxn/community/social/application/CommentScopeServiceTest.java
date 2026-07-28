@@ -8,6 +8,7 @@ import top.pxczxn.community.blog.model.BlogSetting;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.blog.persistence.BlogSettingMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.social.model.CommunityFollow;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
 import top.pxczxn.community.user.model.CommunityUser;
@@ -49,7 +50,8 @@ class CommentScopeServiceTest {
                 settingMapper,
                 followMapper,
                 auth,
-                List.of(teamMemberResolver)
+                List.of(teamMemberResolver),
+                mock(CommunitySanctionService.class)
         );
         actor = user(100L, 200L);
         blog = blog(300L, 101L, "PERSONAL");

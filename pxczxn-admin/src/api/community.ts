@@ -80,6 +80,14 @@ export interface CommunityReport {
   lockVersion: number
 }
 export interface CommunityAppeal { id: string; reportId: string; status: 'PENDING' | 'UPHELD' | 'REVOKED'; reviewNote: string | null; lockVersion: number }
+export interface CommunitySanction {
+  id: string
+  type: string
+  reasonCode: string
+  reasonNote: string | null
+  status: string
+  expiresAt: string | null
+}
 
 export interface TeamApplicationReviewRequest {
   reviewComment?: string
@@ -526,4 +534,7 @@ export const communityApi = {
   ,resolveReport: (reportId: string, expectedLockVersion: number, resolutionCode: string, resolutionNote?: string, dismiss = false) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/${dismiss ? 'dismiss' : 'resolve'}`, method: 'post', data: { expectedLockVersion, resolutionCode, resolutionNote } })
   ,appeals: () => request<CommunityAppeal[]>({ ...adminConfig, url: '/admin-api/community/appeals', method: 'get' })
   ,reviewAppeal: (appealId: string, expectedLockVersion: number, revoke: boolean, reviewNote: string) => request<CommunityAppeal>({ ...adminConfig, url: `/admin-api/community/appeals/${appealId}/${revoke ? 'revoke' : 'uphold'}`, method: 'post', data: { expectedLockVersion, reviewNote } })
+  ,sanctions: (userId: string) => request<CommunitySanction[]>({ ...adminConfig, url: `/admin-api/community/sanctions/users/${userId}`, method: 'get' })
+  ,issueSanction: (data: Record<string, unknown>) => request<CommunitySanction>({ ...adminConfig, url: '/admin-api/community/sanctions', method: 'post', data })
+  ,revokeSanction: (id: string, note: string) => request<CommunitySanction>({ ...adminConfig, url: `/admin-api/community/sanctions/${id}/revoke`, method: 'post', data: { note } })
 }

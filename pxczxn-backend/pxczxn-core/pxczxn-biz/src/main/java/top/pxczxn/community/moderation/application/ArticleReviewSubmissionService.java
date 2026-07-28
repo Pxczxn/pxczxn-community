@@ -20,6 +20,8 @@ import top.pxczxn.community.article.permission.ArticleCommunityAccess;
 import top.pxczxn.community.article.permission.ArticlePermissionService;
 import top.pxczxn.community.moderation.model.ContentReviewTask;
 import top.pxczxn.community.moderation.persistence.ContentReviewTaskMapper;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -46,6 +48,7 @@ public class ArticleReviewSubmissionService {
     private final ArticlePermissionService permissionService;
     private final ArticleKeywordReviewEngine keywordReviewEngine;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunitySanctionService sanctionService;
 
     @Transactional
     public ArticleReviewStatusView submit(
@@ -66,6 +69,7 @@ public class ArticleReviewSubmissionService {
 
         ArticleCommunityAccess access = permissionService
                 .requireCommunityArticle(articleId, ArticleAction.SUBMIT_REVIEW);
+        sanctionService.requireActionAllowed(access.actor().getId(), SanctionAction.SUBMIT);
         Article article = access.article();
         requireExpectedLock(article, command.expectedLockVersion());
         if ("PRIVATE".equals(article.getVisibility())) {

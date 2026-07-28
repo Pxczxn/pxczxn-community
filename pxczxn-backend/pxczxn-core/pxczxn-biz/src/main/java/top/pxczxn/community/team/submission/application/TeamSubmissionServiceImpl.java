@@ -16,6 +16,8 @@ import top.pxczxn.community.article.persistence.ArticleVersionMapper;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.community.team.application.TeamAuthorityService;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamAuditEvent;
@@ -44,10 +46,12 @@ public class TeamSubmissionServiceImpl implements TeamSubmissionService {
     private final TeamAuthorityService authorityService;
     private final TeamAuditEventMapper auditMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunitySanctionService sanctionService;
 
     @Override
     @Transactional
     public TeamSubmissionView submit(Long actorUserId, CreateTeamSubmissionCommand command) {
+        sanctionService.requireActionAllowed(actorUserId, SanctionAction.SUBMIT);
         if (command == null || command.sourceArticleId() == null || command.targetTeamId() == null) throw new BusinessException(400, "投稿信息不完整");
         String key = idempotencyKey(command.idempotencyKey());
         TeamSubmission sameKey = submissionMapper.findByIdempotencyKey(key);

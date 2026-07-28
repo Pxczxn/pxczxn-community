@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.model.CommunityUserLoginAccount;
 import top.pxczxn.community.user.persistence.CommunityUserLoginAccountMapper;
@@ -47,7 +48,8 @@ class CommunitySessionServiceImplTest {
                 userMapper,
                 loginAccountMapper,
                 blogMapper,
-                communityAuth
+                communityAuth,
+                mock(CommunitySanctionService.class)
         );
     }
 

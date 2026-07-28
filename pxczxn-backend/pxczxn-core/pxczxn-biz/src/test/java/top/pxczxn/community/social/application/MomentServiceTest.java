@@ -8,6 +8,7 @@ import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
 import top.pxczxn.community.moderation.application.KeywordReviewOutcome;
 import top.pxczxn.community.shared.auth.CommunityAuth;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.social.model.CommunityContentLike;
 import top.pxczxn.community.social.model.CommunityMoment;
 import top.pxczxn.community.social.model.FavoriteItem;
@@ -67,7 +68,8 @@ class MomentServiceTest {
                 renderer,
                 reviewEngine,
                 auth,
-                List.of()
+                List.of(),
+                mock(CommunitySanctionService.class)
         );
         actor = user(100L, 300L);
         blog = blog(300L, 100L);
@@ -221,10 +223,10 @@ class MomentServiceTest {
         );
         when(momentMapper.selectList(any()))
                 .thenReturn(List.of(visible, hidden));
-        when(accessService.requireAccessible(
+        when(accessService.findAccessible(
                 LikeTargetType.MOMENT, 10L
         )).thenReturn(target(10L));
-        when(accessService.requireAccessible(
+        when(accessService.findAccessible(
                 LikeTargetType.MOMENT, 11L
         )).thenThrow(new BusinessException(404, "内容不存在"));
 

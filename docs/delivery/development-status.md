@@ -10,7 +10,7 @@
 | 即时聊天 | 完成 | 单聊、群聊、未读状态与安全 WebSocket Ticket 已纳入当前基线 |
 | M2.5 产品语义与信息架构校正 | 完成 | 发现页、入口回跳、动态路由、管理端运营信息架构及运行时演示文案已完成收口 |
 | M3 团队博客与协作创作 | 完成 | 团队、投稿、系列、共创已通过完整生命周期验收 |
-| M4 平台治理与内容安全 | 开发中 | 举报中心、屏蔽与黑名单、申诉中心已完成；处罚、反滥用待继续交付 |
+| M4 平台治理与内容安全 | 开发中 | 举报中心、屏蔽与黑名单、申诉中心、处罚体系已完成；内容规则、反滥用与治理看板待继续交付 |
 | M5 发现、搜索与创作者体验 | 已规划 | 搜索、可解释发现、SEO、RSS、统计、性能 |
 | M6 公网发布与持续运营 | 已规划 | 生产环境、CI/CD、备份、监控、灰度 |
 
@@ -902,11 +902,35 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 当前版本
 
-星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力和 M4-T001/T002/T003 治理能力，状态：持续开发中。
+星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力和 M4-T001/T002/T003/T004 治理能力，状态：持续开发中。
 
 M2.5 已将已有内容、互动、通知和聊天能力放到正确的平台入口与导航中：首次进入博客端为社区发现页，进入管理端为社区运营中心；原型团队、动态和协作文章不再作为写死产品路由运行。
 
-M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 已完成举报、屏蔽和申诉闭环，下一项为 **M4-T004 处罚体系**。
+M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 已完成举报、屏蔽、申诉和处罚闭环，下一项为 **M4-T005 内容规则与关键词**。
+
+## M4-T004 处罚体系
+
+状态：完成
+
+交付内容：
+
+- V033 新增处罚、不可变处罚事件与限流令牌表，并增加投稿限制和处罚前账号状态字段；处罚事件的更新和删除均由数据库触发器拒绝。
+- 管理端可按用户发放、查询和撤销 WARNING、RATE_LIMIT、COMMENT_BAN、MOMENT_BAN、SUBMISSION_BAN、PUBLISH_SUSPEND、LOGIN_SUSPEND 和 PERMANENT_BAN；用户端可查看自己的原因、期限、状态与历史。
+- 处罚统一接入评论、动态发布、文章审核投稿、团队投稿和登录；有效限流处罚以每个用户/动作 30 秒窗口执行，并使用条件更新确保并发情况下只发放一个令牌。
+- 到期处罚由定时任务及读写动作同步转为 EXPIRED；撤销或到期会显式清空限制字段，并恢复处罚前的 FROZEN/BANNED 状态，避免覆盖原有账号状态。
+
+验证结果：
+
+```text
+V033 schema verification: 3 sanction tables / 2 immutable triggers / 2 user execution columns
+Backend affected-module and API tests: PASS
+Admin typecheck and production build: PASS
+Web typecheck and production build: PASS
+M4 sanction lifecycle E2E: PASS
+COMMENT_BAN revoke recovery / MOMENT_BAN / RATE_LIMIT / LOGIN_SUSPEND / EXPIRED: PASS
+Immutable sanction event update/delete: MySQL 45000 rejected
+Runtime backend: http://127.0.0.1:8861 / UP
+```
 
 ## M3-T002 团队博客申请与平台审核
 
