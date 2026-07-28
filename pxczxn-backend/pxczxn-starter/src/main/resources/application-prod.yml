@@ -61,6 +61,8 @@ pxczxn:
       samples: false
   community:
     version: ${PXCZXN_COMMUNITY_VERSION:1.0.0}
+    monitoring:
+      metrics-refresh-interval: ${PXCZXN_METRICS_REFRESH_INTERVAL:30s}
     canary:
       registration-enabled: ${PXCZXN_CANARY_REGISTRATION_ENABLED:true}
       maximum-registered-users: ${PXCZXN_CANARY_MAX_REGISTERED_USERS:100}

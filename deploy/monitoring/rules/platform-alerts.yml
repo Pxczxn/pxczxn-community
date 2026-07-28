@@ -21,6 +21,31 @@ groups:
         for: 2m
         labels: { severity: warning }
         annotations: { summary: "Redis exporter cannot query Redis" }
+      - alert: MysqlSlowQueriesHigh
+        expr: increase(mysql_global_status_slow_queries[10m]) > 10
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "MySQL slow-query count is elevated" }
+      - alert: CommunityLoginFailuresHigh
+        expr: sum(increase(http_server_requests_seconds_count{job="pxczxn-backend",uri="/api/v1/auth/login",status=~"4.."}[5m])) > 20
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Community login failures are elevated" }
+      - alert: ReviewQueueBacklog
+        expr: pxczxn_community_review_queue_depth > 50
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Content review queue depth exceeds 50" }
+      - alert: ReviewQueueStalled
+        expr: pxczxn_community_review_queue_oldest_seconds > 3600
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Oldest open review task has waited over one hour" }
+      - alert: NotificationUnreadBacklog
+        expr: pxczxn_community_notification_unread_depth > 1000
+        for: 30m
+        labels: { severity: warning }
+        annotations: { summary: "Unread notification backlog exceeds 1000" }
       - alert: HostDiskAlmostFull
         expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} < 0.15
         for: 15m
