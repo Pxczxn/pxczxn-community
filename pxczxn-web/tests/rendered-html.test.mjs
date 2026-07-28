@@ -83,7 +83,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
   assert.match(topbar, /<Link href="\/">首页<\/Link>/);
   assert.match(auth, /new URLSearchParams\(window\.location\.search\)\.get\("returnTo"\)/);
   assert.match(auth, /: "\/discover"/);
-  assert.match(discover, /communityApi\.discoverArticles/);
+  assert.match(discover, /communityApi\.discoverRankedArticles/);
   assert.match(discover, /communityApi\.moments/);
   assert.match(discover, /communityApi\.tags/);
   assert.match(discover, /communityApi\.myFollowing/);
