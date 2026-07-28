@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.block.application.CommunityBlockService;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.chat.model.CommunityChatMessage;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
@@ -30,11 +31,13 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     private final CommunityUserMapper userMapper;
     private final CommunityBlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Override
     @Transactional
     public CommunityChatMessageView send(Long actor, Long recipient, String content) {
         authorize(actor, recipient);
+        abuseGuard.check("USER:" + actor, "CHAT_SEND", 20, 60);
         String text = content == null ? "" : content.trim();
         if (text.isEmpty() || text.length() > 2000) {
             throw new BusinessException(400, "Message content is invalid");

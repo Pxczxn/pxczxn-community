@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
 import top.pxczxn.community.moderation.application.KeywordReviewOutcome;
@@ -53,6 +54,7 @@ public class MomentService {
     private final CommunityAuth communityAuth;
     private final List<MomentBlogPublisherResolver> publisherResolvers;
     private final CommunitySanctionService sanctionService;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
@@ -68,7 +70,8 @@ public class MomentService {
             ArticleKeywordReviewEngine keywordReviewEngine,
             CommunityAuth communityAuth,
             List<MomentBlogPublisherResolver> publisherResolvers,
-            CommunitySanctionService sanctionService
+            CommunitySanctionService sanctionService,
+            CommunityAbuseGuard abuseGuard
     ) {
         this.momentMapper = momentMapper;
         this.userMapper = userMapper;
@@ -83,6 +86,7 @@ public class MomentService {
                 ? List.of()
                 : List.copyOf(publisherResolvers);
         this.sanctionService = sanctionService;
+        this.abuseGuard = abuseGuard;
     }
 
     @Transactional
@@ -123,6 +127,7 @@ public class MomentService {
                 valueOrEmpty(rendered.textContent()),
                 valueOrEmpty(linkUrl)
         );
+        abuseGuard.rejectDuplicateContent(actor.getId(), "MOMENT", reviewText);
         KeywordReviewOutcome outcome = keywordReviewEngine.review(
                 "MOMENT", null, null, reviewText
         );
@@ -476,6 +481,7 @@ public class MomentService {
 
     private CommunityUser requirePublishingActor() {
         CommunityUser actor = requireActiveActor();
+        abuseGuard.check("USER:" + actor.getId(), "MOMENT_PUBLISH", 8, 60);
         sanctionService.requireActionAllowed(actor.getId(), SanctionAction.PUBLISH);
         if (actor.getPublishRestrictedUntil() != null
                 && actor.getPublishRestrictedUntil().isAfter(

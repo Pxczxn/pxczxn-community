@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.CommunityComment;
@@ -44,6 +45,8 @@ public class ContentLikeService {
     private final CommunityAuth communityAuth;
     private final LikeListPrivacyService privacyService;
 
+    private final CommunityAbuseGuard abuseGuard;
+
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
 
@@ -61,6 +64,7 @@ public class ContentLikeService {
         if (existing != null) {
             return relationship(target, true, target.likeCount());
         }
+        abuseGuard.check("USER:" + userId, "INTERACTION_CREATE", 40, 60);
 
         CommunityContentLike relation = new CommunityContentLike();
         relation.setId(IdWorker.getId());

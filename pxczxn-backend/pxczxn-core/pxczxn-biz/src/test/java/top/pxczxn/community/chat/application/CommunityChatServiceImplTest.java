@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import top.pxczxn.community.block.application.CommunityBlockService;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.chat.model.CommunityChatMessage;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
@@ -40,7 +41,7 @@ class CommunityChatServiceImplTest {
         blockService = mock(CommunityBlockService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
         service = new CommunityChatServiceImpl(
-                messageMapper, followMapper, userMapper, blockService, eventPublisher
+                messageMapper, followMapper, userMapper, blockService, eventPublisher, mock(CommunityAbuseGuard.class)
         );
         when(userMapper.selectById(10L)).thenReturn(activeUser(10L, 100L));
         when(userMapper.selectById(20L)).thenReturn(activeUser(20L, 200L));

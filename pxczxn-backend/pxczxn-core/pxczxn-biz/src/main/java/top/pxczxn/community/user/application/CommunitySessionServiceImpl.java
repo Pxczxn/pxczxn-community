@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.sanction.application.SanctionAction;
@@ -36,6 +37,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
     private final BlogMapper blogMapper;
     private final CommunityAuth communityAuth;
     private final CommunitySanctionService sanctionService;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Override
     @Transactional(noRollbackFor = {
@@ -47,6 +49,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
             throw new InvalidCommunityCredentialsException();
         }
         String normalizedEmail = normalizeEmail(command.email());
+        abuseGuard.check("EMAIL:" + normalizedEmail, "LOGIN", 10, 900);
         CommunityUserLoginAccount account = loginAccountMapper.selectOne(
                 Wrappers.<CommunityUserLoginAccount>lambdaQuery()
                         .eq(CommunityUserLoginAccount::getLoginType, "EMAIL")

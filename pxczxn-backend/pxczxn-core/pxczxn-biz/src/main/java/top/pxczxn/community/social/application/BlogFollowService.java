@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.CommunityFollow;
@@ -46,6 +47,8 @@ public class BlogFollowService {
     private final CommunityUserMapper userMapper;
     private final CommunityAuth communityAuth;
 
+    private final CommunityAbuseGuard abuseGuard;
+
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
 
@@ -64,6 +67,9 @@ public class BlogFollowService {
             applySettings(existing, settings(command, target.blog(), existing));
             return relationship(actor, target, existing);
         }
+        abuseGuard.check(
+                "USER:" + actor.user().getId(), "INTERACTION_CREATE", 40, 60
+        );
         FollowSettings settings = settings(command, target.blog(), null);
 
         CommunityFollow relation = new CommunityFollow();

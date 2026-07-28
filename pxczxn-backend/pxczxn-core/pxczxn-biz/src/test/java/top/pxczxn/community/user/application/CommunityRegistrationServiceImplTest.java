@@ -7,6 +7,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.dao.DuplicateKeyException;
 import top.pxczxn.community.blog.model.Blog;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.model.BlogCategory;
 import top.pxczxn.community.blog.model.BlogSetting;
 import top.pxczxn.community.blog.persistence.BlogCategoryMapper;
@@ -57,7 +58,8 @@ class CommunityRegistrationServiceImplTest {
                 blogMapper,
                 blogSettingMapper,
                 blogCategoryMapper,
-                favoriteFolderMapper
+                favoriteFolderMapper,
+                mock(CommunityAbuseGuard.class)
         );
     }
 

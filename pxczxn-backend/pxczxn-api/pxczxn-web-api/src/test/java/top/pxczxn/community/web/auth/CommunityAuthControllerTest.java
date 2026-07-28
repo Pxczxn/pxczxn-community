@@ -1,8 +1,10 @@
 package top.pxczxn.community.web.auth;
 
 import top.pxczxn.platform.common.result.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.user.application.CommunityLoginSession;
 import top.pxczxn.community.user.application.CommunityRegistrationService;
 import top.pxczxn.community.user.application.CommunitySessionService;
@@ -25,11 +27,14 @@ class CommunityAuthControllerTest {
                         9223372036854774000L,
                         "alice",
                         "alice"
-                ));
+        ));
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
-        CommunityAuthController controller = new CommunityAuthController(service, sessionService);
+        CommunityAuthController controller = new CommunityAuthController(
+                service, sessionService, mock(CommunityAbuseGuard.class)
+        );
 
         Result<CommunityRegistrationView> result = controller.register(
+                requestFrom("127.0.0.1"),
                 new CommunityRegistrationRequest(
                         "Alice",
                         "alice@example.com",
@@ -54,7 +59,9 @@ class CommunityAuthControllerTest {
         when(service.isUsernameAvailable("alice")).thenReturn(true);
         when(service.isEmailAvailable("alice@example.com")).thenReturn(false);
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
-        CommunityAuthController controller = new CommunityAuthController(service, sessionService);
+        CommunityAuthController controller = new CommunityAuthController(
+                service, sessionService, mock(CommunityAbuseGuard.class)
+        );
 
         assertThat(controller.checkUsername("alice").getData().available()).isTrue();
         assertThat(controller.checkEmail("alice@example.com").getData().available()).isFalse();
@@ -74,14 +81,23 @@ class CommunityAuthControllerTest {
                         "alice"
                 ));
         CommunityAuthController controller =
-                new CommunityAuthController(registrationService, sessionService);
+                new CommunityAuthController(
+                        registrationService, sessionService, mock(CommunityAbuseGuard.class)
+                );
 
         Result<CommunityLoginView> result = controller.login(
+                requestFrom("127.0.0.1"),
                 new CommunityLoginRequest("alice@example.com", "password-123")
         );
 
         assertThat(result.getData().tokenName()).isEqualTo("pxczxn-community-token");
         assertThat(result.getData().tokenValue()).isEqualTo("community-token-value");
         assertThat(result.getData().userId()).isEqualTo("9223372036854775000");
+    }
+
+    private static HttpServletRequest requestFrom(String remoteAddress) {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn(remoteAddress);
+        return request;
     }
 }

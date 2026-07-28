@@ -7,6 +7,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.report.model.CommunityReport;
@@ -29,12 +30,14 @@ public class CommunityReportServiceImpl implements CommunityReportService {
     private final ArticleMapper articleMapper; private final CommunityMomentMapper momentMapper; private final CommunityCommentMapper commentMapper;
     private final BlogMapper blogMapper; private final CommunityUserMapper userMapper; private final TeamMapper teamMapper; private final CommunityChatMessageMapper chatMapper;
     private final ObjectMapper objectMapper;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Override @Transactional public CommunityReportView create(Long reporter, CreateCommunityReportCommand command) {
         if (reporter == null || command == null) throw new BusinessException(400, "Invalid report");
+        abuseGuard.check("USER:" + reporter, "REPORT_CREATE", 6, 300);
         String type = targetType(command.targetType()); Long target = positive(command.targetId(), "target");
         if ("USER".equals(type) && reporter.equals(target)) throw new BusinessException(400, "Cannot report yourself");
-        requireTarget(type, target); String reason = required(command.reasonCode(), 40, "reason"); String evidence = evidence(command.evidenceJson()); LocalDateTime now = now();
+        requireTarget(type, target); abuseGuard.check("REPORT_TARGET:" + type + ":" + target, "REPORT_TARGET_BURST", 12, 600); String reason = required(command.reasonCode(), 40, "reason"); String evidence = evidence(command.evidenceJson()); LocalDateTime now = now();
         CommunityReport report = new CommunityReport(); report.setId(IdWorker.getId()); report.setReporterUserId(reporter); report.setTargetType(type); report.setTargetId(target); report.setReasonCode(reason); report.setDescription(optional(command.description(), 1000)); report.setEvidenceJson(evidence); report.setStatus("PENDING"); report.setLockVersion(0); report.setCreatedAt(now); report.setUpdatedAt(now);
         try { if (reportMapper.insert(report) != 1) throw new BusinessException(500, "Unable to create report"); }
         catch (DuplicateKeyException exception) { throw new BusinessException(409, "An active report already exists for this reason and target"); }

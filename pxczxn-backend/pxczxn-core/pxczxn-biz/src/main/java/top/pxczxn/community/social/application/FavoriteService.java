@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
@@ -55,6 +56,8 @@ public class FavoriteService {
     private final BlogMapper blogMapper;
     private final CommunityAuth communityAuth;
 
+    private final CommunityAbuseGuard abuseGuard;
+
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
 
@@ -83,6 +86,7 @@ public class FavoriteService {
         );
         boolean created = false;
         if (item == null) {
+            abuseGuard.check("USER:" + actorId, "INTERACTION_CREATE", 40, 60);
             item = new FavoriteItem();
             item.setId(IdWorker.getId());
             item.setOwnerUserId(actorId);

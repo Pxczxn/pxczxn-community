@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.block.application.CommunityBlockService;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -76,7 +78,8 @@ class CommentServiceTest {
                 userMapper,
                 blogMapper,
                 auth,
-                blockService
+                blockService,
+                mock(CommunityAbuseGuard.class)
         );
         actor = user(100L);
         when(accessService.requireAccessible(
@@ -92,7 +95,7 @@ class CommentServiceTest {
                         "<p>安全内容</p>"
                 )
         );
-        when(reviewEngine.review(isNull(), isNull(), any()))
+        when(reviewEngine.review(anyString(), isNull(), isNull(), any()))
                 .thenReturn(approved());
         when(commentMapper.insert(any())).thenReturn(1);
         when(eventMapper.insert(any())).thenReturn(1);
@@ -114,7 +117,7 @@ class CommentServiceTest {
 
     @Test
     void reviewKeywordQueuesCommentWithoutIncrementingCount() {
-        when(reviewEngine.review(isNull(), isNull(), any()))
+        when(reviewEngine.review(anyString(), isNull(), isNull(), any()))
                 .thenReturn(new KeywordReviewOutcome(
                         KeywordReviewOutcome.Decision.MANUAL_REVIEW,
                         "HIGH",

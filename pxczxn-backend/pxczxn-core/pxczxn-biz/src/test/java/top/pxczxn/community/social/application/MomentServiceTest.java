@@ -9,6 +9,7 @@ import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
 import top.pxczxn.community.moderation.application.KeywordReviewOutcome;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.social.model.CommunityContentLike;
 import top.pxczxn.community.social.model.CommunityMoment;
 import top.pxczxn.community.social.model.FavoriteItem;
@@ -24,6 +25,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -69,7 +71,8 @@ class MomentServiceTest {
                 reviewEngine,
                 auth,
                 List.of(),
-                mock(CommunitySanctionService.class)
+                mock(CommunitySanctionService.class),
+                mock(CommunityAbuseGuard.class)
         );
         actor = user(100L, 300L);
         blog = blog(300L, 100L);
@@ -81,7 +84,7 @@ class MomentServiceTest {
                 .thenReturn(new RenderedMomentContent(
                         "动态正文", "<p>动态正文</p>"
                 ));
-        when(reviewEngine.review(isNull(), isNull(), any()))
+        when(reviewEngine.review(anyString(), isNull(), isNull(), any()))
                 .thenReturn(approved());
         when(momentMapper.insert(any())).thenReturn(1);
     }
@@ -154,7 +157,7 @@ class MomentServiceTest {
 
     @Test
     void reviewKeywordCreatesPendingMomentWithoutSourceIncrement() {
-        when(reviewEngine.review(isNull(), isNull(), any()))
+        when(reviewEngine.review(anyString(), isNull(), isNull(), any()))
                 .thenReturn(new KeywordReviewOutcome(
                         KeywordReviewOutcome.Decision.MANUAL_REVIEW,
                         "HIGH",

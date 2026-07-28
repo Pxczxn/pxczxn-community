@@ -11,6 +11,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.model.BlogCategory;
 import top.pxczxn.community.blog.model.BlogSetting;
 import top.pxczxn.community.blog.persistence.BlogCategoryMapper;
@@ -49,6 +50,7 @@ public class CommunityRegistrationServiceImpl implements CommunityRegistrationSe
     private final BlogSettingMapper blogSettingMapper;
     private final BlogCategoryMapper blogCategoryMapper;
     private final FavoriteFolderMapper favoriteFolderMapper;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Override
     public boolean isUsernameAvailable(String username) {
@@ -76,6 +78,7 @@ public class CommunityRegistrationServiceImpl implements CommunityRegistrationSe
 
         String username = normalizeUsername(command.username());
         String email = normalizeEmail(command.email());
+        abuseGuard.check("EMAIL:" + email, "REGISTER", 3, 3600);
         String displayName = normalizeDisplayName(command.displayName(), username);
         validatePassword(command.password());
 

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.user.model.CommunityUser;
@@ -49,7 +50,8 @@ class CommunitySessionServiceImplTest {
                 loginAccountMapper,
                 blogMapper,
                 communityAuth,
-                mock(CommunitySanctionService.class)
+                mock(CommunitySanctionService.class),
+                mock(CommunityAbuseGuard.class)
         );
     }
 

@@ -3,6 +3,7 @@ package top.pxczxn.community.social.application;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.CommunityContentLike;
 import top.pxczxn.community.social.persistence.CommunityCommentMapper;
@@ -32,6 +33,7 @@ class ContentLikeServiceTest {
     private CommunityUserMapper userMapper;
     private CommunityAuth communityAuth;
     private LikeListPrivacyService privacyService;
+    private CommunityAbuseGuard abuseGuard;
     private ContentLikeService service;
 
     @BeforeEach
@@ -44,6 +46,7 @@ class ContentLikeServiceTest {
         userMapper = mock(CommunityUserMapper.class);
         communityAuth = mock(CommunityAuth.class);
         privacyService = mock(LikeListPrivacyService.class);
+        abuseGuard = mock(CommunityAbuseGuard.class);
         service = new ContentLikeService(
                 likeMapper,
                 contentAccessService,
@@ -52,7 +55,8 @@ class ContentLikeServiceTest {
                 commentMapper,
                 userMapper,
                 communityAuth,
-                privacyService
+                privacyService,
+                abuseGuard
         );
         CommunityUser actor = new CommunityUser();
         actor.setId(100L);

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.block.application.CommunityBlockService;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.blog.model.Blog;
@@ -63,6 +64,7 @@ public class CommentService {
     private final BlogMapper blogMapper;
     private final CommunityAuth communityAuth;
     private final CommunityBlockService blockService;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
@@ -78,6 +80,10 @@ public class CommentService {
                 contentAccessService.requireAccessible(type, targetId);
         CommentActorContext context =
                 scopeService.requireCanComment(target);
+        abuseGuard.check("USER:" + context.actor().getId(), "COMMENT_CREATE", 12, 60);
+        abuseGuard.rejectDuplicateContent(
+                context.actor().getId(), "COMMENT", content
+        );
         return createInternal(
                 target,
                 context.actor(),
@@ -111,6 +117,10 @@ public class CommentService {
         }
         CommentActorContext context =
                 scopeService.requireCanComment(target);
+        abuseGuard.check("USER:" + context.actor().getId(), "COMMENT_CREATE", 12, 60);
+        abuseGuard.rejectDuplicateContent(
+                context.actor().getId(), "COMMENT", content
+        );
         return createInternal(
                 target,
                 context.actor(),

@@ -4,6 +4,7 @@ import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.blog.model.Blog;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.CommunityFollow;
@@ -26,6 +27,7 @@ class BlogFollowServiceTest {
     private BlogMapper blogMapper;
     private CommunityUserMapper userMapper;
     private CommunityAuth communityAuth;
+    private CommunityAbuseGuard abuseGuard;
     private BlogFollowService service;
     private CommunityUser actor;
     private CommunityUser targetOwner;
@@ -38,8 +40,9 @@ class BlogFollowServiceTest {
         blogMapper = mock(BlogMapper.class);
         userMapper = mock(CommunityUserMapper.class);
         communityAuth = mock(CommunityAuth.class);
+        abuseGuard = mock(CommunityAbuseGuard.class);
         service = new BlogFollowService(
-                followMapper, blogMapper, userMapper, communityAuth
+                followMapper, blogMapper, userMapper, communityAuth, abuseGuard
         );
 
         actor = user(100L, 200L);

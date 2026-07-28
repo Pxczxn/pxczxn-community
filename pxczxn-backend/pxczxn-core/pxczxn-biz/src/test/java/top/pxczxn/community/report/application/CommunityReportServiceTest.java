@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.report.model.CommunityReport;
@@ -26,7 +27,7 @@ class CommunityReportServiceTest {
 
     @BeforeEach void setUp() {
         reports = mock(CommunityReportMapper.class); events = mock(CommunityReportEventMapper.class); users = mock(CommunityUserMapper.class);
-        service = new CommunityReportServiceImpl(reports, events, mock(ArticleMapper.class), mock(CommunityMomentMapper.class), mock(CommunityCommentMapper.class), mock(BlogMapper.class), users, mock(TeamMapper.class), mock(CommunityChatMessageMapper.class), new ObjectMapper());
+        service = new CommunityReportServiceImpl(reports, events, mock(ArticleMapper.class), mock(CommunityMomentMapper.class), mock(CommunityCommentMapper.class), mock(BlogMapper.class), users, mock(TeamMapper.class), mock(CommunityChatMessageMapper.class), new ObjectMapper(), mock(CommunityAbuseGuard.class));
     }
 
     @Test void rejectsSelfUserReport() {

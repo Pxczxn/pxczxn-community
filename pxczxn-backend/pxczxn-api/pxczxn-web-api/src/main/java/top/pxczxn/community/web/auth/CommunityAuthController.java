@@ -1,6 +1,7 @@
 package top.pxczxn.community.web.auth;
 
 import top.pxczxn.platform.common.result.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,7 @@ import top.pxczxn.community.user.application.CommunityLoginSession;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.RegisterCommunityUserCommand;
 import top.pxczxn.community.user.application.RegisteredCommunityUser;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 
 @Validated
 @RestController
@@ -29,6 +31,7 @@ public class CommunityAuthController {
 
     private final CommunityRegistrationService registrationService;
     private final CommunitySessionService sessionService;
+    private final CommunityAbuseGuard abuseGuard;
 
     @GetMapping("/check-username")
     public Result<AvailabilityView> checkUsername(
@@ -60,8 +63,10 @@ public class CommunityAuthController {
 
     @PostMapping("/register")
     public Result<CommunityRegistrationView> register(
+            HttpServletRequest servletRequest,
             @Valid @RequestBody CommunityRegistrationRequest request
     ) {
+        abuseGuard.check(clientActor(servletRequest), "REGISTER", 10, 3600);
         RegisteredCommunityUser registered = registrationService.register(
                 new RegisterCommunityUserCommand(
                         request.username(),
@@ -80,8 +85,10 @@ public class CommunityAuthController {
 
     @PostMapping("/login")
     public Result<CommunityLoginView> login(
+            HttpServletRequest servletRequest,
             @Valid @RequestBody CommunityLoginRequest request
     ) {
+        abuseGuard.check(clientActor(servletRequest), "LOGIN", 30, 900);
         CommunityLoginSession session = sessionService.login(
                 new CommunityLoginCommand(request.email(), request.password())
         );
@@ -98,5 +105,13 @@ public class CommunityAuthController {
     public Result<Void> logout() {
         sessionService.logout();
         return Result.ok();
+    }
+
+    private static String clientActor(HttpServletRequest request) {
+        String remoteAddress = request == null ? null : request.getRemoteAddr();
+        if (remoteAddress == null || remoteAddress.isBlank()) {
+            return "IP:UNKNOWN";
+        }
+        return "IP:" + remoteAddress.trim();
     }
 }

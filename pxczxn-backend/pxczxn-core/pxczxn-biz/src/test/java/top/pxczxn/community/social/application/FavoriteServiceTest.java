@@ -3,6 +3,7 @@ package top.pxczxn.community.social.application;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.social.model.FavoriteFolder;
@@ -38,6 +39,7 @@ class FavoriteServiceTest {
     private CommunityUserMapper userMapper;
     private BlogMapper blogMapper;
     private CommunityAuth communityAuth;
+    private CommunityAbuseGuard abuseGuard;
     private FavoriteService service;
 
     @BeforeEach
@@ -51,6 +53,7 @@ class FavoriteServiceTest {
         userMapper = mock(CommunityUserMapper.class);
         blogMapper = mock(BlogMapper.class);
         communityAuth = mock(CommunityAuth.class);
+        abuseGuard = mock(CommunityAbuseGuard.class);
         service = new FavoriteService(
                 itemMapper,
                 folderItemMapper,
@@ -60,7 +63,8 @@ class FavoriteServiceTest {
                 momentMapper,
                 userMapper,
                 blogMapper,
-                communityAuth
+                communityAuth,
+                abuseGuard
         );
         CommunityUser actor = user(100L);
         when(communityAuth.getLoginUserId()).thenReturn(100L);

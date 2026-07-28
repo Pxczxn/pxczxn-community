@@ -1,0 +1,3 @@
+package top.pxczxn.community.abuse.model;
+import com.baomidou.mybatisplus.annotation.IdType; import com.baomidou.mybatisplus.annotation.TableId; import com.baomidou.mybatisplus.annotation.TableName; import lombok.Getter; import lombok.Setter; import java.time.LocalDateTime;
+@Getter @Setter @TableName("community_abuse_event") public class CommunityAbuseEvent { @TableId(type=IdType.AUTO) private Long id; private String actorKey; private String actionType; private String decision; private Integer threshold; private Integer windowSeconds; private Integer attemptCount; private LocalDateTime occurredAt; }
