@@ -11,10 +11,19 @@ $migrationDirectory = Join-Path $root "database\migrations"
 $verifyDirectory = Join-Path $root "database\verify"
 $oldMySqlPassword = $env:MYSQL_PWD
 
-try {
-    if (-not (Test-Path -LiteralPath $MySqlPath -PathType Leaf)) {
+function Resolve-MySqlCommand {
+    if (Test-Path -LiteralPath $MySqlPath -PathType Leaf) {
+        return (Resolve-Path -LiteralPath $MySqlPath).Path
+    }
+    $command = Get-Command $MySqlPath -CommandType Application -ErrorAction SilentlyContinue
+    if ($null -eq $command) {
         throw "MySQL client not found: $MySqlPath"
     }
+    return $command.Source
+}
+
+try {
+    $MySqlPath = Resolve-MySqlCommand
 
     $migrations = @(Get-ChildItem -LiteralPath $migrationDirectory -Filter "V*.sql" |
         Sort-Object Name)
@@ -80,7 +89,14 @@ try {
         Write-Host "       $($migration.Name) $checksum"
     }
 
-    & powershell.exe `
+    $powerShell = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue).Source
+    if (-not $powerShell) {
+        $powerShell = (Get-Command powershell.exe -CommandType Application -ErrorAction SilentlyContinue).Source
+    }
+    if (-not $powerShell) {
+        throw "PowerShell executable not found"
+    }
+    & $powerShell `
         -NoProfile `
         -ExecutionPolicy Bypass `
         -File (Join-Path $PSScriptRoot "invoke-database-migrations.ps1") `

@@ -26,6 +26,17 @@ function ConvertTo-SqlLiteral {
     return $Value.Replace("'", "''")
 }
 
+function Resolve-MySqlCommand {
+    if (Test-Path -LiteralPath $MySqlPath -PathType Leaf) {
+        return (Resolve-Path -LiteralPath $MySqlPath).Path
+    }
+    $command = Get-Command $MySqlPath -CommandType Application -ErrorAction SilentlyContinue
+    if ($null -eq $command) {
+        throw "MySQL client not found: $MySqlPath"
+    }
+    return $command.Source
+}
+
 function Invoke-MySqlQuery {
     param([string]$Sql)
 
@@ -104,9 +115,7 @@ try {
     if ($BaselineExisting -and $CheckOnly) {
         throw "BaselineExisting and CheckOnly cannot be used together"
     }
-    if (-not (Test-Path -LiteralPath $MySqlPath -PathType Leaf)) {
-        throw "MySQL client not found: $MySqlPath"
-    }
+    $MySqlPath = Resolve-MySqlCommand
 
     $migrations = @(Get-ChildItem -LiteralPath $MigrationDirectory -File -Filter "V*.sql" |
         Sort-Object Name)
