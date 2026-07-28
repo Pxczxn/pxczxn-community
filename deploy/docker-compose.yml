@@ -101,7 +101,60 @@ services:
       web: { condition: service_healthy }
     logging: *default_logging
 
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.17.2
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: ${MYSQL_USER}:${MYSQL_PASSWORD}@(mysql:3306)/
+    depends_on:
+      mysql: { condition: service_healthy }
+    logging: *default_logging
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      redis: { condition: service_healthy }
+    logging: *default_logging
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    restart: unless-stopped
+    command: [--path.rootfs=/host]
+    volumes:
+      - /:/host:ro,rslave
+    logging: *default_logging
+
+  prometheus:
+    image: prom/prometheus:v3.4.2
+    restart: unless-stopped
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.path=/prometheus, --storage.tsdb.retention.time=30d]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      backend: { condition: service_healthy }
+      mysqld-exporter: { condition: service_started }
+      redis-exporter: { condition: service_started }
+      node-exporter: { condition: service_started }
+    logging: *default_logging
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    command: [--config.file=/etc/alertmanager/alertmanager.yml, --storage.path=/alertmanager]
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    logging: *default_logging
+
 volumes:
   mysql_data:
   redis_data:
   minio_data:
+  prometheus_data:
+  alertmanager_data:
