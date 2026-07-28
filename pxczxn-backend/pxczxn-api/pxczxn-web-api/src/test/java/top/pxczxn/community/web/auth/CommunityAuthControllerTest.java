@@ -10,6 +10,7 @@ import top.pxczxn.community.user.application.CommunityRegistrationService;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.RegisterCommunityUserCommand;
 import top.pxczxn.community.user.application.RegisteredCommunityUser;
+import top.pxczxn.community.user.persistence.CommunityUserMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -30,7 +31,7 @@ class CommunityAuthControllerTest {
         ));
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
         CommunityAuthController controller = new CommunityAuthController(
-                service, sessionService, mock(CommunityAbuseGuard.class)
+                service, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
         );
 
         Result<CommunityRegistrationView> result = controller.register(
@@ -60,7 +61,7 @@ class CommunityAuthControllerTest {
         when(service.isEmailAvailable("alice@example.com")).thenReturn(false);
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
         CommunityAuthController controller = new CommunityAuthController(
-                service, sessionService, mock(CommunityAbuseGuard.class)
+                service, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
         );
 
         assertThat(controller.checkUsername("alice").getData().available()).isTrue();
@@ -82,7 +83,7 @@ class CommunityAuthControllerTest {
                 ));
         CommunityAuthController controller =
                 new CommunityAuthController(
-                        registrationService, sessionService, mock(CommunityAbuseGuard.class)
+                        registrationService, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
                 );
 
         Result<CommunityLoginView> result = controller.login(
@@ -99,5 +100,9 @@ class CommunityAuthControllerTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRemoteAddr()).thenReturn(remoteAddress);
         return request;
+    }
+
+    private static CanaryRegistrationGate openRegistrationGate() {
+        return new CanaryRegistrationGate(mock(CommunityUserMapper.class));
     }
 }

@@ -32,6 +32,7 @@ public class CommunityAuthController {
     private final CommunityRegistrationService registrationService;
     private final CommunitySessionService sessionService;
     private final CommunityAbuseGuard abuseGuard;
+    private final CanaryRegistrationGate canaryRegistrationGate;
 
     @GetMapping("/check-username")
     public Result<AvailabilityView> checkUsername(
@@ -67,14 +68,9 @@ public class CommunityAuthController {
             @Valid @RequestBody CommunityRegistrationRequest request
     ) {
         abuseGuard.check(clientActor(servletRequest), "REGISTER", 10, 3600);
-        RegisteredCommunityUser registered = registrationService.register(
-                new RegisterCommunityUserCommand(
-                        request.username(),
-                        request.email(),
-                        request.password(),
-                        request.displayName()
-                )
-        );
+        RegisteredCommunityUser registered = canaryRegistrationGate.register(() -> registrationService.register(
+                new RegisterCommunityUserCommand(request.username(), request.email(), request.password(), request.displayName())
+        ));
         return Result.ok(new CommunityRegistrationView(
                 registered.userId().toString(),
                 registered.blogId().toString(),
