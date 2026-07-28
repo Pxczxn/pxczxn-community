@@ -33,6 +33,14 @@ public interface CommunityNotificationRecipientMapper
                     ON notification.id = recipient.notification_id
             WHERE recipient.recipient_user_id = #{recipientUserId}
               AND recipient.status != 'ARCHIVED'
+              AND NOT EXISTS (
+                  SELECT 1 FROM community_block blocked_item
+                  WHERE blocked_item.blocker_user_id = recipient.recipient_user_id
+                    AND (
+                        (blocked_item.target_type = 'USER' AND blocked_item.target_id = notification.sender_user_id)
+                        OR (blocked_item.target_type = 'BLOG' AND notification.target_type = 'BLOG' AND blocked_item.target_id = notification.target_id)
+                    )
+              )
               <if test="status != null">
                 AND recipient.status = #{status}
               </if>
@@ -60,6 +68,14 @@ public interface CommunityNotificationRecipientMapper
                     ON notification.id = recipient.notification_id
             WHERE recipient.recipient_user_id = #{recipientUserId}
               AND recipient.status != 'ARCHIVED'
+              AND NOT EXISTS (
+                  SELECT 1 FROM community_block blocked_item
+                  WHERE blocked_item.blocker_user_id = recipient.recipient_user_id
+                    AND (
+                        (blocked_item.target_type = 'USER' AND blocked_item.target_id = notification.sender_user_id)
+                        OR (blocked_item.target_type = 'BLOG' AND notification.target_type = 'BLOG' AND blocked_item.target_id = notification.target_id)
+                    )
+              )
               <if test="status != null">
                 AND recipient.status = #{status}
               </if>
@@ -81,6 +97,14 @@ public interface CommunityNotificationRecipientMapper
                     ON notification.id = recipient.notification_id
             WHERE recipient.recipient_user_id = #{recipientUserId}
               AND recipient.status = 'UNREAD'
+              AND NOT EXISTS (
+                  SELECT 1 FROM community_block blocked_item
+                  WHERE blocked_item.blocker_user_id = recipient.recipient_user_id
+                    AND (
+                        (blocked_item.target_type = 'USER' AND blocked_item.target_id = notification.sender_user_id)
+                        OR (blocked_item.target_type = 'BLOG' AND notification.target_type = 'BLOG' AND blocked_item.target_id = notification.target_id)
+                    )
+              )
             GROUP BY notification.category
             """)
     List<Map<String, Object>> countUnreadByCategory(
@@ -96,6 +120,14 @@ public interface CommunityNotificationRecipientMapper
                 recipient.read_at = #{readAt}
             WHERE recipient.recipient_user_id = #{recipientUserId}
               AND recipient.status = 'UNREAD'
+              AND NOT EXISTS (
+                  SELECT 1 FROM community_block blocked_item
+                  WHERE blocked_item.blocker_user_id = recipient.recipient_user_id
+                    AND (
+                        (blocked_item.target_type = 'USER' AND blocked_item.target_id = notification.sender_user_id)
+                        OR (blocked_item.target_type = 'BLOG' AND notification.target_type = 'BLOG' AND blocked_item.target_id = notification.target_id)
+                    )
+              )
               <if test="category != null">
                 AND notification.category = #{category}
               </if>

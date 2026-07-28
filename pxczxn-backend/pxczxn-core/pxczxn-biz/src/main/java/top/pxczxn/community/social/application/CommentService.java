@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.blog.model.Blog;
@@ -61,6 +62,7 @@ public class CommentService {
     private final CommunityUserMapper userMapper;
     private final BlogMapper blogMapper;
     private final CommunityAuth communityAuth;
+    private final CommunityBlockService blockService;
 
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
@@ -131,7 +133,7 @@ public class CommentService {
                 contentAccessService.requireAccessible(type, targetId);
         List<CommunityComment> roots = commentMapper.findPublicRoots(
                 type.name(), targetId
-        );
+        ).stream().filter(this::isVisible).toList();
         int validPageNum = validPage(pageNum);
         int validPageSize = validPageSize(pageSize);
         List<CommunityComment> pageRoots = slice(
@@ -140,7 +142,8 @@ public class CommentService {
         List<CommentThreadView> records = new ArrayList<>();
         for (CommunityComment root : pageRoots) {
             List<CommunityComment> replies =
-                    commentMapper.findPublicReplies(root.getId());
+                    commentMapper.findPublicReplies(root.getId()).stream()
+                            .filter(this::isVisible).toList();
             records.add(new CommentThreadView(
                     publicView(root),
                     replies.stream()
@@ -169,7 +172,7 @@ public class CommentService {
     ) {
         requireValidCommentId(rootCommentId);
         CommunityComment root = commentMapper.selectById(rootCommentId);
-        if (!isPublicRoot(root)) {
+        if (!isPublicRoot(root) || !isVisible(root)) {
             throw new BusinessException(404, "评论不存在");
         }
         contentAccessService.requireAccessible(
@@ -177,7 +180,8 @@ public class CommentService {
                 root.getTargetId()
         );
         List<CommunityComment> replies =
-                commentMapper.findPublicReplies(rootCommentId);
+                commentMapper.findPublicReplies(rootCommentId).stream()
+                        .filter(this::isVisible).toList();
         int validPageNum = validPage(pageNum);
         int validPageSize = validPageSize(pageSize);
         return new CommentReplyPageView(
@@ -509,6 +513,13 @@ public class CommentService {
                         viewerId, "COMMENT", comment.getId()
                 ) != null;
         return view(comment, author, liked, deleted, false, null);
+    }
+
+    private boolean isVisible(CommunityComment comment) {
+        return !blockService.isUserBlocked(
+                communityAuth.getOptionalLoginUserId(),
+                comment.getAuthorUserId()
+        );
     }
 
     private static CommentView view(

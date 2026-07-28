@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.chat.model.CommunityChatMessage;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
@@ -27,6 +28,7 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     private final CommunityChatMessageMapper mapper;
     private final CommunityFollowMapper followMapper;
     private final CommunityUserMapper userMapper;
+    private final CommunityBlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -75,6 +77,9 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     private void authorize(Long actor, Long peer) {
         if (actor == null || peer == null || actor.equals(peer)) {
             throw new BusinessException(403, "Not authorized to access this conversation");
+        }
+        if (blockService.isChatRestricted(actor, peer)) {
+            throw new BusinessException(403, "This conversation is blocked");
         }
         CommunityUser actorUser = userMapper.selectById(actor);
         CommunityUser peerUser = userMapper.selectById(peer);

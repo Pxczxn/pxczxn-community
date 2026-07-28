@@ -49,6 +49,7 @@ test("server-renders formal community routes without fixed prototype content", a
   const routes = [
     ["/discover", "发现值得阅读的内容"],
     ["/articles", "按公开时间浏览社区文章"],
+    ["/blocks", "屏蔽管理"],
     ["/teams", "团队博客"],
     ["/teams/ai-explorers", "团队"],
     ["/workspace/team", "团队工作台"],
@@ -60,7 +61,7 @@ test("server-renders formal community routes without fixed prototype content", a
     ["/settings", "主题设置"],
     ["/editor/new", "创作中心"],
   ];
-  routes[5][1] = "外部投稿";
+  routes.find(([path]) => path === "/submissions/ai-agent")[1] = "外部投稿";
 
   for (const [path, marker] of routes) {
     const response = await render(path);
@@ -137,6 +138,22 @@ test("fails instead of changing the configured development port", async () => {
   assert.match(packageJson, /vinext dev --port 8847 --strictPort/);
   assert.match(viteConfig, /port:\s*8847/);
   assert.match(viteConfig, /strictPort:\s*true/);
+});
+
+test("keeps M4 block management connected to the real API", async () => {
+  const [api, blocks, topbar] = await Promise.all([
+    readFile(new URL("../app/lib/community-api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/blocks/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/prototype-ui.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(api, /\/api\/v1\/blocks/);
+  assert.match(api, /createBlock/);
+  assert.match(api, /removeBlock/);
+  assert.match(blocks, /communityApi\.myBlocks/);
+  assert.match(blocks, /communityApi\.createBlock/);
+  assert.match(blocks, /communityApi\.removeBlock/);
+  assert.match(topbar, /href="\/blocks"/);
 });
 
 test("keeps M2 moments, social relationships and notifications on real APIs", async () => {

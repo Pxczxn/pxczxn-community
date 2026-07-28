@@ -11,6 +11,7 @@ import {
   PenLine,
   Search,
   Settings,
+  ShieldBan,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -104,6 +105,11 @@ export function UserTopbar({ title }: { title?: string }) {
         {session && (
           <Link aria-label="写文章" className="icon-button" href="/editor/new">
             <PenLine size={18} />
+          </Link>
+        )}
+        {session && (
+          <Link aria-label="屏蔽管理" className="icon-button" href="/blocks">
+            <ShieldBan size={18} />
           </Link>
         )}
         <Link aria-label="主题设置" className="icon-button" href="/settings">

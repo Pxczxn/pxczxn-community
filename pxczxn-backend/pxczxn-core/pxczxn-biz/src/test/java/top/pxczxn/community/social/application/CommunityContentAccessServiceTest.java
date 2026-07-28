@@ -7,6 +7,7 @@ import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.permission.ArticleAction;
 import top.pxczxn.community.article.permission.ArticlePermissionService;
 import top.pxczxn.community.article.permission.ArticlePublicAccess;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.shared.auth.CommunityAuth;
@@ -33,6 +34,7 @@ class CommunityContentAccessServiceTest {
     private CommunityUserMapper userMapper;
     private CommunityFollowMapper followMapper;
     private CommunityAuth communityAuth;
+    private CommunityBlockService blockService;
     private CommunityContentAccessService service;
 
     @BeforeEach
@@ -44,6 +46,7 @@ class CommunityContentAccessServiceTest {
         userMapper = mock(CommunityUserMapper.class);
         followMapper = mock(CommunityFollowMapper.class);
         communityAuth = mock(CommunityAuth.class);
+        blockService = mock(CommunityBlockService.class);
         service = new CommunityContentAccessService(
                 articlePermissionService,
                 momentMapper,
@@ -51,7 +54,8 @@ class CommunityContentAccessServiceTest {
                 blogMapper,
                 userMapper,
                 followMapper,
-                communityAuth
+                communityAuth,
+                blockService
         );
     }
 

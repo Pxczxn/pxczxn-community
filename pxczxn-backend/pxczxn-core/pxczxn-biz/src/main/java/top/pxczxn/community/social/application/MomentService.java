@@ -457,17 +457,9 @@ public class MomentService {
     }
 
     private boolean canView(Long momentId) {
-        try {
-            contentAccessService.requireAccessible(
-                    LikeTargetType.MOMENT, momentId
-            );
-            return true;
-        } catch (BusinessException exception) {
-            if (Objects.equals(exception.getCode(), 404)) {
-                return false;
-            }
-            throw exception;
-        }
+        return contentAccessService.findAccessible(
+                LikeTargetType.MOMENT, momentId
+        ) != null;
     }
 
     private CommunityUser requirePublishingActor() {

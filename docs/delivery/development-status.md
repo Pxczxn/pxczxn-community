@@ -10,7 +10,7 @@
 | 即时聊天 | 完成 | 单聊、群聊、未读状态与安全 WebSocket Ticket 已纳入当前基线 |
 | M2.5 产品语义与信息架构校正 | 完成 | 发现页、入口回跳、动态路由、管理端运营信息架构及运行时演示文案已完成收口 |
 | M3 团队博客与协作创作 | 完成 | 团队、投稿、系列、共创已通过完整生命周期验收 |
-| M4 平台治理与内容安全 | 开发中 | 举报中心已完成；屏蔽、申诉、处罚、反滥用待继续交付 |
+| M4 平台治理与内容安全 | 开发中 | 举报中心、屏蔽与黑名单已完成；申诉、处罚、反滥用待继续交付 |
 | M5 发现、搜索与创作者体验 | 已规划 | 搜索、可解释发现、SEO、RSS、统计、性能 |
 | M6 公网发布与持续运营 | 已规划 | 生产环境、CI/CD、备份、监控、灰度 |
 
@@ -902,11 +902,11 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 当前版本
 
-星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力和 M4-T001 举报中心，状态：持续开发中。
+星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力、M4-T001 举报中心和 M4-T002 屏蔽与黑名单，状态：持续开发中。
 
 M2.5 已将已有内容、互动、通知和聊天能力放到正确的平台入口与导航中：首次进入博客端为社区发现页，进入管理端为社区运营中心；原型团队、动态和协作文章不再作为写死产品路由运行。
 
-M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 当前从举报中心继续，下一项为 **M4-T002 屏蔽与黑名单**。
+M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 已完成举报和屏蔽闭环，下一项为 **M4-T003 申诉中心**。
 
 ## M3-T002 团队博客申请与平台审核
 
@@ -953,6 +953,30 @@ V030 disposable database verification: 2 report tables / 2 append-only triggers 
 M4 report E2E on backend port 8861: register users, create, active duplicate 409, admin queue, claim, stale-lock 409, resolve, reporter final state PASS
 Event audit: CREATED / CLAIMED / RESOLVED = 1 / 1 / 1
 Append-only event UPDATE / DELETE: MySQL 45000 rejected / PASS
+```
+
+## M4-T002 屏蔽与黑名单
+
+状态：完成
+
+交付内容：
+
+- V031 创建用户级 `community_block`，支持 `USER`、`BLOG`、`TAG`、`CHAT` 四类目标、唯一去重、目标索引和取消屏蔽。
+- 社区 API 提供创建、查询和取消屏蔽；目标存在性、自我屏蔽和重复提交均由服务层和数据库约束处理。
+- 统一内容访问控制会隐藏被屏蔽用户、博客以及带有被屏蔽标签的公开内容；文章发现流、动态详情/列表和评论读取不会绕过该控制。
+- 私聊在任一方屏蔽用户或聊天联系人后拒绝双向发送、历史与已读操作；解除屏蔽后恢复既有互关用户的聊天能力。
+- 通知列表、未读统计和全部已读操作使用同一数据库过滤条件，不显示被屏蔽用户发送的通知或被屏蔽博客目标的通知。
+- 博客端新增 `/blocks` 屏蔽管理页面与顶栏入口，接入真实创建、列表和取消 API。
+
+验证结果：
+
+```text
+Backend focused tests: 26 passed
+Backend package: 26-module Maven reactor SUCCESS
+Web typecheck / lint / build / test: PASS / PASS / PASS / 7 passed
+V031 disposable database verification: 1 table / community-block indexes PASS
+M4 block-list E2E on backend port 8861: USER/BLOG/TAG/CHAT block + unblock, visible moment, hidden moment detail/feed, hidden notification sender, bidirectional chat restriction and restoration PASS
+Port policy: 8847 was already occupied by an unrelated M3 Web process; no alternate port was used
 ```
 
 ## 当前工程债务与后续处理

@@ -7,6 +7,7 @@ import top.pxczxn.platform.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.model.ArticleVersion;
 import top.pxczxn.community.article.permission.ArticleAction;
@@ -26,6 +27,7 @@ import top.pxczxn.community.taxonomy.persistence.ArticleTagMapper;
 import top.pxczxn.community.taxonomy.persistence.PlatformTagMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
+import top.pxczxn.community.shared.auth.CommunityAuth;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -58,6 +60,8 @@ public class PublicArticleService {
     private final PlatformTagMapper tagMapper;
     private final CommunityUserMapper userMapper;
     private final ArticlePermissionService permissionService;
+    private final CommunityBlockService blockService;
+    private final CommunityAuth communityAuth;
 
     @Transactional(readOnly = true)
     public PublicArticleDetailView detail(Long articleId) {
@@ -66,6 +70,9 @@ public class PublicArticleService {
                 ArticleAction.VIEW_DETAIL
         );
         Article article = access.article();
+        if (isBlocked(article)) {
+            throw new BusinessException(404, "Article does not exist");
+        }
         ArticleVersion version = requirePublishedVersion(article);
         BlogSetting setting = findSetting(access.blog().getId());
         PublicArticleCategoryView category =
@@ -113,6 +120,10 @@ public class PublicArticleService {
     ) {
         PublicArticleQuery query = normalizeQuery(rawQuery);
         BlogAccess access = requirePublicBlog(blogSlug);
+        if (blockService.isBlogBlocked(
+                communityAuth.getOptionalLoginUserId(), access.blog().getId())) {
+            return new PublicArticlePageView(List.of(), 0, query.pageNum(), query.pageSize());
+        }
         BlogCategory selectedCategory = query.categorySlug() == null
                 ? null
                 : requireCategory(access.blog().getId(), query.categorySlug());
@@ -173,7 +184,7 @@ public class PublicArticleService {
                     articleAuthor,
                     article,
                     version
-            )) {
+            ) || isBlocked(article)) {
                 continue;
             }
             BlogCategory category = categories.get(article.getCategoryId());
@@ -221,6 +232,7 @@ public class PublicArticleService {
                 ? List.of()
                 : result.getRecords();
         List<PublicArticleSummaryView> records = articles.stream()
+                .filter(article -> !isBlocked(article))
                 .map(Article::getId)
                 .map(this::detail)
                 .map(detail -> new PublicArticleSummaryView(
@@ -333,6 +345,16 @@ public class PublicArticleService {
                         null,
                         false
                 ).allowed();
+    }
+
+    private boolean isBlocked(Article article) {
+        return blockService.isContentBlocked(
+                communityAuth.getOptionalLoginUserId(),
+                article.getAuthorUserId(),
+                article.getBlogId(),
+                "ARTICLE",
+                article.getId()
+        );
     }
 
     private Map<Long, List<PublicArticleTagView>> tagsByArticleIds(

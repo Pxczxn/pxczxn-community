@@ -13,6 +13,7 @@ import top.pxczxn.community.article.permission.ArticlePermissionService;
 import top.pxczxn.community.article.permission.ArticlePublicAccess;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.article.persistence.ArticleVersionMapper;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.model.BlogCategory;
 import top.pxczxn.community.blog.model.BlogSetting;
@@ -25,6 +26,7 @@ import top.pxczxn.community.taxonomy.persistence.ArticleTagMapper;
 import top.pxczxn.community.taxonomy.persistence.PlatformTagMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
+import top.pxczxn.community.shared.auth.CommunityAuth;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -50,6 +52,8 @@ class PublicArticleServiceTest {
     private PlatformTagMapper tagMapper;
     private CommunityUserMapper userMapper;
     private ArticlePermissionService permissionService;
+    private CommunityBlockService blockService;
+    private CommunityAuth communityAuth;
     private PublicArticleService service;
     private Article article;
     private ArticleVersion publishedVersion;
@@ -68,6 +72,8 @@ class PublicArticleServiceTest {
         tagMapper = mock(PlatformTagMapper.class);
         userMapper = mock(CommunityUserMapper.class);
         permissionService = mock(ArticlePermissionService.class);
+        blockService = mock(CommunityBlockService.class);
+        communityAuth = mock(CommunityAuth.class);
         service = new PublicArticleService(
                 articleMapper,
                 versionMapper,
@@ -77,7 +83,9 @@ class PublicArticleServiceTest {
                 articleTagMapper,
                 tagMapper,
                 userMapper,
-                permissionService
+                permissionService,
+                blockService,
+                communityAuth
         );
 
         blog = new Blog();

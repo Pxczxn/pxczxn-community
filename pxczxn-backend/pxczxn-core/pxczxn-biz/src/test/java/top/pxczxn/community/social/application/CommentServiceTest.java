@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.moderation.application.ArticleKeywordReviewEngine;
@@ -43,6 +44,7 @@ class CommentServiceTest {
     private CommunityUserMapper userMapper;
     private BlogMapper blogMapper;
     private CommunityAuth auth;
+    private CommunityBlockService blockService;
     private CommentService service;
     private CommunityUser actor;
 
@@ -60,6 +62,7 @@ class CommentServiceTest {
         userMapper = mock(CommunityUserMapper.class);
         blogMapper = mock(BlogMapper.class);
         auth = mock(CommunityAuth.class);
+        blockService = mock(CommunityBlockService.class);
         service = new CommentService(
                 commentMapper,
                 eventMapper,
@@ -72,7 +75,8 @@ class CommentServiceTest {
                 momentMapper,
                 userMapper,
                 blogMapper,
-                auth
+                auth,
+                blockService
         );
         actor = user(100L);
         when(accessService.requireAccessible(

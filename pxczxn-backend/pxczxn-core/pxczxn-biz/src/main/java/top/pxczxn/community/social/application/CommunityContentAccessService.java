@@ -4,6 +4,7 @@ import top.pxczxn.platform.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.block.application.CommunityBlockService;
 import top.pxczxn.community.article.permission.ArticleAction;
 import top.pxczxn.community.article.permission.ArticlePermissionService;
 import top.pxczxn.community.article.permission.ArticlePublicAccess;
@@ -37,6 +38,7 @@ public class CommunityContentAccessService {
     private final CommunityUserMapper userMapper;
     private final CommunityFollowMapper followMapper;
     private final CommunityAuth communityAuth;
+    private final CommunityBlockService blockService;
 
     @Transactional(readOnly = true)
     public AccessibleContentTarget requireAccessible(
@@ -52,11 +54,21 @@ public class CommunityContentAccessService {
             Long targetId
     ) {
         requireValidTargetId(targetId);
-        return switch (type) {
+        AccessibleContentTarget target = switch (type) {
             case ARTICLE -> requireArticle(targetId);
             case MOMENT -> requireMoment(targetId, new HashSet<>(), 0);
             case COMMENT -> requireComment(targetId);
         };
+        if (blockService.isContentBlocked(
+                communityAuth.getOptionalLoginUserId(),
+                target.authorUserId(),
+                target.blogId(),
+                target.targetType().name(),
+                target.targetId()
+        )) {
+            throw notFound();
+        }
+        return target;
     }
 
     @Transactional(readOnly = true)

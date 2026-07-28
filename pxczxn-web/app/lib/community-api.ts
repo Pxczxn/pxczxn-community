@@ -536,6 +536,13 @@ export interface CommunityReport {
   lockVersion: number;
 }
 
+export interface CommunityBlock {
+  id: string;
+  targetType: "USER" | "BLOG" | "TAG" | "CHAT";
+  targetId: string;
+  createdAt: string;
+}
+
 export interface TeamInvitation {
   id: string;
   teamId: string;
@@ -1009,6 +1016,14 @@ export const communityApi = {
     return communityRequest<CommunityReport>("/api/v1/reports", { method: "POST", body: JSON.stringify(input) });
   },
   myReports() { return communityRequest<CommunityReport[]>("/api/v1/reports/me"); },
+
+  createBlock(input: { targetType: CommunityBlock["targetType"]; targetId: string }) {
+    return communityRequest<CommunityBlock>("/api/v1/blocks", { method: "POST", body: JSON.stringify(input) });
+  },
+  myBlocks() { return communityRequest<CommunityBlock[]>("/api/v1/blocks"); },
+  removeBlock(targetType: CommunityBlock["targetType"], targetId: string) {
+    return communityRequest<void>(`/api/v1/blocks/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}`, { method: "DELETE" });
+  },
 
   // Team applications
   submitTeamApplication(input: SubmitTeamApplicationInput) {
