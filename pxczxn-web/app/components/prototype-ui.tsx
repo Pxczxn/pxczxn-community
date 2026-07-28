@@ -4,17 +4,24 @@ import Link from "next/link";
 import {
   Bell,
   ChevronDown,
+  Compass,
+  FileText,
+  House,
   LogIn,
   LogOut,
   MessageCircle,
   Moon,
+  Orbit,
   PenLine,
   Search,
   Settings,
   ShieldBan,
   Sparkles,
+  Tags,
+  UsersRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   CommunitySession,
   NOTIFICATION_EVENT,
@@ -23,6 +30,16 @@ import {
   readSession,
   saveSession,
 } from "../lib/community-api";
+
+const primaryNavItems = [
+  { href: "/", label: "首页", Icon: House },
+  { href: "/discover", label: "发现", Icon: Compass },
+  { href: "/articles", label: "文章", Icon: FileText },
+  { href: "/moments", label: "动态", Icon: Orbit },
+  { href: "/series", label: "系列", Icon: Sparkles },
+  { href: "/teams", label: "团队", Icon: UsersRound },
+  { href: "/tags", label: "标签", Icon: Tags },
+] as const;
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -46,6 +63,7 @@ export function Avatar({
 export function UserTopbar({ title }: { title?: string }) {
   const [session, setSession] = useState<CommunitySession | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const pathname = usePathname();
 
   useEffect(() => {
     const sync = () => {
@@ -89,13 +107,15 @@ export function UserTopbar({ title }: { title?: string }) {
         {title && <strong>{title}</strong>}
       </div>
       <nav className="community-primary-nav" aria-label="星语社区主导航">
-        <Link href="/">首页</Link>
-        <Link href="/discover">发现</Link>
-        <Link href="/articles">文章</Link>
-        <Link href="/moments">动态</Link>
-        <Link href="/series">系列</Link>
-        <Link href="/teams">团队</Link>
-        <Link href="/tags">标签</Link>
+        {primaryNavItems.map(({ href, label, Icon }) => {
+          const isActive = href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+          return (
+            <Link key={href} href={href} className={isActive ? "is-active" : undefined} aria-current={isActive ? "page" : undefined}>
+              <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
       <div className="app-topbar__group">
         <label className="top-search">
