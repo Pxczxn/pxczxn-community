@@ -173,6 +173,8 @@ export interface UnifiedSearchPage {
   pageSize: number;
 }
 
+export interface EditorialCollection { id: string; kind: "TOPIC" | "EVENT" | "ANNOUNCEMENT" | "FEATURED" | "COLLECTION"; title: string; slug: string; summary: string | null; coverFileId: string | null; status: string; startsAt: string | null; endsAt: string | null; displayOrder: number; publishedAt: string | null; items: Array<{ targetType: "ARTICLE" | "SERIES"; targetId: string; displayOrder: number }>; }
+
 export interface PublicArticleDetail extends PublicArticleSummary {
   visibility: string;
   renderedHtml: string;
@@ -807,6 +809,7 @@ export const communityApi = {
     const query = new URLSearchParams({ keyword, type, pageNum: String(pageNum), pageSize: String(pageSize) });
     return communityRequest<UnifiedSearchPage>(`/api/v1/public/search?${query}`, {}, false);
   },
+  editorialCollections() { return communityRequest<EditorialCollection[]>("/api/v1/public/editorial", {}, false); },
   categories() {
     return communityRequest<BlogCategory[]>("/api/v1/blogs/me/categories");
   },

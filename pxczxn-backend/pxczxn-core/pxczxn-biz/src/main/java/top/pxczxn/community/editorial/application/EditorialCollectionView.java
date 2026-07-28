@@ -1,0 +1,3 @@
+package top.pxczxn.community.editorial.application;
+import top.pxczxn.community.editorial.model.EditorialCollection; import java.time.LocalDateTime; import java.util.List;
+public record EditorialCollectionView(Long id,String kind,String title,String slug,String summary,Long coverFileId,String status,LocalDateTime startsAt,LocalDateTime endsAt,Integer displayOrder,LocalDateTime publishedAt,List<EditorialItemView> items) { static EditorialCollectionView from(EditorialCollection c,List<EditorialItemView> items){return new EditorialCollectionView(c.getId(),c.getKind(),c.getTitle(),c.getSlug(),c.getSummary(),c.getCoverFileId(),c.getStatus(),c.getStartsAt(),c.getEndsAt(),c.getDisplayOrder(),c.getPublishedAt(),items);} }

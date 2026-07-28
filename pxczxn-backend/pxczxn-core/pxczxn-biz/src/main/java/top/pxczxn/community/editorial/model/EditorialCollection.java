@@ -1,0 +1,3 @@
+package top.pxczxn.community.editorial.model;
+import com.baomidou.mybatisplus.annotation.*; import lombok.Getter; import lombok.Setter; import java.time.LocalDateTime;
+@Getter @Setter @TableName("editorial_collection") public class EditorialCollection { @TableId(type=IdType.INPUT) private Long id; private String kind; private String title; private String slug; private String summary; private Long coverFileId; private String status; private LocalDateTime startsAt; private LocalDateTime endsAt; private Integer displayOrder; private Long createdByAdminId; private LocalDateTime publishedAt; private LocalDateTime createdAt; private LocalDateTime updatedAt; }
