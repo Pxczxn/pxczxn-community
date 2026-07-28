@@ -7,7 +7,7 @@
 1. 将 `deploy/.env.example` 复制为 `deploy/.env`，替换所有 `REPLACE_WITH` 值，并设置真实域名。不要将 `.env` 提交到仓库。
 2. 将两个域名的证书放在 `${LETSENCRYPT_DIR}/live/<domain>/fullchain.pem` 与 `privkey.pem`；可先用 Certbot 的 webroot 模式签发，webroot 为 `${CERTBOT_WEBROOT}`。证书续期后运行 `docker compose -f deploy/docker-compose.yml restart nginx`。
 3. 在仓库根目录运行 `docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d --build`。
-4. 完成数据库迁移：`powershell -ExecutionPolicy Bypass -File scripts/invoke-database-migrations.ps1 -DatabaseName <生产库名>`。仅在已验证备份且维护窗口内执行。
+4. 完成数据库迁移：`powershell -ExecutionPolicy Bypass -File scripts/invoke-database-migrations.ps1 -Database <生产库名>`。仅在已验证备份且维护窗口内执行。
 5. 在 MinIO 控制台创建私有 bucket，并在运营后台配置存储 endpoint、bucket、access key 与 secret；不要将 OSS 密钥写入 Compose 文件。
 
 ## 验证与日志
