@@ -90,6 +90,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '举报中心', icon: 'FlagOutline', permission: 'community:report:list' }
       },
       {
+        path: 'community/appeals',
+        name: 'CommunityAppeals',
+        component: () => import('@/views/community/appeals/index.vue'),
+        meta: { title: '申诉中心', icon: 'ShieldCheck', permission: 'community:appeal:list' }
+      },
+      {
         path: 'community/team-applications',
         name: 'TeamApplications',
         component: () => import('@/views/community/team-applications/index.vue'),

@@ -19,4 +19,6 @@ public interface CommunityReportMapper extends BaseMapper<CommunityReport> {
     int claim(@Param("id") Long id, @Param("adminId") Long adminId, @Param("lock") Integer lock, @Param("now") LocalDateTime now);
     @Update("UPDATE community_report SET status=#{status},resolution_code=#{code},resolution_note=#{note},resolved_at=#{now},updated_at=#{now},lock_version=lock_version+1 WHERE id=#{id} AND status='ASSIGNED' AND assignee_admin_id=#{adminId} AND lock_version=#{lock}")
     int resolve(@Param("id") Long id, @Param("adminId") Long adminId, @Param("status") String status, @Param("code") String code, @Param("note") String note, @Param("lock") Integer lock, @Param("now") LocalDateTime now);
+    @Update("UPDATE community_report SET status='DISMISSED',resolution_code='APPEAL_REVOKED',resolution_note=#{note},updated_at=#{now},lock_version=lock_version+1 WHERE id=#{id} AND status='RESOLVED' AND lock_version=#{lock}")
+    int revokeForAppeal(@Param("id") Long id, @Param("lock") Integer lock, @Param("note") String note, @Param("now") LocalDateTime now);
 }

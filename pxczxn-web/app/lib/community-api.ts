@@ -543,6 +543,9 @@ export interface CommunityBlock {
   createdAt: string;
 }
 
+export interface CommunityAppeal { id: string; reportId: string; status: "PENDING" | "UPHELD" | "REVOKED"; appealReason: string; reviewNote: string | null; lockVersion: number; }
+export interface AppealContext { reportId: string; targetType: string; targetId: string; resolutionCode: string | null; resolutionNote: string | null; }
+
 export interface TeamInvitation {
   id: string;
   teamId: string;
@@ -1024,6 +1027,9 @@ export const communityApi = {
   removeBlock(targetType: CommunityBlock["targetType"], targetId: string) {
     return communityRequest<void>(`/api/v1/blocks/${encodeURIComponent(targetType)}/${encodeURIComponent(targetId)}`, { method: "DELETE" });
   },
+  appealContext(reportId: string) { return communityRequest<AppealContext>(`/api/v1/reports/${encodeURIComponent(reportId)}/appeal-context`); },
+  submitAppeal(reportId: string, input: { appealReason: string; evidenceJson?: string }) { return communityRequest<CommunityAppeal>(`/api/v1/reports/${encodeURIComponent(reportId)}/appeals`, { method: "POST", body: JSON.stringify(input) }); },
+  myAppeals() { return communityRequest<CommunityAppeal[]>("/api/v1/appeals/me"); },
 
   // Team applications
   submitTeamApplication(input: SubmitTeamApplicationInput) {

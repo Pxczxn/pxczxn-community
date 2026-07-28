@@ -110,5 +110,26 @@ const visible = mine.data.find((report) => String(report.id) === String(created.
 assert(visible && visible.status === 'RESOLVED' && visible.resolutionCode === 'ACTION_TAKEN', 'reporter final state')
 const remaining = await adminApi('/admin-api/community/reports', { token: admin })
 assert(!remaining.data.some((report) => String(report.id) === String(created.data.id)), 'resolved report leaves active queue')
+const deniedContext = await api(`/api/v1/reports/${created.data.id}/appeal-context`, { token: reporter, codes: [404] })
+assert(deniedContext.code === 404, 'reporter cannot inspect target appeal context')
+const context = await api(`/api/v1/reports/${created.data.id}/appeal-context`, { token: target })
+assert(context.data.resolutionCode === 'ACTION_TAKEN', 'target appeal context')
+const appeal = await api(`/api/v1/reports/${created.data.id}/appeals`, {
+  method: 'POST', token: target, body: { appealReason: 'M4 appeal acceptance', evidenceJson: JSON.stringify({ source: 'm4-e2e' }) },
+})
+assert(appeal.data.status === 'PENDING' && appeal.data.lockVersion === 0, 'appeal creation')
+const duplicateAppeal = await api(`/api/v1/reports/${created.data.id}/appeals`, {
+  method: 'POST', token: target, body: { appealReason: 'M4 duplicate appeal' }, codes: [409],
+})
+assert(duplicateAppeal.code === 409, 'appeal deduplication')
+const appeals = await adminApi('/admin-api/community/appeals', { token: admin })
+const queuedAppeal = appeals.data.find((value) => String(value.id) === String(appeal.data.id))
+assert(queuedAppeal && queuedAppeal.status === 'PENDING', 'admin appeal queue')
+const revoked = await adminApi(`/admin-api/community/appeals/${appeal.data.id}/revoke`, {
+  method: 'POST', token: admin, body: { expectedLockVersion: queuedAppeal.lockVersion, reviewNote: 'M4 appeal revocation' },
+})
+assert(revoked.data.status === 'REVOKED' && revoked.data.lockVersion === 1, 'appeal revocation')
+const myAppeals = await api('/api/v1/appeals/me', { token: target })
+assert(myAppeals.data.some((value) => String(value.id) === String(appeal.data.id) && value.status === 'REVOKED'), 'target sees appeal result')
 
-console.log(`M4 report lifecycle E2E passed: report=${created.data.id}`)
+console.log(`M4 report and appeal lifecycle E2E passed: report=${created.data.id} appeal=${appeal.data.id}`)

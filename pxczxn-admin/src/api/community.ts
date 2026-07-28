@@ -79,6 +79,7 @@ export interface CommunityReport {
   resolutionNote?: string
   lockVersion: number
 }
+export interface CommunityAppeal { id: string; reportId: string; status: 'PENDING' | 'UPHELD' | 'REVOKED'; reviewNote: string | null; lockVersion: number }
 
 export interface TeamApplicationReviewRequest {
   reviewComment?: string
@@ -523,4 +524,6 @@ export const communityApi = {
   ,reports: (status?: 'PENDING' | 'ASSIGNED') => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports', method: 'get', params: status ? { status } : undefined })
   ,claimReport: (reportId: string, expectedLockVersion: number) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/claim`, method: 'post', data: { expectedLockVersion } })
   ,resolveReport: (reportId: string, expectedLockVersion: number, resolutionCode: string, resolutionNote?: string, dismiss = false) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/${dismiss ? 'dismiss' : 'resolve'}`, method: 'post', data: { expectedLockVersion, resolutionCode, resolutionNote } })
+  ,appeals: () => request<CommunityAppeal[]>({ ...adminConfig, url: '/admin-api/community/appeals', method: 'get' })
+  ,reviewAppeal: (appealId: string, expectedLockVersion: number, revoke: boolean, reviewNote: string) => request<CommunityAppeal>({ ...adminConfig, url: `/admin-api/community/appeals/${appealId}/${revoke ? 'revoke' : 'uphold'}`, method: 'post', data: { expectedLockVersion, reviewNote } })
 }

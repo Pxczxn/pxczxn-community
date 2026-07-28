@@ -10,7 +10,7 @@
 | 即时聊天 | 完成 | 单聊、群聊、未读状态与安全 WebSocket Ticket 已纳入当前基线 |
 | M2.5 产品语义与信息架构校正 | 完成 | 发现页、入口回跳、动态路由、管理端运营信息架构及运行时演示文案已完成收口 |
 | M3 团队博客与协作创作 | 完成 | 团队、投稿、系列、共创已通过完整生命周期验收 |
-| M4 平台治理与内容安全 | 开发中 | 举报中心、屏蔽与黑名单已完成；申诉、处罚、反滥用待继续交付 |
+| M4 平台治理与内容安全 | 开发中 | 举报中心、屏蔽与黑名单、申诉中心已完成；处罚、反滥用待继续交付 |
 | M5 发现、搜索与创作者体验 | 已规划 | 搜索、可解释发现、SEO、RSS、统计、性能 |
 | M6 公网发布与持续运营 | 已规划 | 生产环境、CI/CD、备份、监控、灰度 |
 
@@ -902,11 +902,11 @@ Runtime ports: 8847 / 8848 / 8849
 
 ## 当前版本
 
-星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力、M4-T001 举报中心和 M4-T002 屏蔽与黑名单，状态：持续开发中。
+星语社区当前基线为 V1（M1 + M2）加即时聊天、M2.5 产品语义与信息架构校正、完整 M3 团队协作能力和 M4-T001/T002/T003 治理能力，状态：持续开发中。
 
 M2.5 已将已有内容、互动、通知和聊天能力放到正确的平台入口与导航中：首次进入博客端为社区发现页，进入管理端为社区运营中心；原型团队、动态和协作文章不再作为写死产品路由运行。
 
-M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 已完成举报和屏蔽闭环，下一项为 **M4-T003 申诉中心**。
+M3 已完成团队权限、成员、投稿、系列与共创闭环并通过真实 E2E。M4 已完成举报、屏蔽和申诉闭环，下一项为 **M4-T004 处罚体系**。
 
 ## M3-T002 团队博客申请与平台审核
 
@@ -977,6 +977,29 @@ Web typecheck / lint / build / test: PASS / PASS / PASS / 7 passed
 V031 disposable database verification: 1 table / community-block indexes PASS
 M4 block-list E2E on backend port 8861: USER/BLOG/TAG/CHAT block + unblock, visible moment, hidden moment detail/feed, hidden notification sender, bidirectional chat restriction and restoration PASS
 Port policy: 8847 was already occupied by an unrelated M3 Web process; no alternate port was used
+```
+
+## M4-T003 申诉中心
+
+状态：完成
+
+交付内容：
+
+- V032 创建申诉与申诉事件表，使用唯一约束限制同一目标用户对同一举报的重复申诉，并用数据库触发器保护申诉事件不可变。
+- 仅已处理举报的目标所有者可读取处理理由、提交申诉及查看本人申诉；文章、动态、评论、博客、用户、团队和聊天目标均按真实所有权校验。
+- 管理端可查看待复核队列，并在乐观锁保护下维持或撤销申诉；撤销会将原举报由 `RESOLVED` 回退为 `DISMISSED`，同步写入举报事件与申诉事件。
+- 博客端新增 `/appeals`，管理端新增 `/community/appeals`，均接入真实 API 与权限 `community:appeal:list` / `community:appeal:handle`。
+
+验证结果：
+
+```text
+Backend focused appeal tests: 2 passed
+Backend package: 26-module Maven reactor SUCCESS
+Web/Admin typecheck: PASS / PASS
+V032 disposable database verification: 2 tables / 2 append-only triggers PASS
+M4 report + appeal E2E on backend port 8861: target authorization, appeal create, duplicate 409, admin queue, revoke, final state PASS
+Appeal audit: CREATED / REVOKED = 1 / 1
+Appeal event UPDATE / DELETE: MySQL 45000 rejected / PASS
 ```
 
 ## 当前工程债务与后续处理
