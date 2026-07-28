@@ -1,0 +1,2 @@
+package top.pxczxn.community.analytics.application; import java.util.*;
+public record CreatorAnalyticsView(long articleCount,long viewCount,long likeCount,long favoriteCount,long commentCount,long followerCount,List<DailyMetric> daily,List<ArticlePerformance> topArticles,List<CountMetric> trafficSources,List<CountMetric> searchTerms){public record DailyMetric(String day,long count){} public record ArticlePerformance(Long articleId,String title,long viewCount,long likeCount,long favoriteCount,long commentCount){} public record CountMetric(String label,long count){}}

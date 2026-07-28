@@ -36,6 +36,7 @@ import org.mybatis.spring.annotation.MapperScan;
         ,"top.pxczxn.community.abuse.persistence"
         ,"top.pxczxn.community.search.persistence"
         ,"top.pxczxn.community.editorial.persistence"
+        ,"top.pxczxn.community.analytics.persistence"
 })
 @EnableScheduling
 public class PxczxnCommunityApplication {

@@ -49,6 +49,10 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
     try {
       const nextArticle = await communityApi.publicArticle(articleId);
       setArticle(nextArticle);
+      const sourceType = document.referrer
+        ? document.referrer.includes(window.location.host) ? "INTERNAL" : "REFERRAL"
+        : "DIRECT";
+      void communityApi.trackArticleAnalytics(articleId, { sourceType });
       if (readSession()) {
         try {
           const [like, favorite] = await Promise.all([

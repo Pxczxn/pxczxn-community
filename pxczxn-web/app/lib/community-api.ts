@@ -384,6 +384,7 @@ export interface SocialProfilePage {
 
 export interface FollowingFeedItem { itemType: "ARTICLE" | "MOMENT" | "SERIES" | "TAG_ARTICLE"; targetId: string; title: string; excerpt: string | null; canonicalPath: string; authorName: string | null; blogName: string | null; tagName: string | null; occurredAt: string; }
 export interface FollowingFeedPage { records: FollowingFeedItem[]; total: number; pageNum: number; pageSize: number; }
+export interface CreatorAnalytics { articleCount:number; viewCount:number; likeCount:number; favoriteCount:number; commentCount:number; followerCount:number; daily:Array<{day:string;count:number}>; topArticles:Array<{articleId:string;title:string;viewCount:number;likeCount:number;favoriteCount:number;commentCount:number}>; trafficSources:Array<{label:string;count:number}>; searchTerms:Array<{label:string;count:number}>; }
 
 export interface MomentAuthor {
   userId: string;
@@ -999,6 +1000,8 @@ export const communityApi = {
   followingFeed(pageNum = 1, pageSize = 20) {
     return communityRequest<FollowingFeedPage>(`/api/v1/social/me/following-feed?pageNum=${pageNum}&pageSize=${pageSize}`);
   },
+  creatorAnalytics(days = 30) { return communityRequest<CreatorAnalytics>(`/api/v1/analytics/me?days=${days}`); },
+  trackArticleAnalytics(articleId:string,input:{sourceType?:string;searchTerm?:string}) { return communityRequest<void>(`/api/v1/public/analytics/articles/${encodeURIComponent(articleId)}/events`,{method:"POST",body:JSON.stringify(input)},false); },
   myFollowers(pageNum = 1, pageSize = 20) {
     return communityRequest<SocialProfilePage>(
       `/api/v1/social/me/followers?pageNum=${pageNum}&pageSize=${pageSize}`,

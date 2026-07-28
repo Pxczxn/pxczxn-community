@@ -1,0 +1,2 @@
+package top.pxczxn.community.analytics.model; import com.baomidou.mybatisplus.annotation.*; import lombok.Getter; import lombok.Setter; import java.time.LocalDateTime;
+@Getter @Setter @TableName("creator_analytics_event") public class CreatorAnalyticsEvent { @TableId(type=IdType.INPUT) private Long id; private Long articleId; private Long authorUserId; private String eventType; private String sourceType; private String searchTerm; private LocalDateTime occurredAt; }
