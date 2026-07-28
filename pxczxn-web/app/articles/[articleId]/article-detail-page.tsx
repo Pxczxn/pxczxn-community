@@ -232,6 +232,8 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
               <img
                 alt={article.title}
                 className="article-cover"
+                loading="lazy"
+                decoding="async"
                 src={cover}
               />
             )}
