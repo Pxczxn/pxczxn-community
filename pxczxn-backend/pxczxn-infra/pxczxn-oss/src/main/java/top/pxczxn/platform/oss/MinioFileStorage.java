@@ -109,7 +109,9 @@ public class MinioFileStorage implements FileStorage {
         if (!normalizedPath.startsWith("/")) {
             normalizedPath = "/" + normalizedPath;
         }
-        return domain + "/" + bucketName + normalizedPath;
+        // Keep the bucket private. Files are served through the application
+        // controller, which is also the URL contract used by local storage.
+        return "/api/files" + normalizedPath;
     }
 
     @Override
