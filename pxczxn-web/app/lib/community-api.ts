@@ -17,9 +17,13 @@ const inferredLocalApiBaseUrl =
   isLocalBrowser
     ? `${window.location.protocol}//${browserHostname}:8849`
     : "";
+const inferredSameOriginApiBaseUrl =
+  typeof window !== "undefined" && !isLocalBrowser
+    ? window.location.origin
+    : "";
 
 export const COMMUNITY_API_BASE_URL =
-  (configuredApiBaseUrl || inferredLocalApiBaseUrl)
+  (configuredApiBaseUrl || inferredLocalApiBaseUrl || inferredSameOriginApiBaseUrl)
     .replace(/\/+$/, "");
 
 const SESSION_KEY = "pxczxn-community-session";
