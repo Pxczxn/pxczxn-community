@@ -12,6 +12,23 @@ from urllib.request import Request, urlopen
 MAX_BODY_BYTES = 1_048_576
 MAX_ALERTS = 8
 
+STATUS_NAMES = {"firing": "告警触发", "resolved": "告警恢复"}
+SEVERITY_NAMES = {"critical": "严重", "warning": "警告", "info": "信息"}
+ALERT_NAMES = {
+    "AlertmanagerDeliveryDrill": "飞书告警送达演练",
+    "BackendUnavailable": "后端服务不可用",
+    "HttpServerErrorRateHigh": "服务器错误率过高",
+    "MysqlUnavailable": "MySQL 不可用",
+    "RedisUnavailable": "Redis 不可用",
+    "MysqlSlowQueriesHigh": "MySQL 慢查询过多",
+    "CommunityLoginFailuresHigh": "登录失败次数过多",
+    "ReviewQueueBacklog": "内容审核队列积压",
+    "ReviewQueueStalled": "内容审核队列停滞",
+    "NotificationUnreadBacklog": "站内通知积压",
+    "HostDiskAlmostFull": "服务器磁盘空间不足",
+    "HostMemoryPressure": "服务器内存不足",
+}
+
 
 def webhook_url() -> str:
     value = os.environ.get("PXCZXN_FEISHU_WEBHOOK_URL", "")
@@ -26,11 +43,11 @@ def webhook_url() -> str:
 
 
 def format_alert(payload: dict) -> str:
-    status = str(payload.get("status", "unknown")).upper()
+    status = str(payload.get("status", "unknown")).lower()
     alerts = payload.get("alerts")
     if not isinstance(alerts, list):
         alerts = []
-    lines = ["星语告警", f"状态：{status}"]
+    lines = ["星语告警", f"状态：{STATUS_NAMES.get(status, status)}"]
     for alert in alerts[:MAX_ALERTS]:
         labels = alert.get("labels") if isinstance(alert, dict) else {}
         annotations = alert.get("annotations") if isinstance(alert, dict) else {}
@@ -38,10 +55,13 @@ def format_alert(payload: dict) -> str:
             labels = {}
         if not isinstance(annotations, dict):
             annotations = {}
-        name = labels.get("alertname", "未命名告警")
-        severity = labels.get("severity", "unknown")
+        name = str(labels.get("alertname", "未命名告警"))
+        severity = str(labels.get("severity", "unknown")).lower()
         summary = annotations.get("summary", "无摘要")
-        lines.append(f"[{severity}] {name}：{summary}")
+        lines.append(
+            f"【{SEVERITY_NAMES.get(severity, severity)}】"
+            f"{ALERT_NAMES.get(name, name)}：{summary}"
+        )
     if len(alerts) > MAX_ALERTS:
         lines.append(f"其余 {len(alerts) - MAX_ALERTS} 条告警已合并。")
     return "\n".join(lines)
