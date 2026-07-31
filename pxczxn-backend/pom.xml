@@ -39,6 +39,7 @@
         <log4j.version>2.25.5</log4j.version>
         <netty.version>4.1.136.Final</netty.version>
         <tomcat.version>10.1.57</tomcat.version>
+        <okhttp.version>4.12.0</okhttp.version>
         <okio.version>3.6.0</okio.version>
     </properties>
 
@@ -82,6 +83,11 @@
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-websocket</artifactId>
                 <version>${tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okio</groupId>
