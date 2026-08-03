@@ -47,25 +47,25 @@ public class AdminAccountEnforcementController {
     @PostMapping("/users/{userId}/login/block")
     @SaCheckPermission("community:account:freeze")
     public Result<Void> blockLogin(@PathVariable Long userId, @RequestBody FreezeRequest request) {
-        service.blockLogin(StpUtil.getLoginIdAsLong(), userId, new AccountEnforcementService.FreezeCommand(userId, request.reasonCode(), request.userVisibleReason(), request.internalReason(), request.evidenceSnapshot(), request.expiresAt()), superAdmin()); return Result.ok();
+        throw new BusinessException(410, "Deprecated: use account freezing instead");
     }
 
     @PostMapping("/users/{userId}/login/restore")
     @SaCheckPermission("community:account:freeze")
     public Result<Void> restoreLogin(@PathVariable Long userId, @RequestBody SecurityOperationRequest request) {
-        service.restoreLogin(StpUtil.getLoginIdAsLong(), userId, operation(request)); return Result.ok();
+        throw new BusinessException(410, "Deprecated: release the applicable account freeze instead");
     }
 
     @PostMapping("/users/{userId}/deactivate")
     @SaCheckPermission("community:account:apply")
     public Result<Void> deactivate(@PathVariable Long userId, @RequestBody SecurityOperationRequest request) {
-        service.deactivate(StpUtil.getLoginIdAsLong(), userId, operation(request)); return Result.ok();
+        throw new BusinessException(410, "Account deactivation is no longer available");
     }
 
     @PostMapping("/users/{userId}/restore")
     @SaCheckPermission("community:account:apply")
     public Result<Void> restore(@PathVariable Long userId, @RequestBody SecurityOperationRequest request) {
-        service.restore(StpUtil.getLoginIdAsLong(), userId, operation(request)); return Result.ok();
+        throw new BusinessException(410, "Account restoration is no longer available");
     }
 
     @PostMapping
@@ -133,8 +133,7 @@ public class AdminAccountEnforcementController {
     @PostMapping("/users/{userId}/lock")
     @SaCheckPermission("community:account:freeze")
     public Result<Void> lock(@PathVariable Long userId, @RequestBody FreezeRequest request) {
-        service.lockAccount(StpUtil.getLoginIdAsLong(), userId, new AccountEnforcementService.FreezeCommand(userId, request.reasonCode(), request.userVisibleReason(), request.internalReason(), request.evidenceSnapshot(), request.expiresAt()));
-        return Result.ok();
+        throw new BusinessException(410, "Manual account locking is no longer available");
     }
 
     @GetMapping

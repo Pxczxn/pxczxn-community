@@ -96,7 +96,7 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '申诉中心', icon: 'ChatbubblesOutline', permission: 'community:appeal:list' }
       },
       { path: 'community/sanctions', name: 'CommunitySanctions', component: () => import('@/views/community/sanctions/index.vue'), meta: { title: '账号处置', icon: 'HammerOutline', permission: 'community:sanction:list' } },
-      { path: 'community/account-enforcements', name: 'AccountEnforcements', component: () => import('@/views/community/account-enforcements/index.vue'), meta: { title: '账号操作中心', icon: 'KeyOutline', permission: 'community:account:list' } },
+      { path: 'community/account-enforcements', name: 'AccountEnforcements', component: () => import('@/views/community/account-enforcements/index.vue'), meta: { title: '账号管理', icon: 'KeyOutline', permission: 'community:account:list' } },
       {
         path: 'community/content-rules',
         name: 'ContentRules',

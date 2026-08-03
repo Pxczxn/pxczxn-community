@@ -11,4 +11,6 @@ import java.time.LocalDateTime;
 public class CommunityAccountEnforcementAppeal {
     @TableId(type = IdType.INPUT) private Long id;
     private Long caseId; private Long appellantUserId; private String statement; private String evidenceSnapshot; private String status; private Long reviewedByAdminId; private String reviewNote; private LocalDateTime createdAt; private LocalDateTime reviewedAt;
+    private Long primaryReviewedByAdminId; private String primaryDecision; private String primaryReviewNote; private LocalDateTime primaryReviewedAt;
+    private Long finalReviewedByAdminId; private String finalDecision; private String finalReviewNote; private LocalDateTime finalReviewedAt;
 }

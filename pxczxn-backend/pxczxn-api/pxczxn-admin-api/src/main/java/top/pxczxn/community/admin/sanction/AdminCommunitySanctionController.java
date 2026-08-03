@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.sanction.application.CommunitySanctionService;
 import top.pxczxn.community.sanction.application.SanctionView;
 import top.pxczxn.platform.common.result.Result;
+import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,9 @@ public class AdminCommunitySanctionController {
     @PostMapping
     @SaCheckPermission("community:sanction:handle")
     public Result<Response> issue(@RequestBody Request request) {
+        if ("LOGIN_SUSPEND".equals(request.sanctionType()) || "PERMANENT_BAN".equals(request.sanctionType())) {
+            throw new BusinessException(400, "Community sanctions cannot restrict account login or delete an account");
+        }
         return Result.ok(Response.from(service.issue(
                 StpUtil.getLoginIdAsLong(),
                 request.targetUserId(),
