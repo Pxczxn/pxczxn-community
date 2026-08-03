@@ -8,6 +8,8 @@ import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.chat.model.CommunityChatMessage;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
 import top.pxczxn.platform.common.exception.BusinessException;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +34,7 @@ class CommunityChatServiceImplTest {
     private CommunityUserMapper userMapper;
     private CommunityBlockService blockService;
     private ApplicationEventPublisher eventPublisher;
+    private CommunitySanctionService sanctionService;
     private CommunityChatServiceImpl service;
 
     @BeforeEach
@@ -40,8 +44,9 @@ class CommunityChatServiceImplTest {
         userMapper = mock(CommunityUserMapper.class);
         blockService = mock(CommunityBlockService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        sanctionService = mock(CommunitySanctionService.class);
         service = new CommunityChatServiceImpl(
-                messageMapper, followMapper, userMapper, blockService, eventPublisher, mock(CommunityAbuseGuard.class)
+                messageMapper, followMapper, userMapper, blockService, eventPublisher, mock(CommunityAbuseGuard.class), sanctionService
         );
         when(userMapper.selectById(10L)).thenReturn(activeUser(10L, 100L));
         when(userMapper.selectById(20L)).thenReturn(activeUser(20L, 200L));
@@ -58,7 +63,21 @@ class CommunityChatServiceImplTest {
         assertThat(sent.recipientUserId()).isEqualTo(20L);
         assertThat(sent.contentText()).isEqualTo("Hello");
         assertThat(sent.status()).isEqualTo("SENT");
+        verify(sanctionService).requireActionAllowed(10L, SanctionAction.MESSAGE);
         verify(eventPublisher).publishEvent(new CommunityChatMessageSentEvent(sent));
+    }
+
+    @Test
+    void messageBanPreventsMessagePersistence() {
+        when(followMapper.countMutualBlogPair(10L, 100L, 20L, 200L)).thenReturn(1L);
+        doThrow(new BusinessException(403, "当前账号已被限制发送私信"))
+                .when(sanctionService).requireActionAllowed(10L, SanctionAction.MESSAGE);
+
+        assertThatThrownBy(() -> service.send(10L, 20L, "hello"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("限制发送私信");
+
+        verify(messageMapper, never()).insert(any(CommunityChatMessage.class));
     }
 
     @Test

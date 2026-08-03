@@ -5,6 +5,7 @@ public record CommunityLoginView(
         String tokenValue,
         long expiresIn,
         String userId,
-        String username
+        String username,
+        boolean forcePasswordChange
 ) {
 }

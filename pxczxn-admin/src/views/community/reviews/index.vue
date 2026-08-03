@@ -29,7 +29,7 @@
             :options="riskOptions"
             clearable
             placeholder="全部级别"
-            style="width: 140px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item>
@@ -175,7 +175,7 @@
       v-model:show="decisionVisible"
       preset="card"
       :title="decisionTitle"
-      style="width: min(520px, calc(100vw - 32px))"
+      class="dialog-form-sm"
     >
       <n-alert :type="decisionAction === 'approve' ? 'success' : 'warning'">
         本次操作仅作用于当前固定版本，并校验任务锁版本。

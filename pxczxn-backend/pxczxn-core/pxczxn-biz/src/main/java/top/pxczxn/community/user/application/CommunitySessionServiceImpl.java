@@ -23,6 +23,7 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.security.SecureRandom;
 
 @Slf4j
 @Service
@@ -38,6 +39,8 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
     private final CommunityAuth communityAuth;
     private final CommunitySanctionService sanctionService;
     private final CommunityAbuseGuard abuseGuard;
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
 
     @Override
     @Transactional(noRollbackFor = {
@@ -128,7 +131,8 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
                 tokenValue,
                 communityAuth.getTokenTimeout(),
                 user.getId(),
-                user.getUsername()
+                user.getUsername(),
+                Boolean.TRUE.equals(account.getForcePasswordChange())
         );
     }
 
@@ -137,6 +141,36 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
         Long userId = communityAuth.getLoginUserId();
         communityAuth.logout();
         log.info("社区用户退出登录, userId={}", userId);
+    }
+
+    @Override
+    @Transactional
+    public String forcePasswordReset(Long userId) {
+        CommunityUserLoginAccount account = emailAccount(userId);
+        String temporaryPassword = temporaryPassword();
+        account.setPasswordHash(BCrypt.hashpw(temporaryPassword, BCrypt.gensalt()));
+        account.setForcePasswordChange(true);
+        updateRequired(loginAccountMapper.updateById(account), "强制重置密码");
+        communityAuth.stpLogic().logout(userId);
+        return temporaryPassword;
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+        Long userId = communityAuth.getLoginUserId();
+        CommunityUserLoginAccount account = emailAccount(userId);
+        if (currentPassword == null || !BCrypt.checkpw(currentPassword, account.getPasswordHash())) throw new BusinessException(400, "当前密码不正确");
+        if (newPassword == null || !newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s])\\S{12,72}$")) throw new BusinessException(400, "新密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格");
+        account.setPasswordHash(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+        account.setForcePasswordChange(false);
+        updateRequired(loginAccountMapper.updateById(account), "修改密码");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean requiresPasswordChange(Long userId) {
+        return Boolean.TRUE.equals(emailAccount(userId).getForcePasswordChange());
     }
 
     @Override
@@ -171,6 +205,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
                 account == null ? null : account.getNormalizedIdentifier(),
                 user.getStatus(),
                 user.getVerificationStatus(),
+                account != null && Boolean.TRUE.equals(account.getForcePasswordChange()),
                 user.getPersonalBlogId(),
                 personalBlog == null ? null : personalBlog.getName(),
                 personalBlog == null ? null : personalBlog.getSlug()
@@ -179,10 +214,9 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
 
     private static void assertLoginAllowed(CommunityUser user) {
         switch (user.getStatus()) {
-            case "NORMAL", "LIMITED" -> {
+            case "NORMAL", "LIMITED", "FROZEN" -> {
                 return;
             }
-            case "FROZEN" -> throw new BusinessException(403, "账号已冻结");
             case "BANNED" -> throw new BusinessException(403, "账号已封禁");
             case "DEACTIVATED" -> throw new BusinessException(403, "账号已停用");
             case "DELETED" -> throw new BusinessException(403, "账号已删除");
@@ -207,4 +241,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
             throw new BusinessException(500, operation + "失败");
         }
     }
+
+    private CommunityUserLoginAccount emailAccount(Long userId) { CommunityUserLoginAccount account=loginAccountMapper.selectOne(Wrappers.<CommunityUserLoginAccount>lambdaQuery().eq(CommunityUserLoginAccount::getUserId,userId).eq(CommunityUserLoginAccount::getLoginType,"EMAIL").last("LIMIT 1")); if(account==null)throw new BusinessException(404,"登录账号不存在"); return account; }
+    private static String temporaryPassword() { StringBuilder value=new StringBuilder(16); for(int i=0;i<16;i++)value.append(TEMP_PASSWORD_ALPHABET.charAt(RANDOM.nextInt(TEMP_PASSWORD_ALPHABET.length()))); return value.toString(); }
 }

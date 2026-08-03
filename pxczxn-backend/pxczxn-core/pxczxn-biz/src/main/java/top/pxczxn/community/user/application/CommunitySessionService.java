@@ -7,4 +7,10 @@ public interface CommunitySessionService {
     void logout();
 
     CurrentCommunityUser getCurrentUser();
+
+    String forcePasswordReset(Long userId);
+
+    void changePassword(String currentPassword, String newPassword);
+
+    boolean requiresPasswordChange(Long userId);
 }

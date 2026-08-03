@@ -21,7 +21,13 @@ const loading = ref(true)
 
 // 从路由 meta 中获取外链地址
 const frameSrc = computed(() => {
-  return (route.meta.frameSrc as string) || ''
+  const source = (route.meta.frameSrc as string) || ''
+  // Vite 开发服务器与后端分端口运行时，Druid 页面由后端直接提供。
+  // 生产环境二者同源，仍使用相对路径。
+  if (import.meta.env.DEV && source.startsWith('/druid')) {
+    return `http://localhost:8849${source}`
+  }
+  return source
 })
 
 function handleLoad() {

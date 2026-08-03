@@ -22,4 +22,6 @@ public class CommunityChatMessage {
     private LocalDateTime readAt;
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
+    private LocalDateTime senderDeletedAt;
+    private LocalDateTime recipientDeletedAt;
 }

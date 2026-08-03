@@ -9,7 +9,7 @@
       <n-empty v-if="!loading && rows.length === 0" description="暂无待审核系列"><template #icon><n-icon><CheckmarkDoneOutline /></n-icon></template></n-empty>
       <n-data-table v-else :columns="columns" :data="rows" :loading="loading" :row-key="(row: CommunitySeries) => row.id" :scroll-x="1040" />
     </n-card>
-    <n-modal v-model:show="visible" preset="card" :title="action === 'approve' ? '通过系列审核' : '驳回系列审核'" style="width: 580px">
+    <n-modal v-model:show="visible" preset="card" :title="action === 'approve' ? '通过系列审核' : '驳回系列审核'" class="dialog-form-md">
       <template v-if="current"><n-descriptions :column="1" bordered size="small"><n-descriptions-item label="系列">{{ current.title }}</n-descriptions-item><n-descriptions-item label="团队 ID">#{{ current.teamId }}</n-descriptions-item><n-descriptions-item label="章节">{{ current.chapters.length }} 篇</n-descriptions-item><n-descriptions-item label="连载状态">{{ statusLabel(current.serializationStatus) }}</n-descriptions-item></n-descriptions><n-form style="margin-top: 16px"><n-form-item label="审核说明"><n-input v-model:value="comment" type="textarea" :maxlength="1000" show-count :rows="4" placeholder="可选填写审核说明" /></n-form-item></n-form><n-alert v-if="action === 'approve'" type="info" :bordered="false">通过后，已发布章节会按设置的顺序在社区系列页公开。</n-alert></template>
       <template #footer><n-space justify="end"><n-button @click="visible = false">取消</n-button><n-button :loading="saving" :type="action === 'approve' ? 'primary' : 'error'" @click="decide">确认{{ action === 'approve' ? '通过' : '驳回' }}</n-button></n-space></template>
     </n-modal>

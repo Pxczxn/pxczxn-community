@@ -119,6 +119,8 @@ test("keeps M1 user flows connected to the real community API", async () => {
   assert.match(api, /\/api\/v1\/public\/articles/);
   assert.match(api, /\/submit-review/);
   assert.match(api, /\/publish/);
+  assert.match(api, /normalizePaginationNumbers/);
+  assert.match(api, /\["total", "pageNum", "pageSize"\]/);
   assert.match(auth, /communityApi\.register/);
   assert.match(auth, /communityApi\.login/);
   assert.match(editor, /communityApi\.saveArticle/);

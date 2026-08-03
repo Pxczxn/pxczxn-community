@@ -4,5 +4,6 @@ public enum SanctionAction {
     COMMENT,
     PUBLISH,
     SUBMIT,
+    MESSAGE,
     LOGIN
 }

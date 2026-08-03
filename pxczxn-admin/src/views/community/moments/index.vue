@@ -28,7 +28,7 @@
             :options="statusOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="可见性">
@@ -37,7 +37,7 @@
             :options="visibilityOptions"
             clearable
             placeholder="全部范围"
-            style="width: 140px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="类型">
@@ -47,7 +47,7 @@
             clearable
             filterable
             placeholder="全部类型"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="博客 ID">
@@ -219,7 +219,7 @@
       v-model:show="actionVisible"
       preset="card"
       :title="actionTitle"
-      style="width: min(540px, calc(100vw - 32px))"
+      class="dialog-form-sm"
     >
       <n-alert :type="isDestructiveAction ? 'warning' : 'info'">
         {{ actionScopeText }}；恢复转发动态时会重新校验转发源，计数与状态同事务提交。

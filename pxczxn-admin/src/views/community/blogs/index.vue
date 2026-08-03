@@ -24,7 +24,7 @@
             :options="typeOptions"
             clearable
             placeholder="全部类型"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="状态">
@@ -33,7 +33,7 @@
             :options="statusOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item>

@@ -6,10 +6,10 @@ import { UserTopbar } from "../components/prototype-ui";
 import { communityApi, type TeamInvitation } from "../lib/community-api";
 
 const roleLabels: Record<TeamInvitation["roleCode"], string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  EDITOR: "Editor",
-  AUTHOR: "Author",
+  OWNER: "所有者",
+  ADMIN: "管理员",
+  EDITOR: "编辑",
+  AUTHOR: "作者",
 };
 
 function formatExpiry(value: string) {
@@ -88,7 +88,7 @@ export default function TeamInvitationsPage() {
               {invitations.map((invitation) => {
                 const processing = processingId === invitation.id;
                 return (
-                  <li key={invitation.id} className="surface" style={{ padding: 18, border: "1px solid var(--border)" }}>
+                  <li key={invitation.id} className="surface" style={{ padding: 18, border: "1px solid var(--border-default)" }}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <strong>团队 #{invitation.teamId}</strong>
@@ -98,11 +98,11 @@ export default function TeamInvitationsPage() {
                         </p>
                       </div>
                       <div className="flex gap-2" aria-label="邀请操作">
-                        <button className="button-primary" type="button" disabled={processing}
+                        <button className="primary-button" type="button" disabled={processing}
                           onClick={() => void decide(invitation, "accept")}>
                           <Check size={16} aria-hidden="true" /> 接受
                         </button>
-                        <button className="button-secondary" type="button" disabled={processing}
+                        <button className="secondary-button" type="button" disabled={processing}
                           onClick={() => void decide(invitation, "reject")}>
                           <X size={16} aria-hidden="true" /> 拒绝
                         </button>

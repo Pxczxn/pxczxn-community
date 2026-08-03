@@ -19,6 +19,7 @@ import top.pxczxn.platform.system.entity.SysMenu;
 import top.pxczxn.platform.system.entity.SysRole;
 import top.pxczxn.platform.system.entity.SysUser;
 import top.pxczxn.platform.system.entity.SysUserRole;
+import top.pxczxn.platform.system.config.StpInterfaceImpl;
 import top.pxczxn.platform.system.helper.SystemConfigHelper;
 import top.pxczxn.platform.system.service.*;
 import top.pxczxn.platform.websocket.WebSocketTicketService;
@@ -152,6 +153,9 @@ public class AdminAuthController {
     @GetMapping("/info")
     public Result<Map<String, Object>> info() {
         Long userId = StpUtil.getLoginIdAsLong();
+        // 菜单迁移或角色授权变更后，当前会话可能仍持有旧权限缓存。
+        // 刷新登录信息时同步失效缓存，确保随后访问受保护接口时使用最新授权。
+        StpInterfaceImpl.clearPermissionCache(userId);
         SysUser user = userService.getDetail(userId);
         List<String> roles = userService.getRoleCodes(userId);
         List<String> permissions = userService.getPermissions(userId);

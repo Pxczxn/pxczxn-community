@@ -46,15 +46,22 @@ export function SettingsPanel() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!readSession()) return;
       setLoading(true);
-      Promise.all([communityApi.me(), communityApi.myBlog()])
-        .then(([me, myBlog]) => {
-          const themeMode = normalizeTheme(myBlog.settings.themeKey);
+      communityApi.me()
+        .then((me) => {
           setCurrentUser(me);
+          return communityApi.myBlog().then((myBlog) => ({ me, myBlog }));
+        })
+        .then(({ myBlog }) => {
+          const themeMode = normalizeTheme(myBlog.settings.themeKey);
           setBlog(myBlog);
           setName(myBlog.name);
           setSummary(myBlog.summary || "");
@@ -102,6 +109,27 @@ export function SettingsPanel() {
       setNotice(error instanceof Error ? error.message : "保存失败");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function changePassword() {
+    if (newPassword !== confirmPassword) {
+      setNotice("两次输入的新密码不一致");
+      return;
+    }
+    setChangingPassword(true);
+    setNotice("");
+    try {
+      await communityApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setCurrentUser((user) => user ? { ...user, forcePasswordChange: false } : user);
+      setNotice("密码已修改，请妥善保管新密码");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "密码修改失败");
+    } finally {
+      setChangingPassword(false);
     }
   }
 
@@ -160,12 +188,23 @@ export function SettingsPanel() {
 
         <section className="settings-subsection">
           <h3>安全设置</h3>
+          <a className="link" href="/account-appeals">查看账号措施与提交申诉</a>
           <dl className="security-list">
             <div><dt>账号状态</dt><dd className="success-text">{currentUser?.status || "演示账号"}</dd></div>
             <div><dt>邮箱</dt><dd>{currentUser?.email || "xiaoming.dev@example.com"}</dd></div>
             <div><dt>用户名</dt><dd>@{currentUser?.username || "xiaoming"}</dd></div>
             <div><dt>未开启</dt><dd><button className="secondary-button" type="button">开启</button></dd></div>
           </dl>
+          {currentUser?.forcePasswordChange && (
+            <p className="settings-notice" role="alert">管理员已重置密码，请立即设置新密码后继续使用账号。</p>
+          )}
+          <div className="settings-password-form">
+            <label><span>当前密码</span><input className="field" onChange={(event) => setCurrentPassword(event.target.value)} type="password" value={currentPassword} /></label>
+            <label><span>新密码</span><input className="field" onChange={(event) => setNewPassword(event.target.value)} type="password" value={newPassword} /></label>
+            <label><span>确认新密码</span><input className="field" onChange={(event) => setConfirmPassword(event.target.value)} type="password" value={confirmPassword} /></label>
+            <p>新密码须为 12-72 位，包含大写、小写、数字和特殊字符，且不能含空格。</p>
+            <button className="secondary-button" disabled={changingPassword} onClick={changePassword} type="button">{changingPassword ? "修改中…" : "修改密码"}</button>
+          </div>
         </section>
 
         <section className="settings-subsection">

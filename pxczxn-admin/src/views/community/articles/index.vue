@@ -24,7 +24,7 @@
             :options="publishOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="审核状态">
@@ -33,7 +33,7 @@
             :options="reviewOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="可见性">
@@ -42,7 +42,7 @@
             :options="visibilityOptions"
             clearable
             placeholder="全部范围"
-            style="width: 130px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item>
@@ -64,17 +64,20 @@
         <template #action><n-button size="small" @click="loadData">重试</n-button></template>
       </n-alert>
 
-      <n-data-table
-        remote
-        :columns="columns"
-        :data="rows"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="rowKey"
-        :scroll-x="1480"
-        @update:page="changePage"
-        @update:page-size="changePageSize"
-      />
+      <div class="article-table-scroll">
+        <n-data-table
+          remote
+          class="article-table"
+          :columns="columns"
+          :data="rows"
+          :loading="loading"
+          :pagination="pagination"
+          :row-key="rowKey"
+          :scroll-x="1480"
+          @update:page="changePage"
+          @update:page-size="changePageSize"
+        />
+      </div>
     </n-card>
 
     <n-drawer v-model:show="detailVisible" :width="760" placement="right">
@@ -358,6 +361,55 @@ onMounted(loadData)
 </script>
 
 <style scoped lang="scss">
+.article-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+
+  .article-table {
+    width: 100%;
+    min-width: 0;
+
+    :deep(.n-data-table-wrapper) {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  :deep(.n-card__content) {
+    padding: 14px;
+  }
+
+  :deep(.filter-form) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+
+    .n-form-item {
+      margin-bottom: 12px;
+    }
+
+    .n-form-item-blank,
+    .n-input,
+    .n-base-selection {
+      width: 100%;
+    }
+  }
+
+  .detail-descriptions {
+    margin: 14px;
+  }
+
+  .content-preview,
+  .detail-hero {
+    padding-inline: 14px;
+  }
+}
+
 .detail-hero {
   padding: 24px;
   border-bottom: 1px solid var(--community-border);

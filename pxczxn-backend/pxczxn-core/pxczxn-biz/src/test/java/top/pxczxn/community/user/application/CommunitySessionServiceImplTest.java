@@ -1,6 +1,7 @@
 package top.pxczxn.community.user.application;
 
 import cn.hutool.crypto.digest.BCrypt;
+import cn.dev33.satoken.stp.StpLogic;
 import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,24 @@ class CommunitySessionServiceImplTest {
         verify(communityAuth).login(200L);
         verify(loginAccountMapper).recordLoginSuccess(anyLong(), any());
         verify(userMapper).recordLoginSuccess(anyLong(), any());
+    }
+
+    @Test
+    void frozenUserCanLoginForAppealOnlySession() {
+        CommunityUserLoginAccount account = account(100L, 200L, 0, null);
+        when(loginAccountMapper.selectOne(any())).thenReturn(account);
+        when(userMapper.selectById(200L)).thenReturn(user(200L, "FROZEN"));
+        when(loginAccountMapper.recordLoginSuccess(anyLong(), any())).thenReturn(1);
+        when(userMapper.recordLoginSuccess(anyLong(), any())).thenReturn(1);
+        when(communityAuth.getTokenValue()).thenReturn("appeal-token");
+        when(communityAuth.getTokenTimeout()).thenReturn(604800L);
+
+        CommunityLoginSession result = service.login(
+                new CommunityLoginCommand("alice@example.com", "correct-password")
+        );
+
+        assertThat(result.tokenValue()).isEqualTo("appeal-token");
+        verify(communityAuth).login(200L);
     }
 
     @Test
@@ -166,6 +185,22 @@ class CommunitySessionServiceImplTest {
         assertThat(result.email()).isEqualTo("alice@example.com");
         assertThat(result.personalBlogId()).isEqualTo(300L);
         assertThat(result.blogSlug()).isEqualTo("alice");
+    }
+
+    @Test
+    void forcedPasswordResetInvalidatesSessionsAndRequiresPasswordChange() {
+        CommunityUserLoginAccount account = account(100L, 200L, 0, null);
+        StpLogic stpLogic = mock(StpLogic.class);
+        when(loginAccountMapper.selectOne(any())).thenReturn(account);
+        when(loginAccountMapper.updateById(account)).thenReturn(1);
+        when(communityAuth.stpLogic()).thenReturn(stpLogic);
+
+        String temporaryPassword = service.forcePasswordReset(200L);
+
+        assertThat(temporaryPassword).hasSize(16);
+        assertThat(BCrypt.checkpw(temporaryPassword, account.getPasswordHash())).isTrue();
+        assertThat(account.getForcePasswordChange()).isTrue();
+        verify(stpLogic).logout(200L);
     }
 
     @Test

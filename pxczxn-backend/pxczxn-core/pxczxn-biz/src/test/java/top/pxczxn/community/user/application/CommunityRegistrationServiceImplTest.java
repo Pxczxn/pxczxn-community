@@ -79,7 +79,7 @@ class CommunityRegistrationServiceImplTest {
         RegisteredCommunityUser result = service.register(new RegisterCommunityUserCommand(
                 "  Alice_01 ",
                 " Alice@Example.COM ",
-                "correct-horse-battery-staple",
+                "Correct-Horse1!Battery",
                 " Alice "
         ));
 
@@ -100,7 +100,7 @@ class CommunityRegistrationServiceImplTest {
         CommunityUserLoginAccount account = accountCaptor.getValue();
         assertThat(account.getNormalizedIdentifier()).isEqualTo("alice@example.com");
         assertThat(account.getLoginType()).isEqualTo("EMAIL");
-        assertThat(BCrypt.checkpw("correct-horse-battery-staple", account.getPasswordHash()))
+        assertThat(BCrypt.checkpw("Correct-Horse1!Battery", account.getPasswordHash()))
                 .isTrue();
 
         ArgumentCaptor<Blog> blogCaptor = ArgumentCaptor.forClass(Blog.class);
@@ -155,7 +155,7 @@ class CommunityRegistrationServiceImplTest {
         assertThatThrownBy(() -> service.register(new RegisterCommunityUserCommand(
                 "alice",
                 "alice@example.com",
-                "password-123",
+                "Password-123!",
                 null
         )))
                 .isInstanceOf(RegistrationConflictException.class)
@@ -177,7 +177,7 @@ class CommunityRegistrationServiceImplTest {
         assertThatThrownBy(() -> service.register(new RegisterCommunityUserCommand(
                 "alice",
                 "alice@example.com",
-                "password-123",
+                "Password-123!",
                 null
         )))
                 .isInstanceOf(RegistrationConflictException.class)
@@ -186,7 +186,7 @@ class CommunityRegistrationServiceImplTest {
 
     @Test
     void registerRejectsPasswordBeyondBcryptByteLimit() {
-        String password = "密".repeat(25);
+        String password = "Aa1!" + "密".repeat(23);
 
         assertThatThrownBy(() -> service.register(new RegisterCommunityUserCommand(
                 "alice",

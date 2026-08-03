@@ -234,7 +234,8 @@ public class CommunityRegistrationServiceImpl implements CommunityRegistrationSe
         }
         String email = Normalizer.normalize(rawEmail.trim(), Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT);
-        if (email.length() > 320 || !Validator.isEmail(email)) {
+        if (email.length() > 320 || !Validator.isEmail(email)
+                || !email.matches("^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$")) {
             throw new BusinessException(400, "邮箱格式不正确");
         }
         return email;
@@ -252,8 +253,8 @@ public class CommunityRegistrationServiceImpl implements CommunityRegistrationSe
     }
 
     private static void validatePassword(String password) {
-        if (password == null || password.length() < 8) {
-            throw new BusinessException(400, "密码至少需要 8 个字符");
+        if (password == null || !password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s])\\S{12,72}$")) {
+            throw new BusinessException(400, "密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格");
         }
         if (password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES) {
             throw new BusinessException(400, "密码 UTF-8 编码后不能超过 72 字节");

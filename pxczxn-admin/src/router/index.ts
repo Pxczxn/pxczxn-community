@@ -81,7 +81,7 @@ const routes: RouteRecordRaw[] = [
         path: 'community/reviews',
         name: 'CommunityReviews',
         component: () => import('@/views/community/reviews/index.vue'),
-        meta: { title: '文章审核', icon: 'ShieldOutline', permission: 'community:review:list' }
+        meta: { title: '文章审核', icon: 'DocumentTextOutline', permission: 'community:review:list' }
       },
       {
         path: 'community/reports',
@@ -93,9 +93,10 @@ const routes: RouteRecordRaw[] = [
         path: 'community/appeals',
         name: 'CommunityAppeals',
         component: () => import('@/views/community/appeals/index.vue'),
-        meta: { title: '申诉中心', icon: 'ShieldCheck', permission: 'community:appeal:list' }
+        meta: { title: '申诉中心', icon: 'ChatbubblesOutline', permission: 'community:appeal:list' }
       },
-      { path: 'community/sanctions', name: 'CommunitySanctions', component: () => import('@/views/community/sanctions/index.vue'), meta: { title: '处罚体系', icon: 'HammerOutline', permission: 'community:sanction:list' } },
+      { path: 'community/sanctions', name: 'CommunitySanctions', component: () => import('@/views/community/sanctions/index.vue'), meta: { title: '账号处置', icon: 'HammerOutline', permission: 'community:sanction:list' } },
+      { path: 'community/account-enforcements', name: 'AccountEnforcements', component: () => import('@/views/community/account-enforcements/index.vue'), meta: { title: '账号操作中心', icon: 'KeyOutline', permission: 'community:account:list' } },
       {
         path: 'community/content-rules',
         name: 'ContentRules',
@@ -273,8 +274,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'monitor/druid',
         name: 'MonitorDruid',
-        component: IframeComponent,
-        meta: { title: 'Druid监控', icon: 'PieChartOutline', frameSrc: '/druid/index.html' }
+        component: () => import('@/views/monitor/druid/index.vue'),
+        meta: { title: 'SQL监控', icon: 'PieChartOutline', permission: 'monitor:druid:list' }
       },
       {
         path: 'test/test',

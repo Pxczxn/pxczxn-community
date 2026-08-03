@@ -3,8 +3,15 @@ import { request } from '@/utils/request'
 export interface PageResult<T> {
   list: T[]
   total: number
-  page: number
+  pageNum: number
   pageSize: number
+}
+
+interface WirePageResult<T> {
+  list: T[]
+  total: number | string
+  pageNum: number | string
+  pageSize: number | string
 }
 
 export interface CommunityDailyMetric {
@@ -351,25 +358,55 @@ export interface GovernanceResult {
 
 const adminConfig = { baseURL: '' }
 
+async function requestCommunityPage<T>(
+  config: Parameters<typeof request>[0]
+): Promise<PageResult<T>> {
+  const result = await request<WirePageResult<T>>(config)
+  return {
+    list: result.list,
+    total: Number(result.total),
+    pageNum: Number(result.pageNum),
+    pageSize: Number(result.pageSize)
+  }
+}
+export interface CommunityAccountEnforcementCase {
+  id: string
+  targetUserId: string
+  measureType: string
+  status: string
+  reasonCode: string
+  userVisibleReason: string
+  internalReason: string
+  evidenceSnapshot: string
+  requestedByAdminId?: string
+  requestedByTeamId?: string
+  expiresAt: string | null
+  appealDeadlineAt: string | null
+  executeAfter: string | null
+  requestedAt: string
+}
+export interface CommunityAccountEnforcementReview { id: string; caseId: string; stage: string; reviewerAdminId: string; decision: string; reviewNote: string; createdAt: string }
+export interface CommunityAccountEnforcementAppeal { id: string; caseId: string; appellantUserId: string; statement: string; status: string; reviewNote: string | null; createdAt: string }
+
 export const communityApi = {
   dashboard: () => request<CommunityDashboard>({
     ...adminConfig,
     url: '/admin-api/community/dashboard',
     method: 'get'
   }),
-  users: (params: Record<string, unknown>) => request<PageResult<CommunityUser>>({
+  users: (params: Record<string, unknown>) => requestCommunityPage<CommunityUser>({
     ...adminConfig,
     url: '/admin-api/community/users',
     method: 'get',
     params
   }),
-  blogs: (params: Record<string, unknown>) => request<PageResult<CommunityBlog>>({
+  blogs: (params: Record<string, unknown>) => requestCommunityPage<CommunityBlog>({
     ...adminConfig,
     url: '/admin-api/community/blogs',
     method: 'get',
     params
   }),
-  articles: (params: Record<string, unknown>) => request<PageResult<CommunityArticle>>({
+  articles: (params: Record<string, unknown>) => requestCommunityPage<CommunityArticle>({
     ...adminConfig,
     url: '/admin-api/community/articles',
     method: 'get',
@@ -380,7 +417,7 @@ export const communityApi = {
     url: `/admin-api/community/articles/${articleId}`,
     method: 'get'
   }),
-  comments: (params: Record<string, unknown>) => request<PageResult<CommunityComment>>({
+  comments: (params: Record<string, unknown>) => requestCommunityPage<CommunityComment>({
     ...adminConfig,
     url: '/admin-api/community/comments',
     method: 'get',
@@ -412,7 +449,7 @@ export const communityApi = {
     method: 'post',
     data: { targets, reason }
   }),
-  moments: (params: Record<string, unknown>) => request<PageResult<CommunityMoment>>({
+  moments: (params: Record<string, unknown>) => requestCommunityPage<CommunityMoment>({
     ...adminConfig,
     url: '/admin-api/community/moments',
     method: 'get',
@@ -445,13 +482,13 @@ export const communityApi = {
     data: { targets, reason }
   }),
   interactions: (params: Record<string, unknown>) =>
-    request<PageResult<CommunityInteraction>>({
+    requestCommunityPage<CommunityInteraction>({
       ...adminConfig,
       url: '/admin-api/community/interactions',
       method: 'get',
       params
     }),
-  reviews: (params: Record<string, unknown>) => request<PageResult<ArticleReviewListItem>>({
+  reviews: (params: Record<string, unknown>) => requestCommunityPage<ArticleReviewListItem>({
     ...adminConfig,
     url: '/admin-api/community/reviews',
     method: 'get',
@@ -540,9 +577,9 @@ export const communityApi = {
   decideTeamSubmission: (submissionId: string, action: 'approve' | 'revision' | 'reject', expectedLockVersion: number, comment?: string) => request<TeamSubmission>({ ...adminConfig, url: `/admin-api/community/team-submissions/${submissionId}/${action}`, method: 'post', data: { expectedLockVersion, comment } }),
   series: () => request<CommunitySeries[]>({ ...adminConfig, url: '/admin-api/community/series', method: 'get' }),
   decideSeries: (seriesId: string, action: 'approve' | 'reject', expectedLockVersion: number, comment?: string) => request<CommunitySeries>({ ...adminConfig, url: `/admin-api/community/series/${seriesId}/${action}`, method: 'post', data: { expectedLockVersion, comment } }),
-  teams: (params: Record<string, unknown>) => request<PageResult<CommunityTeam>>({ ...adminConfig, url: '/admin-api/community/teams', method: 'get', params }),
+  teams: (params: Record<string, unknown>) => requestCommunityPage<CommunityTeam>({ ...adminConfig, url: '/admin-api/community/teams', method: 'get', params }),
   team: (teamId: string) => request<CommunityTeam>({ ...adminConfig, url: `/admin-api/community/teams/${teamId}`, method: 'get' }),
-  collaborations: (params: Record<string, unknown>) => request<PageResult<CommunityCollaboration>>({ ...adminConfig, url: '/admin-api/community/collaborations', method: 'get', params })
+  collaborations: (params: Record<string, unknown>) => requestCommunityPage<CommunityCollaboration>({ ...adminConfig, url: '/admin-api/community/collaborations', method: 'get', params })
   ,reports: (status?: 'PENDING' | 'ASSIGNED') => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports', method: 'get', params: status ? { status } : undefined })
   ,claimReport: (reportId: string, expectedLockVersion: number) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/claim`, method: 'post', data: { expectedLockVersion } })
   ,resolveReport: (reportId: string, expectedLockVersion: number, resolutionCode: string, resolutionNote?: string, dismiss = false) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/${dismiss ? 'dismiss' : 'resolve'}`, method: 'post', data: { expectedLockVersion, resolutionCode, resolutionNote } })
@@ -551,4 +588,24 @@ export const communityApi = {
   ,sanctions: (userId: string) => request<CommunitySanction[]>({ ...adminConfig, url: `/admin-api/community/sanctions/users/${userId}`, method: 'get' })
   ,issueSanction: (data: Record<string, unknown>) => request<CommunitySanction>({ ...adminConfig, url: '/admin-api/community/sanctions', method: 'post', data })
   ,revokeSanction: (id: string, note: string) => request<CommunitySanction>({ ...adminConfig, url: `/admin-api/community/sanctions/${id}/revoke`, method: 'post', data: { note } })
+  ,accountEnforcements: (userId?: string) => request<CommunityAccountEnforcementCase[]>({ ...adminConfig, url: '/admin-api/community/account-enforcements', method: 'get', params: userId ? { userId } : undefined })
+  ,freezeAccount: (data: Record<string, unknown>) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: '/admin-api/community/account-enforcements/freeze', method: 'post', data })
+  ,extendAccountFreeze: (data: Record<string, unknown>) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: '/admin-api/community/account-enforcements/freeze/extend', method: 'post', data })
+  ,releaseAccountFreeze: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/freeze/release`, method: 'post', data })
+  ,blockAccountLogin: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/login/block`, method: 'post', data })
+  ,restoreAccountLogin: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/login/restore`, method: 'post', data })
+  ,deactivateAccount: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/deactivate`, method: 'post', data })
+  ,restoreAccount: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/restore`, method: 'post', data })
+  ,submitAccountEnforcement: (data: Record<string, unknown>) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: '/admin-api/community/account-enforcements', method: 'post', data })
+  ,reviewAccountEnforcement: (id: string, data: Record<string, unknown>) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: `/admin-api/community/account-enforcements/${id}/reviews`, method: 'post', data })
+  ,accountEnforcementReviews: (id: string) => request<CommunityAccountEnforcementReview[]>({ ...adminConfig, url: `/admin-api/community/account-enforcements/${id}/reviews`, method: 'get' })
+  ,supplementAccountEnforcementEvidence: (id: string, evidenceSnapshot: string) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: `/admin-api/community/account-enforcements/${id}/evidence`, method: 'post', data: { evidenceSnapshot } })
+  ,accountEnforcementConfirmationText: (id: string) => request<{ confirmationText: string }>({ ...adminConfig, url: `/admin-api/community/account-enforcements/${id}/confirmation-text`, method: 'get' })
+  ,executeAccountEnforcement: (id: string, confirmation: string) => request<CommunityAccountEnforcementCase>({ ...adminConfig, url: `/admin-api/community/account-enforcements/${id}/execute`, method: 'post', data: { confirmation } })
+  ,accountEnforcementAppeals: () => request<CommunityAccountEnforcementAppeal[]>({ ...adminConfig, url: '/admin-api/community/account-enforcements/appeals', method: 'get' })
+  ,reviewAccountEnforcementAppeal: (id: string, data: Record<string, unknown>) => request<CommunityAccountEnforcementAppeal>({ ...adminConfig, url: `/admin-api/community/account-enforcements/appeals/${id}/review`, method: 'post', data })
+  ,forcePasswordReset: (userId: string, data: { reasonCode: string; userVisibleReason: string; internalReason: string; evidenceSnapshot: string }) => request<{ temporaryPassword: string }>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/force-password-reset`, method: 'post', data })
+  ,forceLogout: (userId: string, data: { reasonCode: string; userVisibleReason: string; internalReason: string; evidenceSnapshot: string }) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/force-logout`, method: 'post', data })
+  ,unlockAccount: (userId: string, data: { reasonCode: string; userVisibleReason: string; internalReason: string; evidenceSnapshot: string }) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/unlock`, method: 'post', data })
+  ,lockAccount: (userId: string, data: Record<string, unknown>) => request<void>({ ...adminConfig, url: `/admin-api/community/account-enforcements/users/${userId}/lock`, method: 'post', data })
 }

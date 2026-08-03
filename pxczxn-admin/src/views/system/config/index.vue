@@ -49,6 +49,14 @@
                 <n-form-item label="ICP备案号">
                   <n-input v-model:value="configs.system.icp" placeholder="请输入ICP备案号" />
                 </n-form-item>
+                <n-form-item label="社区治理最低审批人数">
+                  <n-input-number v-model:value="configs.system.minimumApprovalCount" :min="1" :max="10" />
+                  <span class="form-hint" style="margin-left: 12px">长期冻结、数据清理、账号删除申请至少需要几名管理员通过；1 表示单人审批。</span>
+                </n-form-item>
+                <n-form-item label="允许超级管理员自审">
+                  <n-switch v-model:value="configs.system.allowSuperAdminSelfReview" />
+                  <span class="form-hint" style="margin-left: 12px">关闭后，超级管理员发起的申请也必须由其他管理员审核。</span>
+                </n-form-item>
                 <n-divider />
                 <n-form-item label="启用水印">
                   <n-switch v-model:value="configs.system.watermarkEnabled" />
@@ -867,7 +875,7 @@ const saving = ref(false)
 
 // 所有配置数据
 const configs = reactive<Record<string, any>>({
-  system: { siteName: '', siteDescription: '', siteLogo: '', copyright: '', icp: '', watermarkEnabled: true, watermarkType: 'username', watermarkCustomText: '', watermarkOpacity: 0.1 },
+  system: { siteName: '', siteDescription: '', siteLogo: '', copyright: '', icp: '', minimumApprovalCount: 2, allowSuperAdminSelfReview: true, watermarkEnabled: true, watermarkType: 'username', watermarkCustomText: '', watermarkOpacity: 0.1 },
   register: { enabled: true, verifyEmail: false, verifyPhone: false, defaultRole: 'user', needAudit: false },
   login: { captchaEnabled: false, captchaType: 'image', maxRetryCount: 5, lockTime: 30, rememberMe: true, singleLogin: false },
   password: { minLength: 6, maxLength: 20, requireUppercase: false, requireLowercase: false, requireNumber: false, requireSpecial: false, expireDays: 0 },

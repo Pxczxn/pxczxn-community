@@ -98,6 +98,18 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
 
     @Override
     @Transactional
+    public void revokeActiveType(Long adminId, Long targetUserId, String sanctionType, String note) {
+        SanctionType type = parse(sanctionType);
+        List<CommunitySanction> active = mapper.selectList(Wrappers.<CommunitySanction>lambdaQuery()
+                .eq(CommunitySanction::getTargetUserId, targetUserId)
+                .eq(CommunitySanction::getSanctionType, type.name())
+                .eq(CommunitySanction::getStatus, "ACTIVE"));
+        if (active.isEmpty()) throw new BusinessException(409, "该账号不存在可恢复的登录限制");
+        active.forEach(item -> revoke(adminId, item.getId(), note));
+    }
+
+    @Override
+    @Transactional
     public List<SanctionView> mine(Long userId) {
         requireUser(userId);
         expireDueFor(userId);
@@ -231,6 +243,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
             case COMMENT -> hasType(active, SanctionType.COMMENT_BAN);
             case PUBLISH -> hasType(active, SanctionType.MOMENT_BAN, SanctionType.PUBLISH_SUSPEND);
             case SUBMIT -> hasType(active, SanctionType.SUBMISSION_BAN, SanctionType.PUBLISH_SUSPEND);
+            case MESSAGE -> hasType(active, SanctionType.MESSAGE_BAN);
             case LOGIN -> hasType(active, SanctionType.LOGIN_SUSPEND, SanctionType.PERMANENT_BAN);
         };
     }

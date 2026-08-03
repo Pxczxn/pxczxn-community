@@ -215,16 +215,16 @@ public class AdminCommunityQueryService {
         var query = Wrappers.<CommunityUser>lambdaQuery()
                 .and(
                         StringUtils.hasText(keyword),
-                        nested -> nested
-                                .like(
-                                        CommunityUser::getUsername,
-                                        keyword.trim()
-                                )
-                                .or()
-                                .like(
-                                        CommunityUser::getDisplayName,
-                                        keyword.trim()
-                                )
+                        nested -> {
+                            String value = keyword.trim();
+                            nested.like(CommunityUser::getUsername, value)
+                                    .or()
+                                    .like(CommunityUser::getDisplayName, value);
+                            Long userId = parseUserId(value);
+                            if (userId != null) {
+                                nested.or().eq(CommunityUser::getId, userId);
+                            }
+                        }
                 )
                 .eq(
                         StringUtils.hasText(status),
@@ -376,6 +376,15 @@ public class AdminCommunityQueryService {
                 user.getLastLoginAt(),
                 user.getCreatedAt()
         );
+    }
+
+    private static Long parseUserId(String value) {
+        try {
+            long id = Long.parseLong(value);
+            return id > 0 ? id : null;
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
 
     private AdminCommunityBlogView blogView(Blog blog) {

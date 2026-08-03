@@ -24,7 +24,7 @@
             :options="statusOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="认证状态">
@@ -33,7 +33,7 @@
             :options="verificationOptions"
             clearable
             placeholder="全部状态"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item>
@@ -62,7 +62,7 @@
         :loading="loading"
         :pagination="pagination"
         :row-key="rowKey"
-        :scroll-x="1120"
+        :scroll-x="1050"
         @update:page="changePage"
         @update:page-size="changePageSize"
       />
@@ -72,7 +72,8 @@
 
 <script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue'
-import { NTag, type DataTableColumns } from 'naive-ui'
+import { useRouter } from 'vue-router'
+import { NButton, NTag, type DataTableColumns } from 'naive-ui'
 import { RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityUser } from '@/api/community'
 import { formatDateTime, statusLabel, statusTone } from '@/utils/community'
@@ -80,6 +81,7 @@ import { formatDateTime, statusLabel, statusTone } from '@/utils/community'
 const rows = ref<CommunityUser[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
+const router = useRouter()
 const filters = reactive({
   keyword: '',
   status: null as string | null,
@@ -104,21 +106,41 @@ const verificationOptions = [
   { label: '未认证', value: 'UNVERIFIED' }
 ]
 
+function maskedValue(value: string, visiblePrefix = 2) {
+  if (value.length <= visiblePrefix + 1) return `${value.slice(0, 1)}***`
+  return `${value.slice(0, visiblePrefix)}***${value.slice(-1)}`
+}
+
+function maskedEmail(email: string) {
+  const [local = '', domain = ''] = email.split('@')
+  return `${maskedValue(local)}@${maskedValue(domain, 1)}`
+}
+
+function sensitiveValue(masked: string, full: string) {
+  return h('span', { class: 'sensitive-reveal', title: '悬停查看完整信息' }, [
+    h('span', { class: 'sensitive-reveal__masked' }, masked),
+    h('span', { class: 'sensitive-reveal__full' }, full)
+  ])
+}
+
 const columns: DataTableColumns<CommunityUser> = [
   {
     title: '用户',
     key: 'displayName',
-    width: 200,
+    width: 160,
     render: row => h('div', { class: 'identity-cell' }, [
       h('strong', row.displayName || row.username),
-      h('span', `@${row.username}`)
+      sensitiveValue(`@${maskedValue(row.username)}`, `@${row.username}`)
     ])
   },
-  { title: '邮箱', key: 'email', minWidth: 210 },
+  {
+    title: '邮箱', key: 'email', width: 175,
+    render: row => sensitiveValue(maskedEmail(row.email), row.email)
+  },
   {
     title: '状态',
     key: 'status',
-    width: 100,
+    width: 80,
     render: row => h(NTag, {
       size: 'small',
       bordered: false,
@@ -128,7 +150,7 @@ const columns: DataTableColumns<CommunityUser> = [
   {
     title: '认证',
     key: 'verificationStatus',
-    width: 100,
+    width: 80,
     render: row => h(NTag, {
       size: 'small',
       bordered: false,
@@ -136,22 +158,29 @@ const columns: DataTableColumns<CommunityUser> = [
     }, { default: () => statusLabel(row.verificationStatus) })
   },
   {
-    title: '个人博客',
+    title: '关联博客',
     key: 'personalBlogName',
-    minWidth: 180,
+    minWidth: 150,
     render: row => row.personalBlogName || '—'
   },
   {
     title: '最近登录',
     key: 'lastLoginAt',
-    width: 170,
+    width: 150,
     render: row => formatDateTime(row.lastLoginAt)
   },
   {
     title: '注册时间',
     key: 'createdAt',
-    width: 170,
+    width: 150,
     render: row => formatDateTime(row.createdAt)
+  },
+  {
+    title: '账号操作', key: 'actions', width: 100, fixed: 'right',
+    render: row => h(NButton, {
+      size: 'small',
+      onClick: () => router.push({ path: '/community/account-enforcements', query: { userId: row.id } })
+    }, { default: () => '账号操作' })
   }
 ]
 

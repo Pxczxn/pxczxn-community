@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Clock3, LibraryBig, ListTree, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, Layers, LibraryBig, ListTree, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { UserTopbar } from "../components/prototype-ui";
 import { communityApi, type TeamSeries } from "../lib/community-api";
 
+type StatusFilter = "ALL" | "ONGOING" | "COMPLETED" | "PAUSED";
+
 export default function SeriesPage() {
   const [series, setSeries] = useState<TeamSeries[]>([]);
+  const [filter, setFilter] = useState<StatusFilter>("ALL");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -27,6 +30,11 @@ export default function SeriesPage() {
     chapters: series.reduce((total, item) => total + item.chapters.length, 0),
     ongoing: series.filter((item) => item.serializationStatus === "ONGOING").length,
   }), [series]);
+
+  const filteredSeries = useMemo(() => {
+    if (filter === "ALL") return series;
+    return series.filter((item) => item.serializationStatus === filter);
+  }, [series, filter]);
 
   return (
     <>
@@ -54,24 +62,48 @@ export default function SeriesPage() {
             <span className="eyebrow"><ListTree size={15} /> 按最近更新排序</span>
             <h2>全部系列</h2>
           </div>
-          {!loading && !error && <span className="series-toolbar__count">共 {summary.series} 个公开系列</span>}
+          <div className="series-filters">
+            <button
+              className={`series-filter-btn ${filter === "ALL" ? "active" : ""}`}
+              onClick={() => setFilter("ALL")}
+              type="button"
+            >
+              全部 ({series.length})
+            </button>
+            <button
+              className={`series-filter-btn ${filter === "ONGOING" ? "active" : ""}`}
+              onClick={() => setFilter("ONGOING")}
+              type="button"
+            >
+              连载中 ({series.filter((s) => s.serializationStatus === "ONGOING").length})
+            </button>
+            <button
+              className={`series-filter-btn ${filter === "COMPLETED" ? "active" : ""}`}
+              onClick={() => setFilter("COMPLETED")}
+              type="button"
+            >
+              已完结 ({series.filter((s) => s.serializationStatus === "COMPLETED").length})
+            </button>
+
+            {!loading && !error && <span className="series-toolbar__count">共 {filteredSeries.length} 个公开系列</span>}
+          </div>
         </section>
 
         {loading && <div className="series-loading surface" aria-busy="true"><Loader2 className="animate-spin" size={22} /> 正在整理连载书架…</div>}
         {error && <p className="inline-feedback error" role="alert">{error}</p>}
-        {!loading && !error && series.length === 0 && (
+        {!loading && !error && filteredSeries.length === 0 && (
           <section className="series-empty surface">
             <span className="series-empty__icon"><BookOpen size={28} /></span>
             <div>
-              <h2>还没有公开系列</h2>
-              <p>团队发布并通过审核的连载会自动展示在这里。你可以先在发现页阅读已经公开的文章。</p>
+              <h2>{filter === "ALL" ? "还没有公开系列" : "未找到匹配条件的系列"}</h2>
+              <p>{filter === "ALL" ? "团队发布并通过审核的连载会自动展示在这里。你可以先在发现页阅读已经公开的文章。" : "尝试切换分类过滤器查看其他连载内容。"}</p>
             </div>
             <Link className="secondary-button" href="/discover">浏览公开文章 <ArrowRight size={16} /></Link>
           </section>
         )}
-        {!loading && !error && series.length > 0 && (
+        {!loading && !error && filteredSeries.length > 0 && (
           <section className="series-shelf" aria-label="公开文章系列">
-            {series.map((item) => <SeriesCard item={item} key={item.id} />)}
+            {filteredSeries.map((item) => <SeriesCard item={item} key={item.id} />)}
           </section>
         )}
       </main>
@@ -84,7 +116,7 @@ function SeriesCard({ item }: { item: TeamSeries }) {
     <Link className="series-card surface" href={`/series/${item.id}`}>
       <div className="series-card__topline">
         <span className={`series-status series-status--${item.serializationStatus.toLowerCase()}`}>{status(item.serializationStatus)}</span>
-        <span className="series-card__chapter-count"><ListTree size={14} /> {item.chapters.length} 篇章节</span>
+        <span className="series-card__chapter-count"><Layers size={14} /> {item.chapters.length} 篇章节</span>
       </div>
       <span className="series-card__icon"><BookOpen size={22} /></span>
       <h3>{item.title}</h3>
@@ -100,3 +132,4 @@ function SeriesCard({ item }: { item: TeamSeries }) {
 function status(value: TeamSeries["serializationStatus"]) {
   return ({ ONGOING: "连载中", COMPLETED: "已完结", PAUSED: "暂缓更新" } as const)[value] || "系列";
 }
+

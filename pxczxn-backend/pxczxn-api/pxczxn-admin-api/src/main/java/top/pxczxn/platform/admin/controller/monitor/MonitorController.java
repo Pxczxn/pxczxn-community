@@ -3,6 +3,7 @@ package top.pxczxn.platform.admin.controller.monitor;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
+import com.zaxxer.hikari.HikariDataSource;
 import top.pxczxn.platform.common.result.Result;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.web.bind.annotation.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +35,36 @@ import java.util.*;
 public class MonitorController {
 
     private final StringRedisTemplate redisTemplate;
+    private final DataSource dataSource;
+
+    @GetMapping("/database/info")
+    @SaCheckPermission("monitor:druid:list")
+    public Result<Map<String, Object>> databaseInfo() {
+        Map<String, Object> result = new HashMap<>();
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            result.put("databaseProduct", metaData.getDatabaseProductName());
+            result.put("databaseVersion", metaData.getDatabaseProductVersion());
+            result.put("jdbcUrl", sanitizeJdbcUrl(metaData.getURL()));
+            result.put("driverName", metaData.getDriverName());
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to read database monitor information", e);
+        }
+        if (dataSource instanceof HikariDataSource hikari) {
+            var pool = hikari.getHikariPoolMXBean();
+            if (pool != null) {
+                result.put("activeConnections", pool.getActiveConnections());
+                result.put("idleConnections", pool.getIdleConnections());
+                result.put("totalConnections", pool.getTotalConnections());
+                result.put("threadsAwaitingConnection", pool.getThreadsAwaitingConnection());
+            }
+        }
+        return Result.ok(result);
+    }
+
+    static String sanitizeJdbcUrl(String jdbcUrl) {
+        return jdbcUrl == null ? "" : jdbcUrl.replaceAll("(?i)([?&])(user|username|password)=[^&]*", "$1$2=***");
+    }
 
     /**
      * 获取在线用户列表

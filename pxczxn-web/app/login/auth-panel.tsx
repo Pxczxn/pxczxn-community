@@ -18,6 +18,9 @@ import {
   saveSession,
 } from "../lib/community-api";
 
+const EMAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9\s])\S{12,72}$/;
+
 export function AuthPanel() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +50,14 @@ export function AuthPanel() {
       }
       if (!agreed) {
         setMessage({ tone: "error", text: "请先阅读并同意服务协议与隐私政策" });
+        return;
+      }
+      if (!EMAIL_PATTERN.test(email)) {
+        setMessage({ tone: "error", text: "请输入有效邮箱，例如 name@example.com" });
+        return;
+      }
+      if (!PASSWORD_PATTERN.test(password)) {
+        setMessage({ tone: "error", text: "密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格" });
         return;
       }
     }
@@ -95,7 +106,9 @@ export function AuthPanel() {
       });
       window.setTimeout(() => {
         const redirectTarget = new URLSearchParams(window.location.search).get("returnTo");
-        const safeReturnTo = redirectTarget
+        const safeReturnTo = session.forcePasswordChange
+          ? "/settings"
+          : redirectTarget
           && redirectTarget.startsWith("/")
           && !redirectTarget.startsWith("//")
           ? redirectTarget
@@ -185,7 +198,9 @@ export function AuthPanel() {
                 className="field"
                 name="password"
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder={mode === "login" ? "请输入密码" : "至少 8 个字符"}
+                minLength={mode === "register" ? 12 : 1}
+                maxLength={72}
+                placeholder={mode === "login" ? "请输入密码" : "12-72 位，含大小写、数字和特殊字符"}
                 required
                 type={showPassword ? "text" : "password"}
                 value={password}

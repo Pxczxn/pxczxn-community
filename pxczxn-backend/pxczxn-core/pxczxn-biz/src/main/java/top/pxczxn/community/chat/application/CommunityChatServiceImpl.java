@@ -12,6 +12,8 @@ import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.social.persistence.CommunityFollowMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
+import top.pxczxn.community.sanction.application.CommunitySanctionService;
+import top.pxczxn.community.sanction.application.SanctionAction;
 import top.pxczxn.platform.common.exception.BusinessException;
 
 import java.time.LocalDateTime;
@@ -32,11 +34,13 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     private final CommunityBlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
     private final CommunityAbuseGuard abuseGuard;
+    private final CommunitySanctionService sanctionService;
 
     @Override
     @Transactional
     public CommunityChatMessageView send(Long actor, Long recipient, String content) {
         authorize(actor, recipient);
+        sanctionService.requireActionAllowed(actor, SanctionAction.MESSAGE);
         abuseGuard.check("USER:" + actor, "CHAT_SEND", 20, 60);
         String text = content == null ? "" : content.trim();
         if (text.isEmpty() || text.length() > 2000) {

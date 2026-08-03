@@ -93,7 +93,8 @@ public class CommunityAuthController {
                 session.tokenValue(),
                 session.expiresIn(),
                 session.userId().toString(),
-                session.username()
+                session.username(),
+                session.forcePasswordChange()
         ));
     }
 

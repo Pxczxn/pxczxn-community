@@ -37,7 +37,7 @@
             :options="targetOptions"
             clearable
             placeholder="文章 / 动态"
-            style="width: 130px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="目标 ID">
@@ -196,7 +196,7 @@
       v-model:show="actionVisible"
       preset="card"
       :title="actionTitle"
-      style="width: min(540px, calc(100vw - 32px))"
+      class="dialog-form-sm"
     >
       <n-alert :type="isDestructiveAction ? 'warning' : 'info'">
         {{ actionScopeText }}；提交时会校验当前锁版本并写入不可变治理事件。

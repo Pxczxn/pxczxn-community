@@ -61,6 +61,44 @@ test('the three supported visual themes remain available', async () => {
   }
 })
 
+test('community pagination matches the backend contract and normalizes numeric strings', async () => {
+  const api = await source('src/api/community.ts')
+
+  assert.match(api, /pageNum:\s*number/)
+  assert.doesNotMatch(api, /\n\s*page:\s*number/)
+  assert.match(api, /total:\s*Number\(result\.total\)/)
+  assert.match(api, /pageNum:\s*Number\(result\.pageNum\)/)
+  assert.match(api, /pageSize:\s*Number\(result\.pageSize\)/)
+})
+
+test('wide community tables stay inside the content card', async () => {
+  const styles = await source('src/styles/index.scss')
+  const layoutShrinkRule = styles.match(
+    /\.n-layout,\s*\n\.n-layout-content,[\s\S]*?\n\}/
+  )?.[0]
+
+  assert.match(styles, /grid-template-columns:\s*minmax\(0,\s*1fr\)/)
+  assert.match(styles, /\.n-data-table-wrapper\s*\{[\s\S]*?max-width:\s*100%/)
+  assert.ok(layoutShrinkRule)
+  assert.match(layoutShrinkRule, /min-width:\s*0\s*!important/)
+  assert.doesNotMatch(layoutShrinkRule, /overflow:\s*visible/)
+})
+
+test('community forms and filters use shared validation and sizing rules', async () => {
+  const [styles, contentRules] = await Promise.all([
+    source('src/styles/index.scss'),
+    source('src/views/community/content-rules/index.vue')
+  ])
+
+  assert.match(styles, /\.filter-select\s*\{[\s\S]*?width:\s*150px/)
+  for (const size of ['sm', 'md', 'lg']) {
+    assert.match(styles, new RegExp(`\\.dialog-form-${size}\\s*\\{`))
+  }
+  assert.match(contentRules, /ref="formRef"/)
+  assert.match(contentRules, /:rules="formRules"/)
+  assert.match(contentRules, /formRef\.value\?\.validate\(\)/)
+})
+
 test('websocket authentication uses one-time tickets instead of session tokens', async () => {
   const [websocket, serverManager, authApi] = await Promise.all([
     source('src/utils/websocket.ts'),
@@ -115,4 +153,30 @@ test('administrator passwords are random, one-time, and forced to change', async
   assert.match(userPage, /temporaryPassword/)
   assert.match(passwordModal, /props\.required/)
   assert.match(userStore, /mustChangePassword/)
+})
+
+test('account enforcement selections submit numeric ids and respect operator permissions', async () => {
+  const page = await source('src/views/community/account-enforcements/index.vue')
+
+  assert.match(page, /const numericId = \(value: string\) => value\.trim\(\)\.match\(\/\^\\d\+\//)
+  assert.match(page, /reviewAccountEnforcement\(caseId,/)
+  assert.match(page, /reviewAccountEnforcementAppeal\(appealId,/)
+  assert.match(page, /if \(canApprove\.value\) void loadAppeals\(\)/)
+  assert.match(page, /tab\.value = 'records'/)
+  assert.match(page, /name="review" tab="申请审批"/)
+  assert.match(page, /name="appeals" tab="申诉复核"/)
+  assert.match(page, /<n-descriptions-item label="申请 ID">/)
+  assert.match(page, /<n-descriptions-item label="申诉 ID">/)
+  assert.doesNotMatch(page, /<n-description\s/)
+  assert.match(page, /selectedReviewApplication\.value\.status === 'SUBMITTED'/)
+  assert.match(page, /selectedReviewApplication\.value\.status === 'UNDER_REVIEW' && isSuperAdmin\.value/)
+  assert.match(page, /selectedReviewApplication\.value\?\.status === 'APPROVED'/)
+  assert.match(page, /\['LONG_FREEZE', 'DATA_CLEANUP', 'ACCOUNT_DELETE'\]\.includes\(form\.measureType\)/)
+  assert.match(page, /\['LONG_FREEZE', '提交长期冻结申请'\]/)
+  assert.match(page, /reviewAction\('APPROVE'\)/)
+  assert.match(page, /reviewAction\('REJECT'\)/)
+  assert.match(page, /accountEnforcementReviews\(item\.id\)/)
+  assert.match(page, /title="目标账户基本信息"/)
+  assert.match(page, /isOwnReviewApplication/)
+  assert.match(page, /hasReviewedSelection/)
 })

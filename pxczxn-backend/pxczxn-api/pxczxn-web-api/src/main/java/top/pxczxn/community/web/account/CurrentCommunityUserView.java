@@ -9,6 +9,7 @@ public record CurrentCommunityUserView(
         String email,
         String status,
         String verificationStatus,
+        boolean forcePasswordChange,
         String personalBlogId,
         String blogName,
         String blogSlug

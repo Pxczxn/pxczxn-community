@@ -108,10 +108,17 @@ body.starry-theme {
 
 .community-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+  min-width: 0;
   padding: 20px;
 
+  > * {
+    min-width: 0;
+  }
+
   .n-card {
+    min-width: 0;
     border: 1px solid var(--community-border);
   }
 }
@@ -151,6 +158,22 @@ body.starry-theme {
   }
 }
 
+.filter-select {
+  width: 150px;
+}
+
+.dialog-form-sm {
+  width: min(540px, calc(100vw - 32px));
+}
+
+.dialog-form-md {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.dialog-form-lg {
+  width: min(900px, calc(100vw - 32px));
+}
+
 .table-alert {
   margin-bottom: 16px;
 }
@@ -181,6 +204,45 @@ body.starry-theme {
   }
 }
 
+// 账号信息默认脱敏，运营人员悬停时再查看完整内容。
+.sensitive-reveal {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.sensitive-reveal__full {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: max-content;
+  max-width: none;
+  margin: 0 !important;
+  padding: 0 2px;
+  background: var(--community-surface, var(--n-card-color));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 120ms ease;
+}
+
+.sensitive-reveal:hover .sensitive-reveal__masked,
+.sensitive-reveal:focus-visible .sensitive-reveal__masked {
+  opacity: 0;
+}
+
+.sensitive-reveal:hover .sensitive-reveal__full,
+.sensitive-reveal:focus-visible .sensitive-reveal__full {
+  opacity: 1;
+}
+
 .page-empty {
   padding: 96px 24px;
 }
@@ -197,96 +259,108 @@ body.starry-theme {
   .page-heading {
     flex-direction: column;
   }
+
+  .filter-select {
+    width: 100%;
+  }
 }
 
 // 暗色主题全局样式
 body.dark-theme {
-  background-color: #101014;
-  color: #ffffffd1;
+  --community-deep: #18181c;
+  --community-ink: #101014;
+  --community-surface-raised: #262629;
+  --community-surface-overlay: #27272a;
+  --community-border-strong: #3f3f46;
+  --community-border-mid: #52525b;
+  --community-accent: #60a5fa;
+  --community-ink-muted: #71717a;
+  background-color: var(--community-ink);
+  color: var(--community-text);
 
   html, body, #app {
-    background-color: #101014;
-    color: #ffffffd1;
+    background-color: var(--community-ink);
+    color: var(--community-text);
   }
 
   // 卡片样式
   .n-card {
-    background-color: #18181c !important;
+    background-color: var(--community-deep) !important;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
   }
 
   // 表格样式
   .n-data-table {
     .n-data-table-thead {
-      background-color: #262629 !important;
+      background-color: var(--community-surface-raised) !important;
     }
-    
+
     .n-data-table-th {
-      background-color: #262629 !important;
-      color: #ffffffa6 !important;
+      background-color: var(--community-surface-raised) !important;
+      color: var(--community-text) !important;
     }
-    
+
     .n-data-table-td {
-      background-color: #18181c !important;
+      background-color: var(--community-deep) !important;
     }
 
     .n-data-table-tr:hover .n-data-table-td {
-      background-color: #262629 !important;
+      background-color: var(--community-surface-raised) !important;
     }
   }
 
   // 输入框样式
   .n-input {
-    background-color: #27272a !important;
+    background-color: var(--community-surface-overlay) !important;
   }
 
-  // 选择器样式  
+  // 选择器样式
   .n-base-selection {
-    background-color: #27272a !important;
+    background-color: var(--community-surface-overlay) !important;
   }
 
   // 按钮样式
   .n-button--default-type {
-    background-color: #27272a !important;
+    background-color: var(--community-surface-overlay) !important;
   }
 
   // 标签样式
   .n-tag {
-    background-color: #3f3f46 !important;
+    background-color: var(--community-border-strong) !important;
   }
 
   // 分页器样式
   .n-pagination {
     .n-pagination-item {
       background-color: transparent !important;
-      
+
       &:hover {
-        background-color: #3f3f46 !important;
+        background-color: var(--community-border-strong) !important;
       }
-      
+
       &.n-pagination-item--active {
-        background-color: #60a5fa !important;
+        background-color: var(--community-accent) !important;
       }
     }
   }
 
   // 弹窗样式
   .n-modal {
-    background-color: #18181c !important;
+    background-color: var(--community-deep) !important;
   }
 
   .n-dialog {
-    background-color: #18181c !important;
+    background-color: var(--community-deep) !important;
   }
 
   // 下拉菜单样式
   .n-dropdown-menu {
-    background-color: #27272a !important;
+    background-color: var(--community-surface-overlay) !important;
   }
 
   // 气泡卡片样式
   .n-popover {
-    background-color: #27272a !important;
+    background-color: var(--community-surface-overlay) !important;
   }
 
   // Tabs 样式
@@ -296,292 +370,292 @@ body.dark-theme {
 
   // 表单样式
   .n-form-item-label {
-    color: #ffffffa6 !important;
+    color: var(--community-text) !important;
   }
 
   // 首页欢迎区域样式
   .welcome-info {
-    background: #18181c !important;
+    background: var(--community-deep) !important;
   }
 
   .welcome-title {
-    color: #ffffff !important;
+    color: var(--community-text) !important;
   }
 
   .welcome-desc {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .time-display {
-    color: #ffffff !important;
+    color: var(--community-text) !important;
   }
 
   .date-display {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   // 首页统计卡片样式
   .stat-value {
-    color: #ffffff !important;
+    color: var(--community-text) !important;
   }
 
   .stat-title {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .shortcut-item:hover {
-    background: #27272a !important;
+    background: var(--community-surface-overlay) !important;
   }
 
   .shortcut-name {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .changelog-list {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .author-name {
-    color: #ffffff !important;
+    color: var(--community-text) !important;
   }
 
   .author-desc {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .project-desc {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .project-stat-item {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .author-link {
-    background: #27272a !important;
-    color: #a1a1aa !important;
+    background: var(--community-surface-overlay) !important;
+    color: var(--community-muted) !important;
 
     &:hover {
-      background: #3f3f46 !important;
-      color: #e4e4e7 !important;
+      background: var(--community-border-strong) !important;
+      color: var(--community-text) !important;
     }
   }
 
   .wechat-info {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   // 聊天页面样式
   .chat-sidebar {
-    background: #18181c !important;
-    border-right-color: #3f3f46 !important;
+    background: var(--community-deep) !important;
+    border-right-color: var(--community-border-strong) !important;
   }
 
   .sidebar-header {
-    background: #18181c !important;
-    border-bottom-color: #3f3f46 !important;
+    background: var(--community-deep) !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .sidebar-tabs {
-    border-bottom-color: #3f3f46 !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .tab-item {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
 
     &:hover,
     &.active {
-      color: #60a5fa !important;
+      color: var(--community-accent) !important;
     }
 
     &.active {
-      background: #27272a !important;
+      background: var(--community-surface-overlay) !important;
     }
   }
 
   .contact-item {
     &:hover,
     &.active {
-      background: #27272a !important;
+      background: var(--community-surface-overlay) !important;
     }
   }
 
   .contact-name {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .contact-time {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .contact-last-msg {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .resize-handle {
     &:hover {
-      background: #3f3f46 !important;
+      background: var(--community-border-strong) !important;
     }
 
     &::after {
-      background: #52525b !important;
+      background: var(--community-border-mid) !important;
     }
   }
 
   .chat-main {
-    background: #101014 !important;
+    background: var(--community-ink) !important;
   }
 
   .chat-header {
-    background: #18181c !important;
-    border-bottom-color: #3f3f46 !important;
+    background: var(--community-deep) !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .chat-header-name {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .chat-header-status .offline {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .message-list {
-    background: #101014 !important;
+    background: var(--community-ink) !important;
   }
 
   .message-bubble {
-    background: #27272a !important;
-    color: #e4e4e7 !important;
+    background: var(--community-surface-overlay) !important;
+    color: var(--community-text) !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
   }
 
   .message-self .message-bubble {
-    background: #2563eb !important;
+    background: var(--community-accent) !important;
     color: #fff !important;
   }
 
   .message-time {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .message-sender {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .chat-input {
-    background: #18181c !important;
-    border-top-color: #3f3f46 !important;
+    background: var(--community-deep) !important;
+    border-top-color: var(--community-border-strong) !important;
   }
 
   .chat-empty {
-    background: #101014 !important;
+    background: var(--community-ink) !important;
   }
 
   .system-message {
-    background: #27272a !important;
-    color: #a1a1aa !important;
+    background: var(--community-surface-overlay) !important;
+    color: var(--community-muted) !important;
   }
 
   .emoji-tabs {
-    border-bottom-color: #3f3f46 !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .emoji-tab:hover,
   .emoji-item:hover {
-    background: #3f3f46 !important;
+    background: var(--community-border-strong) !important;
   }
 
   .emoji-tab.active {
-    background: #27272a !important;
+    background: var(--community-surface-overlay) !important;
   }
 
   .quick-reply-header {
-    color: #e4e4e7 !important;
-    border-bottom-color: #3f3f46 !important;
+    color: var(--community-text) !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .quick-reply-item {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
 
     &:hover {
-      background: #27272a !important;
-      color: #60a5fa !important;
+      background: var(--community-surface-overlay) !important;
+      color: var(--community-accent) !important;
     }
   }
 
   .member-count-badge {
-    background: #27272a !important;
-    color: #a1a1aa !important;
+    background: var(--community-surface-overlay) !important;
+    color: var(--community-muted) !important;
   }
 
   .member-item {
-    border-bottom-color: #3f3f46 !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .member-name {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .search-result-item:hover {
-    background: #27272a !important;
+    background: var(--community-surface-overlay) !important;
   }
 
   .result-content {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .profile-name {
-    color: #e4e4e7 !important;
+    color: var(--community-text) !important;
   }
 
   .profile-username {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .card-resize-handle::before {
-    border-color: #52525b !important;
+    border-color: var(--community-border-mid) !important;
   }
 
   .card-resize-handle:hover::before {
-    border-color: #60a5fa !important;
+    border-color: var(--community-accent) !important;
   }
 
   // 描述列表样式
   .n-descriptions {
     .n-descriptions-table-content {
-      color: #e4e4e7 !important;
+      color: var(--community-text) !important;
     }
   }
 
   // ==================== 登录页面暗黑模式 ====================
   .login-page {
-    background: #101014 !important;
+    background: var(--community-ink) !important;
   }
 
   // 样式一暗黑模式
   .login-page.style-1 {
-    background: linear-gradient(135deg, #18181c 0%, #101014 100%) !important;
+    background: linear-gradient(135deg, var(--community-deep) 0%, var(--community-ink) 100%) !important;
   }
 
   .style1-container {
-    background: #18181c !important;
+    background: var(--community-deep) !important;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
   }
 
   .login-form-wrapper {
-    background: #18181c !important;
+    background: var(--community-deep) !important;
   }
 
   .login-form .form-title {
-    color: #ffffff !important;
+    color: var(--community-text) !important;
   }
 
   .login-form .form-subtitle {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
   }
 
   .style1-footer {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   // 样式切换按钮
@@ -591,15 +665,15 @@ body.dark-theme {
   }
 
   .style-option {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
 
     &:hover {
-      background: #3f3f46 !important;
-      color: #e4e4e7 !important;
+      background: var(--community-border-strong) !important;
+      color: var(--community-text) !important;
     }
 
     &.active {
-      background: #60a5fa !important;
+      background: var(--community-accent) !important;
       color: #fff !important;
     }
   }
@@ -607,70 +681,70 @@ body.dark-theme {
   // 登录表单
   .login-form {
     .n-form-item-label {
-      color: #a1a1aa !important;
+      color: var(--community-muted) !important;
     }
 
     .n-input {
-      --n-color: #27272a !important;
-      --n-color-focus: #27272a !important;
-      --n-border: 1px solid #3f3f46 !important;
-      --n-border-hover: 1px solid #52525b !important;
-      --n-border-focus: 1px solid #60a5fa !important;
-      --n-text-color: #e4e4e7 !important;
-      --n-placeholder-color: #71717a !important;
-      --n-caret-color: #e4e4e7 !important;
+      --n-color: var(--community-surface-overlay) !important;
+      --n-color-focus: var(--community-surface-overlay) !important;
+      --n-border: 1px solid var(--community-border-strong) !important;
+      --n-border-hover: 1px solid var(--community-border-mid) !important;
+      --n-border-focus: 1px solid var(--community-accent) !important;
+      --n-text-color: var(--community-ink) !important;
+      --n-placeholder-color: var(--community-ink-muted) !important;
+      --n-caret-color: var(--community-ink) !important;
     }
 
     .n-input__prefix {
-      color: #71717a !important;
+      color: var(--community-ink-muted) !important;
     }
 
     .n-input__eye {
-      color: #71717a !important;
+      color: var(--community-ink-muted) !important;
 
       &:hover {
-        color: #a1a1aa !important;
+        color: var(--community-muted) !important;
       }
     }
 
     .n-checkbox {
-      --n-text-color: #a1a1aa !important;
+      --n-text-color: var(--community-muted) !important;
     }
   }
 
   .register-link {
-    color: #a1a1aa !important;
+    color: var(--community-muted) !important;
 
     &:hover {
-      color: #60a5fa !important;
+      color: var(--community-accent) !important;
     }
   }
 
   .captcha-img {
-    border-color: #3f3f46 !important;
+    border-color: var(--community-border-strong) !important;
   }
 
   // 滑块验证弹窗
   .slider-puzzle-container {
-    background: #18181c !important;
+    background: var(--community-deep) !important;
   }
 
   .slider-puzzle-header {
-    color: #e4e4e7 !important;
-    border-bottom-color: #3f3f46 !important;
+    color: var(--community-text) !important;
+    border-bottom-color: var(--community-border-strong) !important;
   }
 
   .slider-puzzle-track {
-    background: #27272a !important;
+    background: var(--community-surface-overlay) !important;
   }
 
   .slider-track-bg {
-    background: #3f3f46 !important;
+    background: var(--community-border-strong) !important;
   }
 
   .slider-handle {
-    background: #52525b !important;
-    color: #e4e4e7 !important;
+    background: var(--community-border-mid) !important;
+    color: var(--community-text) !important;
 
     &.verified {
       background: #22c55e !important;
@@ -679,17 +753,17 @@ body.dark-theme {
   }
 
   .slider-track-tip {
-    color: #71717a !important;
+    color: var(--community-ink-muted) !important;
   }
 
   .slider-puzzle-footer {
-    border-top-color: #3f3f46 !important;
+    border-top-color: var(--community-border-strong) !important;
 
     .n-button {
-      color: #a1a1aa !important;
+      color: var(--community-muted) !important;
 
       &:hover {
-        color: #e4e4e7 !important;
+        color: var(--community-text) !important;
       }
     }
   }
@@ -740,6 +814,85 @@ body.dark-theme {
 .n-data-table {
   --n-merged-th-color: #F9FAFB;
   --n-merged-td-color: #FFFFFF;
+}
+
+// DataTable 单元格底部分隔线：表头与内容之间有一条分隔，
+// 使表格轮廓更清晰，符合项目设计规范。
+// 外层边框放在 wrapper 上，使用 border-box 让 border 计入 width
+.n-data-table-wrapper {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--community-border) !important;
+  border-radius: var(--n-border-radius, 12px);
+  overflow: hidden;
+}
+
+// Naive Layout 是 flex 容器：允许主内容收缩，同时保留组件内置的
+// overflow: hidden，避免宽表格把整个页面撑出视口。
+.n-layout,
+.n-layout-content,
+.page-container,
+.layout-content,
+.n-card,
+.n-card__content,
+.n-data-table {
+  min-width: 0 !important;
+}
+
+.n-card,
+.n-card__content,
+.n-data-table {
+  max-width: 100%;
+}
+
+.n-data-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.n-data-table-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.n-data-table-th,
+.n-data-table-td {
+  border-right: 1px solid var(--community-border) !important;
+}
+
+.n-data-table-th {
+  border-bottom: 1px solid var(--community-border) !important;
+}
+
+.n-data-table-td {
+  border-bottom: 1px solid color-mix(in srgb, var(--community-border) 60%, transparent) !important;
+}
+
+// 最后一列不需要右边框
+.n-data-table-th:last-child,
+.n-data-table-td:last-child {
+  border-right: none !important;
+}
+
+// 固定列区域不需要重复的底边线，避免在阴影区域出现多余边框
+.n-data-table-th--fixed-left,
+.n-data-table-th--fixed-right,
+.n-data-table-td--fixed-left,
+.n-data-table-td--fixed-right {
+  border-bottom: none !important;
+  border-right: none !important;
+}
+
+// 最后一行 td 去掉底边线，与外层圆角保持一致
+.n-data-table-tr:last-child .n-data-table-td {
+  border-bottom: none !important;
+}
+
+// 空状态区上边框
+.n-data-table-empty {
+  border-top: 1px solid var(--community-border) !important;
 }
 
 // 卡片阴影

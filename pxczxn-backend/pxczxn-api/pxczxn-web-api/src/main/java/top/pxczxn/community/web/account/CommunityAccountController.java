@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.CurrentCommunityUser;
 
@@ -27,11 +29,17 @@ public class CommunityAccountController {
                 current.email(),
                 current.status(),
                 current.verificationStatus(),
+                current.forcePasswordChange(),
                 stringId(current.personalBlogId()),
                 current.blogName(),
                 current.blogSlug()
         ));
     }
+
+    @PostMapping("/password")
+    public Result<Void> changePassword(@RequestBody PasswordChangeRequest request) { sessionService.changePassword(request.currentPassword(), request.newPassword()); return Result.ok(); }
+
+    public record PasswordChangeRequest(String currentPassword, String newPassword) { }
 
     private static String stringId(Long id) {
         return id == null ? null : id.toString();

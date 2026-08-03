@@ -36,6 +36,14 @@ public interface CommunityUserLoginAccountMapper extends BaseMapper<CommunityUse
     @Update("""
             UPDATE community_user_login_account
             SET failed_login_count = 0,
+                locked_until = #{lockedUntil}
+            WHERE id = #{accountId}
+            """)
+    int lockAccount(@Param("accountId") Long accountId, @Param("lockedUntil") LocalDateTime lockedUntil);
+
+    @Update("""
+            UPDATE community_user_login_account
+            SET failed_login_count = 0,
                 locked_until = NULL,
                 last_login_at = #{loginAt}
             WHERE id = #{accountId}

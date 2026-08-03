@@ -18,6 +18,8 @@ public interface CommunityChatMessageMapper extends BaseMapper<CommunityChatMess
             WHERE ((sender_user_id = #{actor} AND recipient_user_id = #{peer})
                 OR (sender_user_id = #{peer} AND recipient_user_id = #{actor}))
               AND deleted_at IS NULL
+              AND ((sender_user_id = #{actor} AND sender_deleted_at IS NULL)
+                OR (recipient_user_id = #{actor} AND recipient_deleted_at IS NULL))
             ORDER BY id DESC
             LIMIT #{limit}
             """)
@@ -39,4 +41,12 @@ public interface CommunityChatMessageMapper extends BaseMapper<CommunityChatMess
             @Param("recipient") Long recipient,
             @Param("now") LocalDateTime now
     );
+
+    @Update("""
+            UPDATE community_chat_message
+            SET sender_deleted_at = CASE WHEN sender_user_id = #{userId} THEN #{deletedAt} ELSE sender_deleted_at END,
+                recipient_deleted_at = CASE WHEN recipient_user_id = #{userId} THEN #{deletedAt} ELSE recipient_deleted_at END
+            WHERE sender_user_id = #{userId} OR recipient_user_id = #{userId}
+            """)
+    int hideForUser(@Param("userId") Long userId, @Param("deletedAt") LocalDateTime deletedAt);
 }

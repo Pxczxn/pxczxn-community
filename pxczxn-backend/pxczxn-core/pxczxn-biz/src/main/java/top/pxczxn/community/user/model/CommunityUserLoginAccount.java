@@ -31,4 +31,6 @@ public class CommunityUserLoginAccount {
     private LocalDateTime lockedUntil;
 
     private LocalDateTime lastLoginAt;
+
+    private Boolean forcePasswordChange;
 }

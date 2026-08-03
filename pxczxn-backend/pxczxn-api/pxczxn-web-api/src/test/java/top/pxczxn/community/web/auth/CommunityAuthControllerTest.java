@@ -79,7 +79,8 @@ class CommunityAuthControllerTest {
                         "community-token-value",
                         604800,
                         9223372036854775000L,
-                        "alice"
+                        "alice",
+                        false
                 ));
         CommunityAuthController controller =
                 new CommunityAuthController(

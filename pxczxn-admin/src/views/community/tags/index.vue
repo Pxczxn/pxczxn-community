@@ -32,7 +32,7 @@
             :options="statusOptions"
             clearable
             placeholder="全部状态"
-            style="width: 140px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item>
@@ -72,7 +72,7 @@
       v-model:show="modalVisible"
       preset="card"
       :title="editingId ? '编辑标签' : '新建标签'"
-      style="width: min(560px, calc(100vw - 32px))"
+      class="dialog-form-sm"
     >
       <n-form
         ref="formRef"

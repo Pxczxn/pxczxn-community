@@ -37,7 +37,7 @@
           <n-select
             v-model:value="filters.interactionType"
             :options="interactionOptions"
-            style="width: 140px"
+            class="filter-select"
             @update:value="search"
           />
         </n-form-item>
@@ -48,7 +48,7 @@
             clearable
             filterable
             placeholder="全部类型"
-            style="width: 150px"
+            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="目标 ID">

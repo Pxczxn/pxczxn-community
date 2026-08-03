@@ -173,6 +173,24 @@ export const serverApi = {
   }
 }
 
+// ==================== SQL 监控 ====================
+export interface DatabaseMonitorInfo {
+  databaseProduct: string
+  databaseVersion: string
+  jdbcUrl: string
+  driverName: string
+  activeConnections?: number
+  idleConnections?: number
+  totalConnections?: number
+  threadsAwaitingConnection?: number
+}
+
+export const databaseMonitorApi = {
+  info(): Promise<DatabaseMonitorInfo> {
+    return request({ url: '/monitor/database/info', method: 'get' })
+  }
+}
+
 // ==================== API 访问统计 ====================
 export interface ApiAccessLog {
   id?: number

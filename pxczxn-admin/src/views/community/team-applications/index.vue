@@ -39,7 +39,7 @@
       v-model:show="reviewVisible"
       preset="card"
       :title="reviewAction === 'approve' ? '审核通过' : '审核拒绝'"
-      style="width: 600px"
+      class="dialog-form-md"
       :segmented="{ content: 'soft', footer: 'soft' }"
     >
       <n-spin :show="reviewLoading">
@@ -181,7 +181,7 @@ const columns = [
     width: 220,
     ellipsis: { tooltip: true },
     render: (row: TeamApplication) => {
-      return row.description || h('span', { style: { color: '#999' } }, '无')
+      return row.description || h('span', { style: { color: 'var(--community-muted)' } }, '无')
     }
   },
   {
@@ -217,7 +217,7 @@ const columns = [
     fixed: 'right' as const,
     render: (row: TeamApplication) => {
       if (row.status !== 'PENDING') {
-        return h('span', { style: { color: '#999' } }, '-')
+        return h('span', { style: { color: 'var(--community-muted)' } }, '-')
       }
       return h(
         NSpace,
@@ -327,7 +327,7 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: #999;
+  color: var(--community-muted);
   margin-bottom: 8px;
 }
 
@@ -339,7 +339,7 @@ onMounted(() => {
 
 .page-heading p {
   margin: 0;
-  color: #666;
+  color: var(--community-muted);
   font-size: 14px;
 }
 

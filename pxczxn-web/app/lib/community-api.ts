@@ -42,6 +42,7 @@ export interface CommunitySession {
   expiresIn: number;
   userId: string;
   username: string;
+  forcePasswordChange?: boolean;
   displayName?: string | null;
   blogSlug?: string | null;
 }
@@ -55,6 +56,7 @@ export interface CurrentCommunityUser {
   email: string;
   status: string;
   verificationStatus: string;
+  forcePasswordChange: boolean;
   personalBlogId: string | null;
   blogName: string | null;
   blogSlug: string | null;
@@ -647,6 +649,24 @@ export function publicFileUrl(fileId?: string | null) {
     ? `${COMMUNITY_API_BASE_URL}/api/v1/public/files/${encodeURIComponent(fileId)}/content`
     : null;
 }
+export interface AccountEnforcementCase { id: string; measureType: string; status: string; userVisibleReason: string; expiresAt: string | null; appealDeadlineAt: string | null; }
+export interface AccountEnforcementAppeal { id: string; caseId: string; status: string; statement: string; createdAt: string; }
+
+function normalizePaginationNumbers<T>(value: T): T {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+
+  const source = value as Record<string, unknown>;
+  const normalized: Record<string, unknown> = { ...source };
+  for (const key of ["total", "pageNum", "pageSize"] as const) {
+    if (typeof source[key] === "string" && /^\d+$/.test(source[key])) {
+      normalized[key] = Number(source[key]);
+    }
+  }
+  if (source.page && typeof source.page === "object" && !Array.isArray(source.page)) {
+    normalized.page = normalizePaginationNumbers(source.page);
+  }
+  return normalized as T;
+}
 
 export async function communityRequest<T>(
   path: string,
@@ -706,7 +726,7 @@ export async function communityRequest<T>(
       response.status,
     );
   }
-  return payload.data;
+  return normalizePaginationNumbers(payload.data);
 }
 
 export const communityApi = {
@@ -751,6 +771,21 @@ export const communityApi = {
   },
   me() {
     return communityRequest<CurrentCommunityUser>("/api/v1/account/me");
+  },
+  changePassword(currentPassword: string, newPassword: string) {
+    return communityRequest<void>("/api/v1/account/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+  myAccountEnforcements() {
+    return communityRequest<AccountEnforcementCase[]>("/api/v1/account-enforcements/me");
+  },
+  myAccountEnforcementAppeals() {
+    return communityRequest<AccountEnforcementAppeal[]>("/api/v1/account-enforcements/appeals/me");
+  },
+  appealAccountEnforcement(caseId: string, input: { statement: string; evidenceSnapshot?: string }) {
+    return communityRequest<AccountEnforcementAppeal>(`/api/v1/account-enforcements/${encodeURIComponent(caseId)}/appeals`, { method: "POST", body: JSON.stringify(input) });
   },
   myBlog() {
     return communityRequest<PersonalBlog>("/api/v1/blogs/me");

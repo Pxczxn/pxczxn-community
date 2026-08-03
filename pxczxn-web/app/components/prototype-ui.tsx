@@ -53,10 +53,24 @@ export function Brand({ compact = false }: { compact?: boolean }) {
 export function Avatar({
   label = "程",
   size = "md",
+  src,
+  alt = "",
 }: {
   label?: string;
   size?: "sm" | "md" | "lg";
+  src?: string | null;
+  alt?: string;
 }) {
+  if (src) {
+    return (
+      <img
+        alt={alt}
+        className={`avatar avatar-${size} avatar-image`}
+        src={src}
+      />
+    );
+  }
+
   return <span className={`avatar avatar-${size}`}>{label}</span>;
 }
 

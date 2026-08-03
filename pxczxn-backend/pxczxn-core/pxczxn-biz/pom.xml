@@ -20,6 +20,14 @@
             <artifactId>pxczxn-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>pxczxn-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>top.pxczxn</groupId>
+            <artifactId>pxczxn-system</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
         </dependency>
