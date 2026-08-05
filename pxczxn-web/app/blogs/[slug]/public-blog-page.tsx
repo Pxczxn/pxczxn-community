@@ -68,7 +68,7 @@ export function PublicBlogPage({ slug }: { slug: string }) {
   async function toggleFollow() {
     if (!blog) return;
     if (!readSession()) {
-      window.location.assign(`/login?returnTo=${encodeURIComponent(`/blogs/${blog.slug}`)}`);
+      window.location.assign(`/login?returnTo=${encodeURIComponent(`/${blog.slug}`)}`);
       return;
     }
     setFollowBusy(true);
@@ -224,7 +224,7 @@ export function PublicBlogPage({ slug }: { slug: string }) {
             {records.map((article, index) => (
               <Link
                 className="team-article"
-                href={`/articles/${article.articleId}`}
+                href={`/${blog.slug}/${article.articleId}`}
                 key={article.articleId}
               >
                 {article.coverFileId ? (

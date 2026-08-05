@@ -11,6 +11,9 @@ public interface TeamSeriesService {
     List<TeamSeriesChapterView> eligibleArticles(Long actorUserId, Long teamId);
     List<TeamSeriesView> publicSeries();
     TeamSeriesView publicSeries(Long seriesId);
+
+    /** Approved series of one team, shown on the public team portal; no membership required. */
+    List<TeamSeriesView> publicTeamSeries(Long teamId);
     List<TeamSeriesView> reviewQueue();
     TeamSeriesView approve(Long adminId, Long seriesId, SeriesReviewDecisionCommand command);
     TeamSeriesView reject(Long adminId, Long seriesId, SeriesReviewDecisionCommand command);

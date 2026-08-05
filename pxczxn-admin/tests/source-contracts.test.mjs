@@ -155,28 +155,70 @@ test('administrator passwords are random, one-time, and forced to change', async
   assert.match(userStore, /mustChangePassword/)
 })
 
-test('account enforcement selections submit numeric ids and respect operator permissions', async () => {
+test('account enforcement merges sanction handling and application submission', async () => {
   const page = await source('src/views/community/account-enforcements/index.vue')
 
-  assert.match(page, /const numericId = \(value: string\) => value\.trim\(\)\.match\(\/\^\\d\+\//)
-  assert.match(page, /reviewAccountEnforcement\(caseId,/)
-  assert.match(page, /reviewAccountEnforcementAppeal\(appealId,/)
-  assert.match(page, /if \(canApprove\.value\) void loadAppeals\(\)/)
-  assert.match(page, /tab\.value = 'records'/)
-  assert.match(page, /name="review" tab="申请审批"/)
-  assert.match(page, /name="appeals" tab="申诉复核"/)
-  assert.match(page, /<n-descriptions-item label="申请 ID">/)
-  assert.match(page, /<n-descriptions-item label="申诉 ID">/)
-  assert.doesNotMatch(page, /<n-description\s/)
-  assert.match(page, /selectedReviewApplication\.value\.status === 'SUBMITTED'/)
-  assert.match(page, /selectedReviewApplication\.value\.status === 'UNDER_REVIEW' && isSuperAdmin\.value/)
-  assert.match(page, /selectedReviewApplication\.value\?\.status === 'APPROVED'/)
-  assert.match(page, /\['LONG_FREEZE', 'DATA_CLEANUP', 'ACCOUNT_DELETE'\]\.includes\(form\.measureType\)/)
-  assert.match(page, /\['LONG_FREEZE', '提交长期冻结申请'\]/)
-  assert.match(page, /reviewAction\('APPROVE'\)/)
-  assert.match(page, /reviewAction\('REJECT'\)/)
-  assert.match(page, /accountEnforcementReviews\(item\.id\)/)
-  assert.match(page, /title="目标账户基本信息"/)
-  assert.match(page, /isOwnReviewApplication/)
-  assert.match(page, /hasReviewedSelection/)
+  // 用户 ID 必须为纯数字
+  assert.match(page, /pattern: \/\^\\d\+\$\//)
+  assert.match(page, /请输入纯数字用户 ID/)
+  // 表单必填校验：用户可见理由与内部说明
+  assert.match(page, /userVisibleReason: \{/)
+  assert.match(page, /internalReason: \{/)
+  // 危险操作必须经过确认对话框
+  assert.match(page, /function confirmAction/)
+  assert.match(page, /dialog\.warning|dialog\.error/)
+  assert.match(page, /positiveText: '强制下线'/)
+  assert.match(page, /positiveText: '冻结'/)
+  // 状态与措施类型中文映射
+  assert.match(page, /statusMeta/)
+  assert.match(page, /measureLabels/)
+  assert.match(page, /SUBMITTED: \{ label: '待初审'/)
+  assert.match(page, /ACCOUNT_DELETE: '账号删除'/)
+  // 操作记录表格展示申请时间
+  assert.match(page, /key: 'requestedAt'/)
+  // 重置登录凭证后展示一次性临时密码
+  assert.match(page, /showTemporaryPassword/)
+  assert.match(page, /temporaryPassword/)
+  // 账号处置已并入本页（社区处置 tab 与接口）
+  assert.match(page, /tab="账号处置"/)
+  assert.match(page, /issueSanction/)
+  assert.match(page, /revokeSanction/)
+  assert.match(page, /sanctionTypes/)
+  // 发起申请入口与通用提交
+  assert.match(page, /发起申请/)
+  assert.match(page, /submitAccountEnforcement/)
+  assert.match(page, /measureOptions/)
+  assert.match(page, /cleanupScopeOptions/)
+  assert.match(page, /applyRules/)
+  // 禁止使用原生 prompt 弹窗与废弃的删除专用端点
+  assert.doesNotMatch(page, /window\.prompt/)
+  assert.doesNotMatch(page, /account-deletions/)
+  // 禁止使用错误的 createdAt 列（接口字段为 requestedAt）
+  assert.doesNotMatch(page, /key: 'createdAt'/)
+})
+
+test('appeal center handles both appeals and account application reviews', async () => {
+  const page = await source('src/views/community/appeals/index.vue')
+
+  // 举报申诉 tab
+  assert.match(page, /tab="举报申诉"/)
+  assert.match(page, /communityApi\.appeals\(\)/)
+  assert.match(page, /reviewAppeal\(/)
+  assert.match(page, /PENDING: \{ label: '待复核'/)
+  // 申请审批 tab（仅具有审核权限时展示）
+  assert.match(page, /tab="申请审批"/)
+  assert.match(page, /canApprove/)
+  assert.match(page, /canReview\(row\)/)
+  assert.match(page, /row\.status === 'SUBMITTED'/)
+  assert.match(page, /row\.status === 'UNDER_REVIEW'/)
+  assert.match(page, /isSuperAdmin/)
+  // 两级审核决定与最终执行确认
+  assert.match(page, /APPROVE.*REJECT.*RETURN_FOR_EVIDENCE|reviewDecision/)
+  assert.match(page, /reviewAccountEnforcement/)
+  assert.match(page, /accountEnforcementConfirmationText/)
+  assert.match(page, /executeAccountEnforcement/)
+  assert.match(page, /executeConfirmation\.trim\(\) !== executeConfirmationText/)
+  // 禁止使用原生 prompt 弹窗与废弃的删除专用端点
+  assert.doesNotMatch(page, /window\.prompt/)
+  assert.doesNotMatch(page, /account-deletions/)
 })

@@ -224,6 +224,17 @@ public class AdminCommunityQueryService {
                             if (userId != null) {
                                 nested.or().eq(CommunityUser::getId, userId);
                             }
+                            List<Long> emailUserIds = loginAccountMapper.selectList(
+                                            Wrappers.<CommunityUserLoginAccount>lambdaQuery()
+                                                    .eq(CommunityUserLoginAccount::getLoginType, "EMAIL")
+                                                    .like(CommunityUserLoginAccount::getNormalizedIdentifier, value)
+                                    ).stream()
+                                    .map(CommunityUserLoginAccount::getUserId)
+                                    .distinct()
+                                    .toList();
+                            if (!emailUserIds.isEmpty()) {
+                                nested.or().in(CommunityUser::getId, emailUserIds);
+                            }
                         }
                 )
                 .eq(
@@ -245,6 +256,18 @@ public class AdminCommunityQueryService {
                 result.getCurrent(),
                 result.getSize()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public AdminCommunityUserView user(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(400, "用户 ID 无效");
+        }
+        CommunityUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+        return userView(user);
     }
 
     @Transactional(readOnly = true)

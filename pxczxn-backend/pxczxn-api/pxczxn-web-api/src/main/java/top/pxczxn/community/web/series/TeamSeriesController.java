@@ -30,6 +30,12 @@ public class TeamSeriesController {
     @GetMapping("/series/{seriesId}")
     public Result<TeamSeriesView> publicDetail(@PathVariable Long seriesId) { return Result.ok(seriesService.publicSeries(seriesId)); }
 
+    /** Approved series of one team for its public portal; no login required. */
+    @GetMapping("/public/teams/{teamId}/series")
+    public Result<List<TeamSeriesView>> publicTeamSeries(@PathVariable Long teamId) {
+        return Result.ok(seriesService.publicTeamSeries(teamId));
+    }
+
     @GetMapping("/teams/{teamId}/series")
     public Result<List<TeamSeriesView>> teamSeries(@PathVariable Long teamId) { return Result.ok(seriesService.teamSeries(communityAuth.getLoginUserId(), teamId)); }
 

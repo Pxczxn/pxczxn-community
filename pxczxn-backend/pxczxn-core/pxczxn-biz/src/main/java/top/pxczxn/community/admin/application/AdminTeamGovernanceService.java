@@ -60,8 +60,15 @@ public class AdminTeamGovernanceService {
         Page<ArticleCollaborator> page = collaboratorMapper.selectPage(new Page<>(positive(pageNum), boundedSize(pageSize)),
                 Wrappers.<ArticleCollaborator>lambdaQuery().eq(articleId != null, ArticleCollaborator::getArticleId, articleId)
                         .eq(userId != null, ArticleCollaborator::getUserId, userId).orderByDesc(ArticleCollaborator::getCreatedAt));
-        Map<Long, Article> articles = indexed(articleMapper.selectBatchIds(page.getRecords().stream().map(ArticleCollaborator::getArticleId).toList()), Article::getId);
-        Map<Long, CommunityUser> users = indexed(userMapper.selectBatchIds(page.getRecords().stream().map(ArticleCollaborator::getUserId).toList()), CommunityUser::getId);
+        List<Long> articleIdList = page.getRecords().stream().map(ArticleCollaborator::getArticleId).toList();
+        List<Long> userIdList = page.getRecords().stream().map(ArticleCollaborator::getUserId).toList();
+        // selectBatchIds 对空集合会生成 "IN ()" 导致 SQL 语法错误，空集合时跳过查询
+        Map<Long, Article> articles = articleIdList.isEmpty()
+                ? Map.of()
+                : indexed(articleMapper.selectBatchIds(articleIdList), Article::getId);
+        Map<Long, CommunityUser> users = userIdList.isEmpty()
+                ? Map.of()
+                : indexed(userMapper.selectBatchIds(userIdList), CommunityUser::getId);
         List<AdminArticleCollaborationView> list = page.getRecords().stream().map(value -> {
             Article article = articles.get(value.getArticleId()); CommunityUser user = users.get(value.getUserId());
             return new AdminArticleCollaborationView(value.getId(), value.getArticleId(), article == null ? null : article.getTitle(),
@@ -76,7 +83,10 @@ public class AdminTeamGovernanceService {
         Blog blog = team.getBlogId() == null ? null : blogMapper.selectById(team.getBlogId());
         CommunityUser owner = team.getOwnerUserId() == null ? null : userMapper.selectById(team.getOwnerUserId());
         List<TeamMember> rows = memberMapper.findActiveMembers(team.getId());
-        Map<Long, CommunityUser> users = indexed(userMapper.selectBatchIds(rows.stream().map(TeamMember::getUserId).toList()), CommunityUser::getId);
+        List<Long> memberUserIds = rows.stream().map(TeamMember::getUserId).toList();
+        Map<Long, CommunityUser> users = memberUserIds.isEmpty()
+                ? Map.of()
+                : indexed(userMapper.selectBatchIds(memberUserIds), CommunityUser::getId);
         List<AdminTeamMemberView> members = detail ? rows.stream().map(member -> memberView(member, users.get(member.getUserId()))).toList() : List.of();
         List<AdminTeamAuditEventView> events = detail ? auditMapper.selectList(Wrappers.<TeamAuditEvent>lambdaQuery()
                 .eq(TeamAuditEvent::getTeamId, team.getId()).orderByDesc(TeamAuditEvent::getOccurredAt).last("LIMIT 50"))

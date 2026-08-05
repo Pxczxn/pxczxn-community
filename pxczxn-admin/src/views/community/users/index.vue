@@ -97,6 +97,9 @@ const pagination = reactive({
 
 const statusOptions = [
   { label: '正常', value: 'NORMAL' },
+  { label: '已冻结', value: 'FROZEN' },
+  { label: '已停用', value: 'DEACTIVATED' },
+  { label: '已删除', value: 'DELETED' },
   { label: '禁用', value: 'DISABLED' },
   { label: '封禁', value: 'BANNED' }
 ]
@@ -176,11 +179,11 @@ const columns: DataTableColumns<CommunityUser> = [
     render: row => formatDateTime(row.createdAt)
   },
   {
-    title: '账号操作', key: 'actions', width: 100, fixed: 'right',
+    title: '账号管理', key: 'actions', width: 110, fixed: 'right',
     render: row => h(NButton, {
       size: 'small',
       onClick: () => router.push({ path: '/community/account-enforcements', query: { userId: row.id } })
-    }, { default: () => '账号操作' })
+    }, { default: () => '账号管理' })
   }
 ]
 

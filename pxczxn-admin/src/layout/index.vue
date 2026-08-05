@@ -434,7 +434,7 @@ const layoutConfig = computed(() => ({
 const themeOptions = [
   { value: 'light' as const, color: '#ffffff', label: '浅色主题' },
   { value: 'dark' as const, color: '#18181c', label: '深色主题' },
-  { value: 'starry' as const, color: 'linear-gradient(135deg, #070B1D, #26345F)', label: '星空主题' }
+  { value: 'starry' as const, color: 'linear-gradient(135deg, #080B1A, #29345C)', label: '星空主题' }
 ]
 
 // 顶栏动态样式

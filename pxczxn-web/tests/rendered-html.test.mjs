@@ -50,9 +50,9 @@ test("server-renders formal community routes without fixed prototype content", a
     ["/discover", "发现值得阅读的内容"],
     ["/articles", "按公开时间浏览社区文章"],
     ["/blocks", "屏蔽管理"],
-    ["/teams", "团队博客"],
+    ["/teams", "团队空间"],
     ["/teams/ai-explorers", "团队"],
-    ["/workspace/team", "团队工作台"],
+    ["/teams/star-design/workspace", "团队工作台"],
     ["/submissions/ai-agent", "当前不会展示虚构的投稿审核记录"],
     ["/collaboration/articles/agent-patterns", "文章共创"],
     ["/moments/agent-architecture", "星语社区"],
@@ -76,7 +76,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
     readFile(new URL("../app/login/auth-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/discover/discover-page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/prototype-ui.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/workspace/team/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/teams/[teamSlug]/workspace/layout.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(home, /return <DiscoverPage \/>;/);
@@ -95,7 +95,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
     assert.match(topbar, new RegExp(path.replaceAll("/", "\\/")));
   }
   assert.doesNotMatch(topbar, /ai-explorers|agent-architecture|agent-patterns/);
-  assert.match(workspace, /M3 团队协作创作/);
+  assert.match(workspace, /正在进入团队工作台/);
   assert.match(workspace, /communityApi\.teamWorkspace/);
   assert.doesNotMatch(workspace, /待处理投稿|AI探索者团队/);
 });

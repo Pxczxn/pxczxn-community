@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
 import top.pxczxn.community.file.persistence.CommunityFileReferenceMapper;
+import top.pxczxn.community.file.application.CommunityFileService;
 import top.pxczxn.community.governance.model.CommunityAccountEnforcementAppeal;
 import top.pxczxn.community.governance.model.CommunityAccountEnforcementCase;
 import top.pxczxn.community.governance.model.CommunityAccountEnforcementEvent;
@@ -79,6 +80,7 @@ class AccountEnforcementServiceTest {
                 appeals,
                 reviews,
                 events,
+                mock(CommunityFileService.class),
                 users,
                 communityAuth,
                 mock(CommunitySessionService.class),
@@ -129,7 +131,8 @@ class AccountEnforcementServiceTest {
 
         service.review(20L, 1L, new AccountEnforcementService.ReviewCommand("APPROVE", "超级管理员自审"), true);
 
-        assertThat(item.getStatus()).isEqualTo("UNDER_REVIEW");
+        // 超级管理员免初审：自审一次通过即直接批准
+        assertThat(item.getStatus()).isEqualTo("APPROVED");
         verify(reviews).insert(any());
     }
 
@@ -166,7 +169,7 @@ class AccountEnforcementServiceTest {
                 new AccountEnforcementService.SubmitCommand(
                         100L, "LONG_FREEZE", "RISK_INVESTIGATION",
                         "调查期间暂停账号使用", "长期冻结申请，等待复审",
-                        "{\"description\":\"关联风险调查记录\"}", null, null, null
+                        "{\"description\":\"关联风险调查记录\"}", null, null, now().plusDays(30)
                 ));
 
         assertThat(item.getStatus()).isEqualTo("SUBMITTED");

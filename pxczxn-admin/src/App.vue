@@ -348,30 +348,30 @@ const darkThemeOverrides = computed<GlobalThemeOverrides>(() => {
   }
 })
 
-// 星空主题：保留暗色组件语义，并使用蓝紫与青色构建高对比运营界面。
+// 星空主题（深空蓝）：底 #080B1A / 卡 #11172D / 浮层 #182342 / 主色 #7C83FF / 辅助 #38BDF8
 const starryThemeOverrides = computed<GlobalThemeOverrides>(() => ({
   common: {
-    primaryColor: '#7C8CFF',
-    primaryColorHover: '#9AA7FF',
-    primaryColorPressed: '#6272E8',
-    primaryColorSuppl: '#38D9F2',
-    infoColor: '#38D9F2',
-    successColor: '#34D399',
-    warningColor: '#FBBF24',
-    errorColor: '#FB7185',
-    bodyColor: '#070B1D',
-    cardColor: '#0F1733',
-    modalColor: '#0F1733',
-    popoverColor: '#121C3D',
-    tableColor: '#0F1733',
-    inputColor: '#121C3D',
-    borderColor: '#26345F',
-    dividerColor: '#26345F',
-    hoverColor: '#18254B',
-    textColorBase: '#F4F7FF',
-    textColor1: '#F4F7FF',
-    textColor2: '#A8B3CF',
-    textColor3: '#74809E',
+    primaryColor: '#7C83FF',
+    primaryColorHover: '#9298FF',
+    primaryColorPressed: '#6A71F0',
+    primaryColorSuppl: '#38BDF8',
+    infoColor: '#38BDF8',
+    successColor: '#22C55E',
+    warningColor: '#F59E0B',
+    errorColor: '#EF4444',
+    bodyColor: '#080B1A',
+    cardColor: '#11172D',
+    modalColor: '#11172D',
+    popoverColor: '#182342',
+    tableColor: '#11172D',
+    inputColor: '#182342',
+    borderColor: '#29345C',
+    dividerColor: '#29345C',
+    hoverColor: '#1E2A50',
+    textColorBase: '#EAF1FF',
+    textColor1: '#EAF1FF',
+    textColor2: '#8FA3C9',
+    textColor3: '#6B7DA6',
     borderRadius: '8px',
     borderRadiusSmall: '6px'
   },
@@ -388,72 +388,72 @@ const starryThemeOverrides = computed<GlobalThemeOverrides>(() => ({
     borderRadius: '12px',
     paddingMedium: '20px',
     titleFontSizeMedium: '16px',
-    color: '#0F1733',
-    borderColor: '#26345F'
+    color: '#11172D',
+    borderColor: '#29345C'
   },
   DataTable: {
     borderRadius: '12px',
     thFontWeight: '600',
-    thColor: '#121C3D',
-    thTextColor: '#A8B3CF',
-    tdColor: '#0F1733',
-    tdColorHover: '#18254B',
-    borderColor: '#26345F'
+    thColor: '#182342',
+    thTextColor: '#8FA3C9',
+    tdColor: '#11172D',
+    tdColorHover: '#1E2A50',
+    borderColor: '#29345C'
   },
   Input: {
     borderRadius: '8px',
     heightMedium: '36px',
-    color: '#121C3D',
-    colorFocus: '#121C3D',
-    border: '1px solid #26345F',
-    borderHover: '1px solid #44558B',
-    borderFocus: '1px solid #7C8CFF'
+    color: '#182342',
+    colorFocus: '#182342',
+    border: '1px solid #29345C',
+    borderHover: '1px solid #3A4A7A',
+    borderFocus: '1px solid #7C83FF'
   },
   InternalSelection: {
-    color: '#121C3D',
-    colorActive: '#121C3D',
-    border: '1px solid #26345F',
-    borderHover: '1px solid #44558B',
-    borderActive: '1px solid #7C8CFF',
-    borderFocus: '1px solid #7C8CFF'
+    color: '#182342',
+    colorActive: '#182342',
+    border: '1px solid #29345C',
+    borderHover: '1px solid #3A4A7A',
+    borderActive: '1px solid #7C83FF',
+    borderFocus: '1px solid #7C83FF'
   },
   Menu: {
     itemHeight: '44px',
     borderRadius: '8px',
-    color: '#0F1733',
-    itemColorActive: '#1B2853',
-    itemColorActiveHover: '#223363',
-    itemTextColor: '#A8B3CF',
-    itemTextColorHover: '#F4F7FF',
-    itemTextColorActive: '#9AA7FF',
-    itemTextColorActiveHover: '#B4BEFF',
-    itemIconColor: '#74809E',
-    itemIconColorHover: '#F4F7FF',
-    itemIconColorActive: '#7C8CFF',
-    itemIconColorActiveHover: '#9AA7FF',
-    itemTextColorChildActive: '#9AA7FF',
-    itemTextColorChildActiveHover: '#B4BEFF',
-    itemIconColorChildActive: '#7C8CFF',
-    itemIconColorChildActiveHover: '#9AA7FF'
+    color: '#11172D',
+    itemColorActive: '#1E2A50',
+    itemColorActiveHover: '#24335F',
+    itemTextColor: '#8FA3C9',
+    itemTextColorHover: '#EAF1FF',
+    itemTextColorActive: '#9298FF',
+    itemTextColorActiveHover: '#A5ABFF',
+    itemIconColor: '#6B7DA6',
+    itemIconColorHover: '#EAF1FF',
+    itemIconColorActive: '#7C83FF',
+    itemIconColorActiveHover: '#9298FF',
+    itemTextColorChildActive: '#9298FF',
+    itemTextColorChildActiveHover: '#A5ABFF',
+    itemIconColorChildActive: '#7C83FF',
+    itemIconColorChildActiveHover: '#9298FF'
   },
   Tag: {
     borderRadius: '6px',
-    colorInfo: 'rgba(56, 217, 242, .12)',
-    textColorInfo: '#67E8F9',
-    borderInfo: '1px solid rgba(56, 217, 242, .3)'
+    colorInfo: 'rgba(56, 189, 248, .12)',
+    textColorInfo: '#7DD3FC',
+    borderInfo: '1px solid rgba(56, 189, 248, .3)'
   },
   Dialog: {
     borderRadius: '12px',
-    color: '#0F1733'
+    color: '#11172D'
   },
-  Popover: { color: '#121C3D' },
-  Dropdown: { color: '#121C3D' },
+  Popover: { color: '#182342' },
+  Dropdown: { color: '#182342' },
   Tabs: {
-    tabTextColorActiveLine: '#9AA7FF',
-    tabTextColorHoverLine: '#B4BEFF',
-    tabTextColorActiveBar: '#9AA7FF',
-    tabTextColorHoverBar: '#B4BEFF',
-    barColor: '#7C8CFF'
+    tabTextColorActiveLine: '#9298FF',
+    tabTextColorHoverLine: '#A5ABFF',
+    tabTextColorActiveBar: '#9298FF',
+    tabTextColorHoverBar: '#A5ABFF',
+    barColor: '#7C83FF'
   }
 }))
 

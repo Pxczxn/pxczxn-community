@@ -3,12 +3,21 @@
 import Link from "next/link";
 import {
   AlertCircle,
+  Bold,
   CheckCircle2,
   ChevronLeft,
   Clock3,
+  Code2,
   Eye,
   FileText,
+  Heading1,
+  Heading2,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   LoaderCircle,
+  Quote,
   Save,
   Send,
   Sparkles,
@@ -60,6 +69,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
   const [reviewing, setReviewing] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [preview, setPreview] = useState(false);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const [dirty, setDirty] = useState(false);
   const [notice, setNotice] = useState<{
     tone: "error" | "success" | "info";
@@ -142,6 +152,48 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
       return;
     }
     change("contentMode", nextMode);
+  }
+
+  function applyMarkdown(kind: "h1" | "h2" | "bold" | "italic" | "link" | "quote" | "code" | "list" | "ordered-list") {
+    const input = contentRef.current;
+    if (!input) return;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const selected = form.content.slice(start, end);
+    let replacement = selected || "文字";
+    let replaceStart = start;
+    let replaceEnd = end;
+    let selectionStart = start;
+
+    if (["h1", "h2", "quote", "list", "ordered-list"].includes(kind)) {
+      const lineStart = form.content.lastIndexOf("\n", start - 1) + 1;
+      const lineEnd = form.content.indexOf("\n", end);
+      replaceStart = lineStart;
+      replaceEnd = lineEnd === -1 ? form.content.length : lineEnd;
+      const block = form.content.slice(replaceStart, replaceEnd) || "文字";
+      const prefix = kind === "h1" ? "# " : kind === "h2" ? "## " : kind === "quote" ? "> " : kind === "list" ? "- " : "1. ";
+      replacement = block.split("\n").map((line, index) => `${kind === "ordered-list" ? `${index + 1}. ` : prefix}${line}`).join("\n");
+      selectionStart = replaceStart + prefix.length;
+    } else if (kind === "bold") {
+      replacement = `**${replacement}**`;
+      selectionStart += 2;
+    } else if (kind === "italic") {
+      replacement = `*${replacement}*`;
+      selectionStart += 1;
+    } else if (kind === "code") {
+      replacement = `\`${replacement}\``;
+      selectionStart += 1;
+    } else {
+      replacement = `[${selected || "链接文字"}](https://)`;
+      selectionStart += 1;
+    }
+
+    setForm((current) => ({ ...current, content: `${form.content.slice(0, replaceStart)}${replacement}${form.content.slice(replaceEnd)}` }));
+    setDirty(true);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(selectionStart, selectionStart + (selected || "文字").length);
+    });
   }
 
   function toggleTag(tagId: string) {
@@ -403,10 +455,26 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
                   <span className="code-symbol">M↓</span> Markdown
                 </button>
               </div>
+              {form.contentMode === "MARKDOWN" && (
+                <div className="markdown-toolbar" aria-label="Markdown 格式工具">
+                  <button aria-label="一级标题" disabled={!editable} onClick={() => applyMarkdown("h1")} title="一级标题" type="button"><Heading1 size={17} /></button>
+                  <button aria-label="二级标题" disabled={!editable} onClick={() => applyMarkdown("h2")} title="二级标题" type="button"><Heading2 size={17} /></button>
+                  <span className="markdown-toolbar-divider" />
+                  <button aria-label="加粗" disabled={!editable} onClick={() => applyMarkdown("bold")} title="加粗" type="button"><Bold size={16} /></button>
+                  <button aria-label="斜体" disabled={!editable} onClick={() => applyMarkdown("italic")} title="斜体" type="button"><Italic size={16} /></button>
+                  <button aria-label="行内代码" disabled={!editable} onClick={() => applyMarkdown("code")} title="行内代码" type="button"><Code2 size={16} /></button>
+                  <button aria-label="链接" disabled={!editable} onClick={() => applyMarkdown("link")} title="链接" type="button"><Link2 size={16} /></button>
+                  <span className="markdown-toolbar-divider" />
+                  <button aria-label="引用" disabled={!editable} onClick={() => applyMarkdown("quote")} title="引用" type="button"><Quote size={16} /></button>
+                  <button aria-label="无序列表" disabled={!editable} onClick={() => applyMarkdown("list")} title="无序列表" type="button"><List size={17} /></button>
+                  <button aria-label="有序列表" disabled={!editable} onClick={() => applyMarkdown("ordered-list")} title="有序列表" type="button"><ListOrdered size={17} /></button>
+                </div>
+              )}
               <textarea
                 aria-label={form.contentMode === "MARKDOWN" ? "Markdown 正文" : "富文本正文"}
                 className={`editor-body editor-body--${form.contentMode.toLowerCase()}`}
                 disabled={!editable}
+                ref={contentRef}
                 onChange={(event) => change("content", event.target.value)}
                 placeholder={
                   form.contentMode === "MARKDOWN"

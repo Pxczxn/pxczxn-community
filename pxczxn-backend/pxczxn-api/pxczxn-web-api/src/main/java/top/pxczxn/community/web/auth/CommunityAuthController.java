@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import top.pxczxn.community.user.application.CommunityPasswordResetService;
 import top.pxczxn.community.user.application.CommunityRegistrationService;
 import top.pxczxn.community.user.application.CommunityLoginCommand;
 import top.pxczxn.community.user.application.CommunityLoginSession;
@@ -31,16 +32,17 @@ public class CommunityAuthController {
 
     private final CommunityRegistrationService registrationService;
     private final CommunitySessionService sessionService;
+    private final CommunityPasswordResetService passwordResetService;
     private final CommunityAbuseGuard abuseGuard;
     private final CanaryRegistrationGate canaryRegistrationGate;
 
     @GetMapping("/check-username")
     public Result<AvailabilityView> checkUsername(
             @RequestParam
-            @NotBlank(message = "用户名不能为空")
+            @NotBlank(message = "个人空间地址不能为空")
             @Pattern(
-                    regexp = "^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$",
-                    message = "用户名须为 3-32 位字母、数字、下划线或连字符"
+                    regexp = "^[A-Za-z][A-Za-z0-9_-]{0,30}[A-Za-z0-9]$",
+                    message = "个人空间地址须为 2-32 位，以字母开头，并以字母或数字结尾"
             )
             String username
     ) {
@@ -101,6 +103,26 @@ public class CommunityAuthController {
     @PostMapping("/logout")
     public Result<Void> logout() {
         sessionService.logout();
+        return Result.ok();
+    }
+
+    @PostMapping("/forgot-password/send-code")
+    public Result<Void> forgotPasswordSendCode(
+            HttpServletRequest servletRequest,
+            @Valid @RequestBody ForgotPasswordSendCodeRequest request
+    ) {
+        abuseGuard.check(clientActor(servletRequest), "PASSWORD_RESET_SEND", 5, 3600);
+        passwordResetService.sendResetCode(request.email());
+        return Result.ok();
+    }
+
+    @PostMapping("/forgot-password/reset")
+    public Result<Void> forgotPasswordReset(
+            HttpServletRequest servletRequest,
+            @Valid @RequestBody ForgotPasswordResetRequest request
+    ) {
+        abuseGuard.check(clientActor(servletRequest), "PASSWORD_RESET_RESET", 10, 3600);
+        passwordResetService.resetPassword(request.email(), request.code(), request.newPassword());
         return Result.ok();
     }
 

@@ -99,14 +99,13 @@ public class CommunityNotificationInboxService {
                 ),
                 CommunityNotification::getId
         );
+        List<Long> senderIds = notifications.values().stream()
+                .map(CommunityNotification::getSenderUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
         Map<Long, CommunityUser> senders = byId(
-                userMapper.selectBatchIds(
-                        notifications.values().stream()
-                                .map(CommunityNotification::getSenderUserId)
-                                .filter(Objects::nonNull)
-                                .distinct()
-                                .toList()
-                ),
+                senderIds.isEmpty() ? List.of() : userMapper.selectBatchIds(senderIds),
                 CommunityUser::getId
         );
         List<NotificationView> records = new ArrayList<>();

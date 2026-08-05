@@ -18,6 +18,7 @@ import top.pxczxn.community.governance.persistence.CommunityAccountEnforcementCa
 import top.pxczxn.community.governance.persistence.CommunityAccountEnforcementAppealMapper;
 import top.pxczxn.community.governance.persistence.CommunityAccountEnforcementEventMapper;
 import top.pxczxn.community.governance.persistence.CommunityAccountEnforcementReviewMapper;
+import top.pxczxn.community.file.application.CommunityFileService;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.chat.persistence.CommunityChatMessageMapper;
@@ -48,6 +49,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,7 +57,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AccountEnforcementService {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Set<String> APPROVAL_MEASURES = Set.of("ACCOUNT_DELETE");
+    private static final Set<String> APPROVAL_MEASURES = Set.of("LONG_FREEZE", "DATA_CLEANUP", "ACCOUNT_DELETE");
     private static final int NORMAL_ADMIN_MAX_FREEZE_DAYS = 7;
     private static final int DELETE_APPEAL_WINDOW_DAYS = 30;
 
@@ -63,6 +65,7 @@ public class AccountEnforcementService {
     private final CommunityAccountEnforcementAppealMapper appeals;
     private final CommunityAccountEnforcementReviewMapper reviews;
     private final CommunityAccountEnforcementEventMapper events;
+    private final CommunityFileService fileService;
     private final CommunityUserMapper users;
     private final CommunityAuth communityAuth;
     private final CommunitySessionService sessionService;
@@ -195,13 +198,20 @@ public class AccountEnforcementService {
     @Transactional
     public CommunityAccountEnforcementCase submit(Long adminId, SubmitCommand command) {
         if (!APPROVAL_MEASURES.contains(command.measureType())) throw new BusinessException(400, "仅长期冻结、数据清理或账号删除需要提交申请");
-        ensureNoBlockingCleanupRelation(command.targetUserId());
+        if ("FROZEN".equals(user(command.targetUserId()).getStatus())) {
+            throw new BusinessException(409, "该用户正在冻结中，不能重复发起申请");
+        }
+        if ("LONG_FREEZE".equals(command.measureType()) && (command.expiresAt() == null || !command.expiresAt().isAfter(now()))) {
+            throw new BusinessException(400, "长期冻结必须设置晚于当前时间的到期时间");
+        }
+        if (!"LONG_FREEZE".equals(command.measureType())) ensureNoBlockingCleanupRelation(command.targetUserId());
         requireText(command.userVisibleReason(), "用户可见理由", 1000);
         requireText(command.internalReason(), "内部处理说明", 2000);
         requireText(command.evidenceSnapshot(), "证据快照", 50000);
+        Set<String> cleanupScopes = "DATA_CLEANUP".equals(command.measureType()) ? cleanupScopes(command.cleanupScope()) : Set.of();
         CommunityAccountEnforcementCase item = newCase(adminId, command.targetUserId(), command.measureType(), command.reasonCode(), command.userVisibleReason(), command.internalReason(), command.evidenceSnapshot());
         item.setStatus("SUBMITTED");
-        item.setCleanupScope(null);
+        item.setCleanupScope(cleanupScopes.isEmpty() ? null : json(cleanupScopes));
         item.setSourceReportId(command.sourceReportId());
         item.setExpiresAt(command.expiresAt());
         insert(item, adminId, "SUBMITTED");
@@ -214,24 +224,42 @@ public class AccountEnforcementService {
         if (!Set.of("SUBMITTED", "UNDER_REVIEW").contains(item.getStatus())) {
             throw new BusinessException(409, "当前申请状态不允许继续审核");
         }
-        if (!superAdmin) throw new BusinessException(403, "Only super administrators can review deletion applications");
+        boolean allowSuperAdminSelfReview = configHelper.getBoolean(SystemConfigHelper.GROUP_SYSTEM, "allowSuperAdminSelfReview", true);
+        if ((!superAdmin || !allowSuperAdminSelfReview) && adminId.equals(item.getRequestedByAdminId())) {
+            throw new BusinessException(403, "发起人不能审核自己的申请");
+        }
         requireText(command.reviewNote(), "审核意见", 2000);
         if (!Set.of("APPROVE", "REJECT", "RETURN_FOR_EVIDENCE").contains(command.decision())) throw new BusinessException(400, "审核决定无效");
-        String stage = "FINAL";
+        String stage = "SUBMITTED".equals(item.getStatus()) ? "INITIAL" : "SECONDARY";
         if ("SECONDARY".equals(stage) && !superAdmin) {
             throw new BusinessException(403, "复审只能由超级管理员完成");
         }
         if (reviews.selectCount(Wrappers.<CommunityAccountEnforcementReview>lambdaQuery().eq(CommunityAccountEnforcementReview::getCaseId, caseId).eq(CommunityAccountEnforcementReview::getReviewerAdminId, adminId)) > 0) {
-            throw new BusinessException(409, "同一管理员不能重复审核同一申请");
+            if (!superAdmin) {
+                throw new BusinessException(409, "同一管理员不能重复审核同一申请");
+            }
         }
+        long previousApprovalCount = reviews.selectCount(Wrappers.<CommunityAccountEnforcementReview>lambdaQuery()
+                .eq(CommunityAccountEnforcementReview::getCaseId, caseId)
+                .eq(CommunityAccountEnforcementReview::getDecision, "APPROVE"));
         CommunityAccountEnforcementReview review = new CommunityAccountEnforcementReview();
         review.setCaseId(caseId); review.setStage(stage); review.setReviewerAdminId(adminId); review.setDecision(command.decision()); review.setReviewNote(command.reviewNote().trim()); review.setCreatedAt(now());
         reviews.insert(review);
-        item.setStatus("REJECT".equals(command.decision()) ? "REJECTED" : "RETURN_FOR_EVIDENCE".equals(command.decision()) ? "SUBMITTED" : "APPROVED");
+        long approvalCount = Math.max("SECONDARY".equals(stage) ? 1 : 0, previousApprovalCount)
+                + ("APPROVE".equals(command.decision()) ? 1 : 0);
+        int minimumApprovalCount = minimumApprovalCount();
+        // 超级管理员免初审：对 SUBMITTED 申请的一次通过审核直接视为终审批准
+        boolean superAdminDirectApproval = superAdmin && "INITIAL".equals(stage) && "APPROVE".equals(command.decision());
+        item.setStatus("REJECT".equals(command.decision()) ? "REJECTED" : "RETURN_FOR_EVIDENCE".equals(command.decision()) ? "SUBMITTED" : (superAdminDirectApproval || approvalCount >= minimumApprovalCount) ? "APPROVED" : "UNDER_REVIEW");
         item.setLockVersion(item.getLockVersion() + 1);
         cases.updateById(item);
         event(item, adminId, "REVIEW_" + command.decision());
         return item;
+    }
+
+    private int minimumApprovalCount() {
+        int configured = configHelper.getInt(SystemConfigHelper.GROUP_SYSTEM, "minimumApprovalCount", 2);
+        return Math.max(1, Math.min(configured, 10));
     }
 
     public List<CommunityAccountEnforcementReview> reviews(Long caseId) {
@@ -276,14 +304,18 @@ public class AccountEnforcementService {
     @Transactional
     public CommunityAccountEnforcementCase execute(Long adminId, Long caseId, String confirmation) {
         CommunityAccountEnforcementCase item = requireCase(caseId);
-        if (!"ACCOUNT_DELETE".equals(item.getMeasureType())) throw new BusinessException(400, "Only account deletion can be executed");
         if (!"APPROVED".equals(item.getStatus())) throw new BusinessException(409, "该申请尚未完成多级审核");
         String expected = confirmationText(item);
         if (!expected.equals(confirmation == null ? "" : confirmation.trim())) throw new BusinessException(400, "最终确认文字不匹配");
         item.setStartsAt(now());
         item.setAppealDeadlineAt(now().plusDays(DELETE_APPEAL_WINDOW_DAYS));
-        item.setStatus("APPEAL_WINDOW");
-        item.setExecuteAfter(item.getAppealDeadlineAt());
+        if ("LONG_FREEZE".equals(item.getMeasureType())) {
+            item.setStatus("ACTIVE");
+            item.setExecuteAfter(null);
+        } else {
+            item.setStatus("APPEAL_WINDOW");
+            item.setExecuteAfter(item.getAppealDeadlineAt());
+        }
         item.setLockVersion(item.getLockVersion() + 1);
         cases.updateById(item); setFrozen(item.getTargetUserId()); event(item, adminId, "EXECUTION_PENDING_APPEAL");
         return item;
@@ -303,7 +335,7 @@ public class AccountEnforcementService {
     }
 
     @Transactional
-    public CommunityAccountEnforcementAppeal appeal(Long userId, Long caseId, String statement, String evidenceSnapshot) {
+    public CommunityAccountEnforcementAppeal appeal(Long userId, Long caseId, String statement, List<Long> evidenceFileIds) {
         CommunityAccountEnforcementCase item = requireCase(caseId);
         if (!userId.equals(item.getTargetUserId())) throw new BusinessException(403, "只能对本人账号措施提交申诉");
         if (!Boolean.TRUE.equals(item.getAppealAllowed()) || !("ACTIVE".equals(item.getStatus()) || "APPEAL_WINDOW".equals(item.getStatus()))) {
@@ -316,8 +348,9 @@ public class AccountEnforcementService {
             throw new BusinessException(409, "该措施已有待处理申诉");
         }
         CommunityAccountEnforcementAppeal appeal = new CommunityAccountEnforcementAppeal();
-        appeal.setId(IdWorker.getId()); appeal.setCaseId(caseId); appeal.setAppellantUserId(userId); appeal.setStatement(requireText(statement, "申诉说明", 2000)); appeal.setEvidenceSnapshot(optionalEvidenceSnapshot(evidenceSnapshot)); appeal.setStatus("SUBMITTED"); appeal.setCreatedAt(now());
+        appeal.setId(IdWorker.getId()); appeal.setCaseId(caseId); appeal.setAppellantUserId(userId); appeal.setStatement(requireText(statement, "申诉说明", 2000)); appeal.setEvidenceSnapshot(appealEvidenceSnapshot(evidenceFileIds)); appeal.setStatus("SUBMITTED"); appeal.setCreatedAt(now());
         appeals.insert(appeal);
+        fileService.replaceOwnedFileReferences(evidenceFileIds, "ACCOUNT_ENFORCEMENT_APPEAL", appeal.getId(), "APPEAL_EVIDENCE");
         item.setStatus("APPEALED"); item.setLockVersion(item.getLockVersion() + 1); cases.updateById(item); event(item, userId, "APPEAL_SUBMITTED");
         return appeal;
     }
@@ -331,11 +364,11 @@ public class AccountEnforcementService {
     }
 
     @Transactional
-    public CommunityAccountEnforcementAppeal primaryReviewAppeal(Long adminId, Long appealId, String decision, String note) {
+    public CommunityAccountEnforcementAppeal primaryReviewAppeal(Long adminId, Long appealId, String decision, String note, boolean superAdmin) {
         CommunityAccountEnforcementAppeal appeal = requireAppeal(appealId);
         CommunityAccountEnforcementCase item = requireCase(appeal.getCaseId());
         if (!"SUBMITTED".equals(appeal.getStatus())) throw new BusinessException(409, "Appeal has already entered review");
-        if (adminId.equals(item.getRequestedByAdminId())) throw new BusinessException(403, "The original operator cannot review this appeal");
+        if (adminId.equals(item.getRequestedByAdminId()) && !superAdmin) throw new BusinessException(403, "您是该措施的原处置人，不能初审自己的申诉，请由其他管理员处理");
         validateAppealDecision(decision, note, null);
         appeal.setPrimaryReviewedByAdminId(adminId); appeal.setPrimaryDecision(decision); appeal.setPrimaryReviewNote(note.trim()); appeal.setPrimaryReviewedAt(now()); appeal.setStatus("PRIMARY_REVIEWED");
         appeals.updateById(appeal); event(item, adminId, "APPEAL_PRIMARY_" + decision);
@@ -345,7 +378,8 @@ public class AccountEnforcementService {
     @Transactional
     public CommunityAccountEnforcementAppeal finalReviewAppeal(Long adminId, Long appealId, String decision, String note, LocalDateTime modifiedExpiresAt) {
         CommunityAccountEnforcementAppeal appeal = requireAppeal(appealId);
-        if (!"PRIMARY_REVIEWED".equals(appeal.getStatus())) throw new BusinessException(409, "Primary review is required before final decision");
+        if (!"PRIMARY_REVIEWED".equals(appeal.getStatus())) throw new BusinessException(409, "该申诉尚未完成初审，不能终审");
+        if (adminId.equals(appeal.getPrimaryReviewedByAdminId())) throw new BusinessException(403, "初审人与终审人不能是同一管理员，请由另一名超级管理员终审");
         validateAppealDecision(decision, note, modifiedExpiresAt);
         appeal.setFinalReviewedByAdminId(adminId); appeal.setFinalDecision(decision); appeal.setFinalReviewNote(note.trim()); appeal.setFinalReviewedAt(now());
         appeal.setStatus("UNDER_REVIEW"); appeals.updateById(appeal);
@@ -386,6 +420,7 @@ public class AccountEnforcementService {
     }
 
     private CommunityAccountEnforcementAppeal requireAppeal(Long appealId) { CommunityAccountEnforcementAppeal appeal = appeals.selectById(appealId); if (appeal == null) throw new BusinessException(404, "Appeal does not exist"); return appeal; }
+    private static String appealEvidenceSnapshot(List<Long> fileIds) { if (fileIds == null || fileIds.isEmpty()) return null; LinkedHashSet<Long> normalized = new LinkedHashSet<>(fileIds); normalized.remove(null); if (normalized.size() > 10) throw new BusinessException(400, "最多上传 10 个申诉附件"); return normalized.toString(); }
     private void validateAppealDecision(String decision, String note, LocalDateTime modifiedExpiresAt) { if (!Set.of("UPHOLD", "MODIFY", "REVOKE").contains(decision)) throw new BusinessException(400, "Invalid appeal decision"); requireText(note, "review note", 2000); if ("MODIFY".equals(decision) && (modifiedExpiresAt == null || !modifiedExpiresAt.isAfter(now()))) throw new BusinessException(400, "Modified expiry must be in the future"); }
 
     public List<CommunityAccountEnforcementCase> mine(Long userId) {
@@ -398,9 +433,13 @@ public class AccountEnforcementService {
         cases.selectList(Wrappers.<CommunityAccountEnforcementCase>lambdaQuery().eq(CommunityAccountEnforcementCase::getStatus, "ACTIVE").in(CommunityAccountEnforcementCase::getMeasureType, "TEMP_FREEZE", "LONG_FREEZE").isNotNull(CommunityAccountEnforcementCase::getExpiresAt).le(CommunityAccountEnforcementCase::getExpiresAt, now())).forEach(item -> {
             item.setStatus("FINALIZED"); item.setFinalizedAt(now()); item.setLockVersion(item.getLockVersion() + 1); cases.updateById(item); restoreIfNoActiveFreeze(item.getTargetUserId(), item.getId()); event(item, null, "FREEZE_EXPIRED");
         });
-        cases.selectList(Wrappers.<CommunityAccountEnforcementCase>lambdaQuery().eq(CommunityAccountEnforcementCase::getStatus, "APPEAL_WINDOW").eq(CommunityAccountEnforcementCase::getMeasureType, "ACCOUNT_DELETE").le(CommunityAccountEnforcementCase::getExecuteAfter, now())).forEach(item -> {
+        cases.selectList(Wrappers.<CommunityAccountEnforcementCase>lambdaQuery().eq(CommunityAccountEnforcementCase::getStatus, "APPEAL_WINDOW").le(CommunityAccountEnforcementCase::getExecuteAfter, now())).forEach(item -> {
             CommunityUser user = user(item.getTargetUserId());
-            finalizeAccountDeletion(user);
+            if ("ACCOUNT_DELETE".equals(item.getMeasureType())) finalizeAccountDeletion(user);
+            else if ("DATA_CLEANUP".equals(item.getMeasureType())) {
+                cleanupUserData(user, cleanupScopes(item.getCleanupScope()));
+            }
+            else user.setStatus("FROZEN");
             users.updateById(user); communityAuth.stpLogic().logout(item.getTargetUserId());
             item.setStatus("FINALIZED"); item.setFinalizedAt(now()); item.setLockVersion(item.getLockVersion() + 1); cases.updateById(item); event(item, null, "FINALIZED");
         });

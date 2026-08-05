@@ -19,6 +19,27 @@ public interface TeamMemberMapper extends BaseMapper<TeamMember> {
     List<TeamMember> findActiveMembers(@Param("teamId") Long teamId);
 
     /**
+     * All active memberships for one user, newest membership first.
+     * Backs {@code GET /api/v1/teams/me} and the smart default tab on the team entry page.
+     */
+    @Select("SELECT * FROM team_member WHERE user_id = #{userId} AND left_at IS NULL "
+            + "ORDER BY joined_at DESC, id DESC")
+    List<TeamMember> findActiveMembershipsByUser(@Param("userId") Long userId);
+
+    /** Active member headcount grouped by team, so multi-team views stay a single query. */
+    @Select("""
+            <script>
+            SELECT team_id AS teamId, COUNT(*) AS total
+            FROM team_member
+            WHERE left_at IS NULL
+              AND team_id IN
+              <foreach item="item" collection="teamIds" open="(" separator="," close=")">#{item}</foreach>
+            GROUP BY team_id
+            </script>
+            """)
+    List<TeamCountRow> countActiveMembersByTeams(@Param("teamIds") List<Long> teamIds);
+
+    /**
      * Update member role with optimistic lock (id + lock_version).
      * Returns 1 if successful, 0 if concurrent modification.
      */

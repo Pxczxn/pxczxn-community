@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 export type ThemeMode = "light" | "dark" | "starry";
+export const THEME_EVENT = "pxczxn-theme-change";
 
 export function ThemeBootstrap() {
   useEffect(() => {
@@ -16,4 +17,5 @@ export function ThemeBootstrap() {
 export function setTheme(theme: ThemeMode) {
   document.documentElement.dataset.theme = theme;
   window.localStorage.setItem("pxczxn-theme", theme);
+  window.dispatchEvent(new CustomEvent<ThemeMode>(THEME_EVENT, { detail: theme }));
 }

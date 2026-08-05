@@ -168,6 +168,31 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
     }
 
     @Override
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+        if (newPassword == null || !newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s])\\S{12,72}$")) {
+            throw new BusinessException(400, "新密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格");
+        }
+        String normalizedEmail = normalizeEmail(email);
+        CommunityUserLoginAccount account = loginAccountMapper.selectOne(
+                Wrappers.<CommunityUserLoginAccount>lambdaQuery()
+                        .eq(CommunityUserLoginAccount::getLoginType, "EMAIL")
+                        .eq(CommunityUserLoginAccount::getNormalizedIdentifier, normalizedEmail)
+                        .last("LIMIT 1")
+        );
+        if (account == null || account.getPasswordHash() == null) {
+            throw new BusinessException(404, "登录账号不存在");
+        }
+        account.setPasswordHash(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+        account.setForcePasswordChange(false);
+        account.setFailedLoginCount(0);
+        account.setLockedUntil(null);
+        updateRequired(loginAccountMapper.updateById(account), "重置密码");
+        communityAuth.stpLogic().logout(account.getUserId());
+        log.info("社区用户通过邮箱验证码重置密码, userId={}", account.getUserId());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public boolean requiresPasswordChange(Long userId) {
         return Boolean.TRUE.equals(emailAccount(userId).getForcePasswordChange());

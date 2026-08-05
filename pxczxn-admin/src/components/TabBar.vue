@@ -214,6 +214,11 @@ body.dark-theme .tab-bar {
   border-bottom-color: #3f3f46;
 }
 
+body.starry-theme .tab-bar {
+  background: #11172D;
+  border-bottom-color: #29345C;
+}
+
 .tab-bar-scroll {
   flex: 1;
   overflow-x: auto;
@@ -275,6 +280,21 @@ body.dark-theme .tab-item {
   }
 }
 
+body.starry-theme .tab-item {
+  color: #8FA3C9;
+
+  &:hover {
+    color: #EAF1FF;
+    background: #1E2A50;
+  }
+
+  &.active {
+    color: var(--tab-active-color) !important;
+    background: var(--tab-active-bg) !important;
+    border-color: var(--tab-active-border) !important;
+  }
+}
+
 .tab-title {
   max-width: 120px;
   overflow: hidden;
@@ -292,7 +312,8 @@ body.dark-theme .tab-item {
   }
 }
 
-body.dark-theme .tab-close:hover {
+body.dark-theme .tab-close:hover,
+body.starry-theme .tab-close:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 </style>

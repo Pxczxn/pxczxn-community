@@ -96,7 +96,7 @@
               <div class="health-list">
                 <button type="button" @click="go('/community/reports')"><span><i class="health-dot health-dot--warning" />待处理举报</span><strong>{{ dashboard.pendingReportCount }}</strong></button>
                 <button type="button" @click="go('/community/appeals')"><span><i class="health-dot health-dot--info" />待处理申诉</span><strong>{{ dashboard.pendingAppealCount }}</strong></button>
-                <button type="button" @click="go('/community/sanctions')"><span><i class="health-dot health-dot--error" />有效处罚</span><strong>{{ dashboard.activeSanctionCount }}</strong></button>
+                <button type="button" @click="go('/community/account-enforcements')"><span><i class="health-dot health-dot--error" />有效处罚</span><strong>{{ dashboard.activeSanctionCount }}</strong></button>
               </div>
               <n-divider />
               <div class="governance-summary"><span>近 7 日风险拒绝</span><strong>{{ dashboard.rejectedAbuseCount }}</strong><span>平均举报处置</span><strong>{{ dashboard.averageReportResolutionMinutes }} 分钟</strong></div>
@@ -177,7 +177,7 @@ const headlineMetrics = computed(() => {
   if (!dashboard.value) return []
   return [
     { label: '社区用户', value: dashboard.value.userCount, hint: `${dashboard.value.activeUserCount} 位状态正常`, color: '#2E5CF6', icon: PeopleOutline },
-    { label: '博客空间', value: dashboard.value.blogCount, hint: '个人与团队博客', color: '#7C8CFF', icon: AlbumsOutline },
+    { label: '博客空间', value: dashboard.value.blogCount, hint: '个人与团队博客', color: '#7C83FF', icon: AlbumsOutline },
     { label: '文章总量', value: dashboard.value.articleCount, hint: `${dashboard.value.publishedArticleCount} 篇已发布`, color: '#14B8A6', icon: DocumentTextOutline },
     { label: '待审核', value: dashboard.value.pendingReviewCount, hint: '需要运营人员处理', color: '#F59E0B', icon: ShieldCheckmarkOutline }
   ]
@@ -198,7 +198,7 @@ const quickLinks = [
 ]
 
 function chartTextColor() {
-  return themeStore.isDark ? '#A8B3CF' : '#6B7280'
+  return themeStore.isDark ? '#8FA3C9' : '#6B7280'
 }
 
 function renderChart() {
@@ -209,7 +209,7 @@ function renderChart() {
   const metrics = dashboard.value.dailyMetrics
   trendChart.setOption({
     animationDuration: 500,
-    color: ['#2E5CF6', '#38D9F2'],
+    color: ['#2E5CF6', '#38BDF8'],
     tooltip: { trigger: 'axis' },
     grid: { left: 12, right: 12, top: 20, bottom: 4, containLabel: true },
     xAxis: {
@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
   }
 
   &--blue::before { background: #2E5CF6; }
-  &--cyan::before { background: #38D9F2; }
+  &--cyan::before { background: #38BDF8; }
 }
 
 .health-list {

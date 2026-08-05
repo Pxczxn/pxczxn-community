@@ -176,7 +176,7 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
       />
       <UserTopbar title={article.blog.name} />
       <main className="article-page page-shell">
-        <Link className="article-back link" href={`/blogs/${article.blog.slug}`}>
+        <Link className="article-back link" href={`/${article.blog.slug}`}>
           <ChevronLeft size={17} /> 返回博客
         </Link>
 
@@ -244,7 +244,7 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
 
             <footer className="article-footer">
               <div>
-                <Link className="article-author-card" href={`/blogs/${article.blog.slug}`}>
+                <Link className="article-author-card" href={`/${article.blog.slug}`}>
                   <Avatar
                     label={(article.author.displayName || article.author.username).slice(0, 1)}
                     size="lg"

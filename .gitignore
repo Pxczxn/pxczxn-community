@@ -1,9 +1,8 @@
-# Dependencies, caches and build output
+# ===== 依赖、缓存与构建产物（非源码，不提交） =====
 node_modules/
 dist/
 out/
 target/
-**/target/
 .next/
 .vinext/
 .wrangler/
@@ -14,22 +13,17 @@ coverage/
 *.hprof
 pxczxn-backend/pxczxn-starter/src/main/resources/static/
 
-# Local runtime state and generated evidence
+# ===== 本地运行时状态与生成产物 =====
 .run/
-**/.run/
 work/
-**/work/
 outputs/
-**/outputs/
 logs/
-**/logs/
 uploads/
-**/uploads/
 *.log
 *.pid
 *.tmp
 
-# Local secrets
+# ===== 本地密钥与敏感配置 =====
 .env
 .env.*
 !.env.example
@@ -39,14 +33,31 @@ deploy/monitoring/alertmanager.yml
 *.p12
 *.jks
 
-# Local Codex and IDE state
+# ===== 本地工具 / IDE / Agent 态（非源码） =====
+.reasonix/
+.workbuddy/
 .agents/
 .codex/
 .idea/
 .vscode/
 *.iml
 
-# OS metadata
+# ===== 项目资料（按"只提交源码+readme"原则不提交） =====
+docs/
+database/
+deploy/
+scripts/
+.github/
+THIRD_PARTY_NOTICES.md
+.dockerignore
+
+# ===== 编辑器临时文件 =====
+*.swp
+*.swo
+*~
+.eslintcache
+
+# ===== OS 元数据 =====
 .DS_Store
 Thumbs.db
 Desktop.ini

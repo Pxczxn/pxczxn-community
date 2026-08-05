@@ -45,6 +45,7 @@ export interface CommunitySession {
   forcePasswordChange?: boolean;
   displayName?: string | null;
   blogSlug?: string | null;
+  status?: string;
 }
 
 export interface CurrentCommunityUser {
@@ -598,7 +599,83 @@ export interface TeamSummary { teamId: string; blogId: string; name: string; slu
 export interface TeamSubmission { id: string; sourceArticleId: string; sourceArticleTitle: string; fixedSourceVersionId: string; targetTeamId: string; submittedByUserId: string; supersedesSubmissionId: string | null; status: string; teamReviewerUserId: string | null; teamReviewComment: string | null; teamReviewedAt: string | null; platformReviewerAdminId: string | null; platformReviewComment: string | null; platformReviewedAt: string | null; publishedTeamArticleId: string | null; lockVersion: number; createdAt: string; updatedAt: string; }
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
 export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
-export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; }
+export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; permissions: string[]; }
+/** One membership card on the "我的团队" tab and one entry of the workspace team switcher. */
+export interface MyTeam {
+  teamId: string;
+  blogId: string;
+  name: string;
+  slug: string;
+  summary: string | null;
+  avatarFileId: string | null;
+  backgroundFileId: string | null;
+  viewerRole: string;
+  capabilities: string[];
+  permissions: string[];
+  memberCount: number;
+  articleCount: number;
+  seriesCount: number;
+  followerCount: number;
+  pendingSubmissionCount: number;
+  revisionRequiredCount: number;
+  joinedAt: string;
+  updatedAt: string;
+}
+export interface TeamStats {
+  publishedArticleCount: number;
+  draftArticleCount: number;
+  reviewingArticleCount: number;
+  seriesCount: number;
+  memberCount: number;
+  followerCount: number;
+  totalViewCount: number;
+  totalInteractionCount: number;
+}
+export interface TeamTodo {
+  pendingSubmissionCount: number;
+  revisionRequiredCount: number;
+  pendingInvitationCount: number;
+  pendingSeriesReviewCount: number;
+  contentRiskCount: number;
+}
+export interface TeamActivity {
+  id: string;
+  teamId: string;
+  eventType: string;
+  targetType: string;
+  targetId: string | null;
+  actorUserId: string | null;
+  actorDisplayName: string | null;
+  actorUsername: string | null;
+  actorAvatarFileId: string | null;
+  occurredAt: string;
+}
+export interface TeamArticleBrief {
+  articleId: string;
+  title: string;
+  slug: string;
+  publishStatus: string;
+  reviewStatus: string;
+  visibility: string;
+  authorUserId: string;
+  authorDisplayName: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  updatedAt: string;
+  publishedAt: string | null;
+}
+export interface TeamDashboard {
+  team: TeamSummary;
+  viewerRole: string;
+  capabilities: string[];
+  permissions: string[];
+  stats: TeamStats;
+  recentArticles: TeamArticleBrief[];
+  todos: TeamTodo;
+  recentActivities: TeamActivity[];
+}
+export interface TeamMemberView { userId: string; roleCode: string; joinedAt: string; }
 export interface TeamSeriesChapter { articleId: string; title: string; slug: string; publishStatus: string; chapterOrder: number; }
 export interface TeamSeries { id: string; teamId: string; title: string; slug: string; summary: string | null; coverFileId: string | null; serializationStatus: "ONGOING" | "COMPLETED" | "PAUSED"; reviewStatus: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED"; reviewComment: string | null; lockVersion: number; publishedAt: string | null; updatedAt: string; chapters: TeamSeriesChapter[]; }
 export interface CommunityChatMessage { id: string; senderUserId: string; recipientUserId: string; contentText: string; status: string; readAt: string | null; createdAt: string; }
@@ -649,8 +726,19 @@ export function publicFileUrl(fileId?: string | null) {
     ? `${COMMUNITY_API_BASE_URL}/api/v1/public/files/${encodeURIComponent(fileId)}/content`
     : null;
 }
-export interface AccountEnforcementCase { id: string; measureType: string; status: string; userVisibleReason: string; expiresAt: string | null; appealDeadlineAt: string | null; }
+export interface AccountEnforcementCase {
+  id: string;
+  measureType: string;
+  status: string;
+  reasonCode: string | null;
+  userVisibleReason: string;
+  startsAt: string | null;
+  expiresAt: string | null;
+  appealDeadlineAt: string | null;
+  executeAfter: string | null;
+}
 export interface AccountEnforcementAppeal { id: string; caseId: string; status: string; statement: string; createdAt: string; }
+export interface CommunityFile { fileId: string; originalName: string; mimeType: string; sizeBytes: number; contentUrl: string; }
 
 function normalizePaginationNumbers<T>(value: T): T {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
@@ -682,7 +770,7 @@ export async function communityRequest<T>(
   }
 
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has("Content-Type")) {
+  if (init.body && !(typeof FormData !== "undefined" && init.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   if (authenticated) {
@@ -766,6 +854,18 @@ export const communityApi = {
       body: JSON.stringify(input),
     }, false);
   },
+  sendPasswordResetCode(email: string) {
+    return communityRequest<void>("/api/v1/auth/forgot-password/send-code", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }, false);
+  },
+  resetPassword(email: string, code: string, newPassword: string) {
+    return communityRequest<void>("/api/v1/auth/forgot-password/reset", {
+      method: "POST",
+      body: JSON.stringify({ email, code, newPassword }),
+    }, false);
+  },
   logout() {
     return communityRequest<void>("/api/v1/auth/logout", { method: "POST" });
   },
@@ -784,7 +884,12 @@ export const communityApi = {
   myAccountEnforcementAppeals() {
     return communityRequest<AccountEnforcementAppeal[]>("/api/v1/account-enforcements/appeals/me");
   },
-  appealAccountEnforcement(caseId: string, input: { statement: string; evidenceSnapshot?: string }) {
+  uploadFile(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return communityRequest<CommunityFile>("/api/v1/files", { method: "POST", body: formData });
+  },
+  appealAccountEnforcement(caseId: string, input: { statement: string; evidenceFileIds?: string[] }) {
     return communityRequest<AccountEnforcementAppeal>(`/api/v1/account-enforcements/${encodeURIComponent(caseId)}/appeals`, { method: "POST", body: JSON.stringify(input) });
   },
   myBlog() {
@@ -1171,6 +1276,37 @@ export const communityApi = {
   revokeCollaborator(articleId: string, collaboratorId: string, expectedLockVersion: number) { return communityRequest<void>(`/api/v1/articles/${encodeURIComponent(articleId)}/collaborators/${encodeURIComponent(collaboratorId)}?expectedLockVersion=${expectedLockVersion}`, { method: "DELETE" }); },
   team(slug: string) { return communityRequest<TeamPortal>(`/api/v1/teams/slug/${encodeURIComponent(slug)}`, {}, false); },
   teamWorkspace(teamId: string) { return communityRequest<TeamWorkspace>(`/api/v1/teams/${encodeURIComponent(teamId)}/workspace`); },
+  /** All active memberships of the current user; drives the smart default tab and the team switcher. */
+  myTeams() { return communityRequest<MyTeam[]>("/api/v1/teams/me"); },
+  /** Single round trip powering the workspace overview page. Members only. */
+  teamDashboard(teamId: string) { return communityRequest<TeamDashboard>(`/api/v1/teams/${encodeURIComponent(teamId)}/dashboard`); },
+  teamActivities(teamId: string, limit = 20) { return communityRequest<TeamActivity[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/activities?limit=${limit}`); },
+  /** All team articles regardless of status, optionally filtered by publish_status. Members only. */
+  teamArticles(teamId: string, publishStatus?: string) {
+    const query = publishStatus ? `?publishStatus=${encodeURIComponent(publishStatus)}` : "";
+    return communityRequest<TeamArticleBrief[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/articles${query}`);
+  },
+  /** Approved series of one team for its public portal; no login required. */
+  teamPublicSeries(teamId: string) { return communityRequest<TeamSeries[]>(`/api/v1/public/teams/${encodeURIComponent(teamId)}/series`, {}, false); },
+  teamMembers(teamId: string) { return communityRequest<TeamMemberView[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/members`); },
+  updateTeamSettings(teamId: string, input: { name: string; summary?: string | null; avatarFileId?: string | null; backgroundFileId?: string | null }) {
+    return communityRequest<TeamSummary>(`/api/v1/teams/${encodeURIComponent(teamId)}`, { method: "PATCH", body: JSON.stringify(input) });
+  },
+  inviteTeamMember(teamId: string, input: { userId: string; roleCode: string; idempotencyKey?: string }) {
+    const idempotencyKey = input.idempotencyKey || `team-invite-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return communityRequest<TeamInvitation>(`/api/v1/teams/${encodeURIComponent(teamId)}/invitations`, { method: "POST", body: JSON.stringify({ userId: input.userId, roleCode: input.roleCode, idempotencyKey }) });
+  },
+  changeTeamMemberRole(teamId: string, userId: string, roleCode: string) {
+    return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}/role`, { method: "POST", body: JSON.stringify({ roleCode }) });
+  },
+  removeTeamMember(teamId: string, userId: string) {
+    return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}`, { method: "DELETE" });
+  },
+  leaveTeam(teamId: string) { return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/leave`, { method: "POST" }); },
+  transferTeamOwnership(teamId: string, userId: string) {
+    return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/owner`, { method: "POST", body: JSON.stringify({ userId }) });
+  },
+  disbandTeam(teamId: string) { return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/disband`, { method: "POST" }); },
   chatHistory(peerId: string) { return communityRequest<CommunityChatMessage[]>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}`); },
   sendChatMessage(recipientUserId: string, contentText: string) { return communityRequest<CommunityChatMessage>("/api/v1/chat/messages", { method: "POST", body: JSON.stringify({ recipientUserId, contentText }) }); },
   markChatRead(peerId: string) { return communityRequest<void>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}/read`, { method: "POST" }); },

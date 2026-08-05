@@ -17,10 +17,12 @@ import {
   Settings,
   ShieldBan,
   Sparkles,
+  Sun,
   Tags,
+  UserRound,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   CommunitySession,
@@ -30,6 +32,7 @@ import {
   readSession,
   saveSession,
 } from "../lib/community-api";
+import { setTheme, THEME_EVENT, ThemeMode } from "./theme-bootstrap";
 
 const primaryNavItems = [
   { href: "/", label: "首页", Icon: House },
@@ -77,7 +80,11 @@ export function Avatar({
 export function UserTopbar({ title }: { title?: string }) {
   const [session, setSession] = useState<CommunitySession | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [theme, setCurrentTheme] = useState<ThemeMode>("light");
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const frozenSession = session?.status === "FROZEN";
 
   useEffect(() => {
     const sync = () => {
@@ -102,6 +109,43 @@ export function UserTopbar({ title }: { title?: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const closeWhenClickAway = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeWhenClickAway);
+    document.addEventListener("keydown", closeWithEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeWhenClickAway);
+      document.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [accountMenuOpen]);
+
+  useEffect(() => {
+    const syncTheme = (event?: Event) => {
+      const changedTheme = (event as CustomEvent<ThemeMode> | undefined)?.detail;
+      const currentTheme = changedTheme || document.documentElement.dataset.theme;
+      setCurrentTheme(currentTheme === "dark" || currentTheme === "starry" ? currentTheme : "light");
+    };
+    syncTheme();
+    window.addEventListener(THEME_EVENT, syncTheme);
+    return () => window.removeEventListener(THEME_EVENT, syncTheme);
+  }, []);
+
+  function toggleTheme() {
+    const nextTheme: ThemeMode = theme === "light" ? "dark" : theme === "dark" ? "starry" : "light";
+    setTheme(nextTheme);
+    setCurrentTheme(nextTheme);
+  }
+
   async function logout() {
     try {
       await communityApi.logout();
@@ -120,7 +164,7 @@ export function UserTopbar({ title }: { title?: string }) {
         {title && <span className="secondary">/</span>}
         {title && <strong>{title}</strong>}
       </div>
-      <nav className="community-primary-nav" aria-label="星语社区主导航">
+      {!frozenSession && <nav className="community-primary-nav" aria-label="星语社区主导航">
         {primaryNavItems.map(({ href, label, Icon }) => {
           const isActive = href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -130,29 +174,31 @@ export function UserTopbar({ title }: { title?: string }) {
             </Link>
           );
         })}
-      </nav>
+      </nav>}
       <div className="app-topbar__group">
-        <label className="top-search">
+        {!frozenSession && <label className="top-search">
           <Search aria-hidden="true" size={17} />
           <input aria-label="搜索" placeholder="搜索文章、动态和团队" />
-        </label>
-        {session && (
-          <Link aria-label="写文章" className="icon-button" href="/editor/new">
-            <PenLine size={18} />
-          </Link>
-        )}
-        {session && (
-          <Link aria-label="屏蔽管理" className="icon-button" href="/blocks">
-            <ShieldBan size={18} />
-          </Link>
-        )}
-        <Link aria-label="主题设置" className="icon-button" href="/settings">
-          <Moon size={18} />
-        </Link>
-        <Link
+        </label>}
+        {!frozenSession && <div className="topbar-tools" aria-label="快捷工具">
+          {session && (
+            <Link aria-label="写文章" className="topbar-compose" href="/editor/new" title="写文章">
+              <PenLine size={18} /> <span>写文章</span>
+            </Link>
+          )}
+          {session && (
+            <Link aria-label="屏蔽管理" className="icon-button" href="/blocks" title="屏蔽管理">
+              <ShieldBan size={18} />
+            </Link>
+          )}
+          <button aria-label={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，切换主题`} className="icon-button" onClick={toggleTheme} title={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，点击切换`} type="button">
+            {theme === "light" ? <Sun size={18} /> : theme === "dark" ? <Moon size={18} /> : <Sparkles size={18} />}
+          </button>
+          <Link
           aria-label={`通知${unreadNotifications ? `，${unreadNotifications} 条未读` : ""}`}
           className="icon-button notification-button"
           href={session ? "/notifications" : "/login"}
+          title={unreadNotifications ? `通知：${unreadNotifications} 条未读` : "通知"}
         >
           <Bell size={18} />
           {unreadNotifications > 0 && (
@@ -161,28 +207,28 @@ export function UserTopbar({ title }: { title?: string }) {
             </span>
           )}
         </Link>
-        {session && (
-          <Link aria-label="即时聊天" className="icon-button" href="/chat">
+          {session && (
+          <Link aria-label="即时聊天" className="icon-button" href="/chat" title="即时聊天">
             <MessageCircle size={18} />
           </Link>
-        )}
+          )}
+        </div>}
+        {frozenSession && <Link className="secondary-button" href="/account-appeals">提交申诉</Link>}
         {session ? (
-          <>
-            <Link className="user-chip" href="/me/blog">
+          <div className="account-menu" ref={accountMenuRef}>
+            <button aria-expanded={accountMenuOpen} aria-haspopup="menu" className="user-chip" onClick={() => setAccountMenuOpen((open) => !open)} type="button">
               <Avatar label={(session.displayName || session.username).slice(0, 1)} size="sm" />
               <span>{session.displayName || session.username}</span>
               <ChevronDown size={15} />
-            </Link>
-            <button
-              aria-label="退出登录"
-              className="icon-button topbar-logout"
-              onClick={logout}
-              title="退出登录"
-              type="button"
-            >
-              <LogOut size={17} />
             </button>
-          </>
+            {accountMenuOpen && (
+              <div className="account-menu__popover" role="menu">
+                {!frozenSession && <Link onClick={() => setAccountMenuOpen(false)} href="/me/blog" role="menuitem"><UserRound size={16} />个人中心</Link>}
+                {!frozenSession && <Link onClick={() => setAccountMenuOpen(false)} href="/settings" role="menuitem"><Settings size={16} />设置</Link>}
+                <button onClick={logout} role="menuitem" type="button"><LogOut size={16} />退出登录</button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link className="user-chip" href="/login">
             <LogIn size={17} />

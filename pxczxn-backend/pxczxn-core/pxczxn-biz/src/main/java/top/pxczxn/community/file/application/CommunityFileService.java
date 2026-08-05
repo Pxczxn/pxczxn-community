@@ -48,14 +48,15 @@ public class CommunityFileService {
                     "CONTENT_IMAGE"
             );
     private static final Set<String> TARGET_TYPES =
-            Set.of("BLOG", "ARTICLE", "ARTICLE_VERSION");
+            Set.of("BLOG", "ARTICLE", "ARTICLE_VERSION", "ACCOUNT_ENFORCEMENT_APPEAL");
     private static final Set<String> USAGE_TYPES =
             Set.of(
                     "BLOG_AVATAR",
                     "BLOG_BACKGROUND",
                     "ARTICLE_COVER",
                     "CONTENT_IMAGE",
-                    "ATTACHMENT"
+                    "ATTACHMENT",
+                    "APPEAL_EVIDENCE"
             );
 
     private final FileObjectMapper fileMapper;
@@ -121,6 +122,20 @@ public class CommunityFileService {
     public CommunityFileContent readMine(Long fileId) {
         FileObject file = requireOwnedActiveFile(fileId);
         return content(file);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityFileContent readReferencedFile(Long fileId, String targetType, Long targetId, String usageType) {
+        String normalizedTarget = normalizedEnum(targetType, TARGET_TYPES, "引用目标类型");
+        String normalizedUsage = normalizedEnum(usageType, USAGE_TYPES, "文件用途");
+        Long references = referenceMapper.selectCount(Wrappers.<CommunityFileReference>lambdaQuery()
+                .eq(CommunityFileReference::getFileId, fileId)
+                .eq(CommunityFileReference::getTargetType, normalizedTarget)
+                .eq(CommunityFileReference::getTargetId, targetId)
+                .eq(CommunityFileReference::getUsageType, normalizedUsage)
+                .isNull(CommunityFileReference::getDeletedAt));
+        if (references == null || references == 0) throw new BusinessException(404, "申诉附件不存在");
+        return content(requireActiveFile(fileId));
     }
 
     @Transactional(readOnly = true)
@@ -318,7 +333,7 @@ public class CommunityFileService {
     private Long requireActiveUser() {
         Long userId = communityAuth.getLoginUserId();
         CommunityUser user = userMapper.selectById(userId);
-        if (user == null || !Set.of("NORMAL", "LIMITED").contains(user.getStatus())) {
+        if (user == null || !Set.of("NORMAL", "LIMITED", "FROZEN").contains(user.getStatus())) {
             throw new BusinessException(403, "当前账号不能使用文件服务");
         }
         return userId;

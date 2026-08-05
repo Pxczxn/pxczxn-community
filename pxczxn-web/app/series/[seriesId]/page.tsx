@@ -33,7 +33,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
       <main className="series-page page-shell">
         <div>
           <Link className="ghost-button" href="/series">
-            <ArrowLeft size={16} /> 返回连载书架
+            <ArrowLeft size={16} /> 返回连载系列
           </Link>
         </div>
 

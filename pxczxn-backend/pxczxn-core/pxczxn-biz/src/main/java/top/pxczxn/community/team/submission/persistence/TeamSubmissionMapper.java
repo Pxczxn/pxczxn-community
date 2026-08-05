@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import top.pxczxn.community.team.persistence.TeamCountRow;
 import top.pxczxn.community.team.submission.model.TeamSubmission;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,29 @@ public interface TeamSubmissionMapper extends BaseMapper<TeamSubmission> {
 
     @Select("SELECT * FROM team_submission WHERE status IN ('PLATFORM_PENDING', 'PLATFORM_PUBLISHING') ORDER BY created_at ASC")
     List<TeamSubmission> findPlatformQueue();
+
+    /**
+     * Submissions waiting for team review, grouped by team.
+     * Drives the "待审投稿" badge without loading full submission rows.
+     */
+    @Select("""
+            <script>
+            SELECT target_team_id AS teamId, COUNT(*) AS total
+            FROM team_submission
+            WHERE status = 'TEAM_PENDING'
+              AND target_team_id IN
+              <foreach item="item" collection="teamIds" open="(" separator="," close=")">#{item}</foreach>
+            GROUP BY target_team_id
+            </script>
+            """)
+    List<TeamCountRow> countPendingByTeams(@Param("teamIds") List<Long> teamIds);
+
+    @Select("SELECT COUNT(*) FROM team_submission WHERE target_team_id = #{teamId} AND status = #{status}")
+    int countByTeamAndStatus(@Param("teamId") Long teamId, @Param("status") String status);
+
+    @Select("SELECT COUNT(*) FROM team_submission WHERE submitted_by_user_id = #{userId} "
+            + "AND target_team_id = #{teamId} AND status = 'TEAM_REVISION_REQUIRED'")
+    int countRevisionRequiredForAuthor(@Param("teamId") Long teamId, @Param("userId") Long userId);
 
     @Update("UPDATE team_submission SET status = #{nextStatus}, team_reviewer_user_id = #{reviewerId}, "
             + "team_review_comment = #{comment}, team_reviewed_at = #{now}, updated_at = #{now}, "

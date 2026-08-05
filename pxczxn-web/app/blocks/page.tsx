@@ -1,11 +1,16 @@
 "use client";
 
-import { Loader2, ShieldBan, X } from "lucide-react";
+import { Loader2, ShieldBan, X, PlusCircle } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { UserTopbar } from "../components/prototype-ui";
 import { communityApi, type CommunityBlock } from "../lib/community-api";
 
-const targetTypes: CommunityBlock["targetType"][] = ["USER", "BLOG", "TAG", "CHAT"];
+const targetTypes: { value: CommunityBlock["targetType"]; label: string }[] = [
+  { value: "USER", label: "用户 (USER)" },
+  { value: "BLOG", label: "博客 (BLOG)" },
+  { value: "TAG", label: "标签 (TAG)" },
+  { value: "CHAT", label: "私聊 (CHAT)" },
+];
 
 export default function BlocksPage() {
   const [items, setItems] = useState<CommunityBlock[]>([]);
@@ -53,33 +58,77 @@ export default function BlocksPage() {
     }
   }
 
-  return <>
-    <UserTopbar title="屏蔽管理" />
-    <main className="page-shell stack" style={{ maxWidth: 960, paddingTop: 32 }}>
-      <header>
-        <h1 className="section-heading">屏蔽管理</h1>
-        <p className="secondary">屏蔽用户、博客、标签或私聊联系人后，相关内容不会出现在你的内容流、评论、私聊和通知中。</p>
-      </header>
-      <form className="surface stack" style={{ padding: 20 }} onSubmit={submit}>
-        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 12 }}>
-          <select className="field" value={targetType} onChange={(event) => setTargetType(event.target.value as CommunityBlock["targetType"])}>
-            {targetTypes.map((value) => <option key={value} value={value}>{value}</option>)}
-          </select>
-          <input className="field" value={targetId} onChange={(event) => setTargetId(event.target.value)} placeholder="目标 ID" required />
-        </div>
-        <button className="primary-button" disabled={submitting} type="submit">
-          {submitting ? <Loader2 className="animate-spin" size={16} /> : <ShieldBan size={16} />} 屏蔽
-        </button>
-        {message && <p role="alert" className="secondary">{message}</p>}
-      </form>
-      <section className="surface stack" style={{ padding: 20 }}>
-        <h2 className="card-heading">已屏蔽对象</h2>
-        {loading ? <Loader2 className="animate-spin" /> : items.length === 0 ? <p className="secondary">暂无屏蔽项。</p> : items.map((item) => <article className="list-row" key={item.id}>
-          <ShieldBan size={17} />
-          <div style={{ flex: 1 }}><strong>{item.targetType} #{item.targetId}</strong><p className="secondary" style={{ margin: "2px 0 0" }}>{new Date(item.createdAt).toLocaleString()}</p></div>
-          <button aria-label={`取消屏蔽 ${item.targetType} ${item.targetId}`} className="icon-button" onClick={() => void remove(item)} title="取消屏蔽" type="button"><X size={17} /></button>
-        </article>)}
-      </section>
-    </main>
-  </>;
+  return (
+    <>
+      <UserTopbar title="屏蔽管理" />
+      <main className="blocks-container page-shell">
+        <header className="page-header-box">
+          <h1>屏蔽管理</h1>
+          <p>屏蔽用户、博客、标签或私聊联系人后，相关内容将不会出现在您的推荐流、动态、评论与私信通知中。</p>
+        </header>
+
+        <form className="card-surface stack" onSubmit={submit}>
+          <h2 className="card-heading" style={{ fontSize: 16, margin: 0, marginBottom: 12 }}>添加屏蔽项</h2>
+          <div className="block-form-grid">
+            <select
+              className="field"
+              onChange={(event) => setTargetType(event.target.value as CommunityBlock["targetType"])}
+              value={targetType}
+            >
+              {targetTypes.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
+              ))}
+            </select>
+            <input
+              className="field"
+              onChange={(event) => setTargetId(event.target.value)}
+              placeholder="请输入目标 ID、用户名或标识"
+              required
+              value={targetId}
+            />
+          </div>
+          <button className="primary-button" disabled={submitting} type="submit" style={{ alignSelf: "flex-start" }}>
+            {submitting ? <Loader2 className="spin" size={16} /> : <PlusCircle size={16} />}
+            <span>添加屏蔽</span>
+          </button>
+          {message && <p className="notice" role="alert" style={{ marginTop: 12 }}>{message}</p>}
+        </form>
+
+        <section className="card-surface stack">
+          <h2 className="card-heading" style={{ fontSize: 16, margin: 0, marginBottom: 12 }}>已屏蔽列表</h2>
+          {loading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "16px 0", color: "var(--text-secondary)" }}>
+              <Loader2 className="spin" size={16} />
+              <span>正在加载屏蔽数据…</span>
+            </div>
+          ) : items.length === 0 ? (
+            <p className="secondary" style={{ padding: "16px 0", margin: 0 }}>暂无屏蔽项。</p>
+          ) : (
+            <div className="stack" style={{ gap: 10 }}>
+              {items.map((item) => (
+                <article className="list-row" key={item.id} style={{ padding: "12px 16px", borderRadius: 10 }}>
+                  <ShieldBan size={18} style={{ color: "var(--primary)", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: 14 }}>{item.targetType} #{item.targetId}</strong>
+                    <p className="secondary" style={{ margin: "2px 0 0", fontSize: 12 }}>
+                      屏蔽于 {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    aria-label={`取消屏蔽 ${item.targetType} ${item.targetId}`}
+                    className="icon-button"
+                    onClick={() => void remove(item)}
+                    title="取消屏蔽"
+                    type="button"
+                  >
+                    <X size={17} />
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </>
+  );
 }

@@ -1,11 +1,13 @@
 package top.pxczxn.community.report.application;
 
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.blog.persistence.BlogMapper;
@@ -45,6 +47,27 @@ public class CommunityReportServiceImpl implements CommunityReportService {
     }
     @Override @Transactional(readOnly = true) public List<CommunityReportView> mine(Long reporter) { return reportMapper.findByReporter(reporter).stream().map(CommunityReportView::from).toList(); }
     @Override @Transactional(readOnly = true) public List<CommunityReportView> queue(String status) { String value = status == null || status.isBlank() ? null : queueStatus(status); return reportMapper.findQueue(value).stream().map(CommunityReportView::from).toList(); }
+
+    @Override @Transactional(readOnly = true)
+    public List<CommunityReportView> search(String keyword, int limit) {
+        if (!StringUtils.hasText(keyword)) return List.of();
+        String value = keyword.trim();
+        int max = Math.max(1, Math.min(limit, 20));
+        return reportMapper.selectList(Wrappers.<CommunityReport>lambdaQuery()
+                        .and(w -> w
+                                .apply("CAST(id AS CHAR) LIKE {0}", "%" + value + "%")
+                                .or()
+                                .apply("CAST(target_id AS CHAR) LIKE {0}", "%" + value + "%")
+                                .or()
+                                .like(CommunityReport::getTargetType, value)
+                                .or()
+                                .like(CommunityReport::getReasonCode, value)
+                                .or()
+                                .like(CommunityReport::getDescription, value))
+                        .orderByDesc(CommunityReport::getCreatedAt)
+                        .last("LIMIT " + max))
+                .stream().map(CommunityReportView::from).toList();
+    }
     @Override @Transactional public CommunityReportView claim(Long admin, Long id, Integer lock) { CommunityReport report = report(id); LocalDateTime now = now(); if (lock == null || reportMapper.claim(id, admin, lock, now) != 1) throw collision(); report.setStatus("ASSIGNED"); report.setAssigneeAdminId(admin); report.setLockVersion(lock + 1); event(id, "ADMIN", admin, "CLAIMED", "PENDING", "ASSIGNED", now); return CommunityReportView.from(report); }
     @Override @Transactional public CommunityReportView resolve(Long admin, Long id, Integer lock, String code, String note, boolean dismiss) { CommunityReport report = report(id); LocalDateTime now = now(); String status = dismiss ? "DISMISSED" : "RESOLVED"; if (lock == null || reportMapper.resolve(id, admin, status, required(code, 40, "resolution"), optional(note, 1000), lock, now) != 1) throw collision(); report.setStatus(status); report.setResolutionCode(code.trim().toUpperCase(Locale.ROOT)); report.setResolutionNote(optional(note, 1000)); report.setResolvedAt(now); report.setLockVersion(lock + 1); event(id, "ADMIN", admin, status, "ASSIGNED", status, now); return CommunityReportView.from(report); }
     private CommunityReport report(Long id) { CommunityReport value = reportMapper.selectById(positive(id, "report")); if (value == null) throw new BusinessException(404, "Report does not exist"); return value; }

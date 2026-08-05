@@ -160,14 +160,18 @@ service.interceptors.response.use(
         const userStore = useUserStore()
         await userStore.logout()
         isLoggingOut = false
-        return Promise.reject(new Error('登录已过期'))
+        const authError = new Error('登录已过期')
+        ;(authError as Error & { handled?: boolean }).handled = true
+        return Promise.reject(authError)
       }
 
       if (!isLogoutRequest) {
         window.$message?.error(res.message || '请求失败')
       }
-      
-      return Promise.reject(new Error(res.message || '请求失败'))
+      // 标记已由拦截器弹出提示，页面 catch 不再重复弹出
+      const bizError = new Error(res.message || '请求失败')
+      ;(bizError as Error & { handled?: boolean }).handled = true
+      return Promise.reject(bizError)
     }
     
     // 检查响应数据是否是AES加密的，自动解密

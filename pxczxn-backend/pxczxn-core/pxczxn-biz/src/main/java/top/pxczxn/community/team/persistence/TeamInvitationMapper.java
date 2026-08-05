@@ -23,6 +23,10 @@ public interface TeamInvitationMapper extends BaseMapper<TeamInvitation> {
     @Select("SELECT * FROM team_invitation WHERE invitee_user_id = #{userId} AND status = 'PENDING' ORDER BY created_at DESC")
     java.util.List<TeamInvitation> findPendingForInvitee(@Param("userId") Long userId);
 
+    /** Invitations the team has sent that are still awaiting an answer; drives the workspace todo badge. */
+    @Select("SELECT COUNT(*) FROM team_invitation WHERE team_id = #{teamId} AND status = 'PENDING' AND expires_at > NOW()")
+    int countPendingByTeam(@Param("teamId") Long teamId);
+
     @Update("UPDATE team_invitation SET status = 'ACCEPTED', accepted_at = NOW(), lock_version = lock_version + 1 "
             + "WHERE id = #{id} AND invitee_user_id = #{userId} AND status = 'PENDING' AND expires_at > NOW() "
             + "AND lock_version = #{lockVersion}")

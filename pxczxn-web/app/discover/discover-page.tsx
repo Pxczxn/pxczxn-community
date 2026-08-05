@@ -127,7 +127,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
               <div className="discover-hero__actions" style={{ marginTop: 6 }}>
                 <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 开始创作</Link>
                 <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
-                <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载书架</Link>
+                <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
               </div>
             </div>
 
@@ -233,7 +233,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
           <div className="discover-hero__actions">
             <Link className="primary-button" href="/editor/new"><BookOpen size={17} /> 写文章</Link>
             <Link className="secondary-button" href="/moments"><Orbit size={17} /> 浏览动态</Link>
-            <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载书架</Link>
+            <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
           </div>
         </section>
 
@@ -303,7 +303,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
               ) : (
                 <div className="discover-planned-card">
                   <p>浏览社区公开发布的专栏与连载系列，按章节循序渐进。</p>
-                  <Link className="secondary-button" href="/series" style={{ marginTop: 8, fontSize: 13, padding: "6px 12px" }}>去连载书架</Link>
+                  <Link className="secondary-button" href="/series" style={{ marginTop: 8, fontSize: 13, padding: "6px 12px" }}>去连载系列</Link>
                 </div>
               )}
             </section>

@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 public class CommunityRegistrationServiceImpl implements CommunityRegistrationService {
 
     private static final Pattern USERNAME_PATTERN =
-            Pattern.compile("^[a-z0-9][a-z0-9_-]{2,31}$");
+            Pattern.compile("^[a-z][a-z0-9_-]{0,30}[a-z0-9]$");
     private static final int BCRYPT_MAX_PASSWORD_BYTES = 72;
     private static final String DEFAULT_CATEGORY_NAME = "未分类";
     private static final String DEFAULT_CATEGORY_SLUG = "uncategorized";
@@ -223,7 +223,7 @@ public class CommunityRegistrationServiceImpl implements CommunityRegistrationSe
         String username = Normalizer.normalize(rawUsername.trim(), Normalizer.Form.NFKC)
                 .toLowerCase(Locale.ROOT);
         if (!USERNAME_PATTERN.matcher(username).matches()) {
-            throw new BusinessException(400, "用户名须为 3-32 位字母、数字、下划线或连字符");
+            throw new BusinessException(400, "个人空间地址须为 2-32 位，以字母开头，并以字母或数字结尾");
         }
         return username;
     }

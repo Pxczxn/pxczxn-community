@@ -1,2 +1,0 @@
-SELECT COUNT(*) AS policy_columns FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='content_keyword_rule' AND column_name IN ('content_scopes','risk_level','hit_action');
-SELECT COUNT(*) AS policy_constraints FROM information_schema.table_constraints WHERE table_schema=DATABASE() AND table_name='content_keyword_rule' AND constraint_name IN ('chk_keyword_rule_risk_level','chk_keyword_rule_hit_action');

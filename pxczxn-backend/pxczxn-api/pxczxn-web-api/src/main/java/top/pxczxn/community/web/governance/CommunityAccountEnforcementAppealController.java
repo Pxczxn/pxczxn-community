@@ -17,8 +17,8 @@ import java.util.List;
 @RestController @RequiredArgsConstructor @RequestMapping("/api/v1/account-enforcements")
 public class CommunityAccountEnforcementAppealController {
     private final AccountEnforcementService service; private final CommunityAuth auth;
-    @PostMapping("/{caseId}/appeals") public Result<CommunityAccountEnforcementAppeal> appeal(@PathVariable Long caseId, @RequestBody AppealRequest request) { return Result.ok(service.appeal(auth.getLoginUserId(), caseId, request.statement(), request.evidenceSnapshot())); }
+    @PostMapping("/{caseId}/appeals") public Result<CommunityAccountEnforcementAppeal> appeal(@PathVariable Long caseId, @RequestBody AppealRequest request) { return Result.ok(service.appeal(auth.getLoginUserId(), caseId, request.statement(), request.evidenceFileIds())); }
     @GetMapping("/appeals/me") public Result<List<CommunityAccountEnforcementAppeal>> mine() { return Result.ok(service.myAppeals(auth.getLoginUserId())); }
     @GetMapping("/me") public Result<List<CommunityAccountEnforcementCase>> cases() { return Result.ok(service.mine(auth.getLoginUserId())); }
-    public record AppealRequest(String statement, String evidenceSnapshot) { }
+    public record AppealRequest(String statement, List<Long> evidenceFileIds) { }
 }

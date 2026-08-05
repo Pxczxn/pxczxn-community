@@ -6,8 +6,9 @@
 ## 页面
 
 - `/login`：注册、登录与会话反馈
-- `/teams/ai-explorers`：团队博客主页
-- `/workspace/team`：团队工作台
+- `/teams`：团队模块智能入口（我的团队 / 发现团队 / 邀请与申请）
+- `/teams/:teamSlug`：团队公开主页（主页 / 文章 / 系列 / 成员 / 关于）
+- `/teams/:teamSlug/workspace`：团队工作台（概览 / 内容 / 系列 / 投稿 / 成员 / 设置）
 - `/submissions/ai-agent`：投稿详情与审核状态
 - `/collaboration/articles/agent-patterns`：共创文章协作
 - `/moments/agent-architecture`：动态发布与详情

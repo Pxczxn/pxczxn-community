@@ -22,6 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(origin),
+    icons: {
+      icon: "/favicon.ico",
+    },
     title: {
       default: "星语社区",
       template: "%s · 星语社区",

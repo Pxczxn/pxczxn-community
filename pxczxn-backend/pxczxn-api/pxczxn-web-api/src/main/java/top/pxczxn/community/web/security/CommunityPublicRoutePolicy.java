@@ -41,6 +41,8 @@ public class CommunityPublicRoutePolicy {
     private static final List<String> PUBLIC_POST_PATTERNS = List.of(
             "/api/v1/auth/register",
             "/api/v1/auth/login",
+            "/api/v1/auth/forgot-password/send-code",
+            "/api/v1/auth/forgot-password/reset",
             "/api/v1/moments/*/share-link",
             "/api/v1/public/analytics/articles/*/events"
     );

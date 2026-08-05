@@ -6,10 +6,10 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CommunityRegistrationRequest(
-        @NotBlank(message = "用户名不能为空")
+        @NotBlank(message = "个人空间地址不能为空")
         @Pattern(
-                regexp = "^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$",
-                message = "用户名须为 3-32 位字母、数字、下划线或连字符"
+                regexp = "^[A-Za-z][A-Za-z0-9_-]{0,30}[A-Za-z0-9]$",
+                message = "个人空间地址须为 2-32 位，以字母开头，并以字母或数字结尾"
         )
         String username,
 
@@ -30,7 +30,8 @@ public record CommunityRegistrationRequest(
         )
         String password,
 
-        @Size(max = 80, message = "显示名称不能超过 80 个字符")
+        @NotBlank(message = "姓名不能为空")
+        @Size(max = 80, message = "姓名不能超过 80 个字符")
         String displayName
 ) {
 }

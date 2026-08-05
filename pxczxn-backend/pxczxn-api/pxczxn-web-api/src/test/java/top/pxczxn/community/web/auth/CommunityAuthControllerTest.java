@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.user.application.CommunityLoginSession;
+import top.pxczxn.community.user.application.CommunityPasswordResetService;
 import top.pxczxn.community.user.application.CommunityRegistrationService;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.RegisterCommunityUserCommand;
@@ -31,7 +32,7 @@ class CommunityAuthControllerTest {
         ));
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
         CommunityAuthController controller = new CommunityAuthController(
-                service, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
+                service, sessionService, mock(CommunityPasswordResetService.class), mock(CommunityAbuseGuard.class), openRegistrationGate()
         );
 
         Result<CommunityRegistrationView> result = controller.register(
@@ -61,7 +62,7 @@ class CommunityAuthControllerTest {
         when(service.isEmailAvailable("alice@example.com")).thenReturn(false);
         CommunitySessionService sessionService = mock(CommunitySessionService.class);
         CommunityAuthController controller = new CommunityAuthController(
-                service, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
+                service, sessionService, mock(CommunityPasswordResetService.class), mock(CommunityAbuseGuard.class), openRegistrationGate()
         );
 
         assertThat(controller.checkUsername("alice").getData().available()).isTrue();
@@ -84,7 +85,7 @@ class CommunityAuthControllerTest {
                 ));
         CommunityAuthController controller =
                 new CommunityAuthController(
-                        registrationService, sessionService, mock(CommunityAbuseGuard.class), openRegistrationGate()
+                        registrationService, sessionService, mock(CommunityPasswordResetService.class), mock(CommunityAbuseGuard.class), openRegistrationGate()
                 );
 
         Result<CommunityLoginView> result = controller.login(
@@ -95,6 +96,33 @@ class CommunityAuthControllerTest {
         assertThat(result.getData().tokenName()).isEqualTo("pxczxn-community-token");
         assertThat(result.getData().tokenValue()).isEqualTo("community-token-value");
         assertThat(result.getData().userId()).isEqualTo("9223372036854775000");
+    }
+
+    @Test
+    void forgotPasswordEndpointsDelegateToPasswordResetService() {
+        CommunityPasswordResetService passwordResetService =
+                mock(CommunityPasswordResetService.class);
+        CommunityAuthController controller = new CommunityAuthController(
+                mock(CommunityRegistrationService.class),
+                mock(CommunitySessionService.class),
+                passwordResetService,
+                mock(CommunityAbuseGuard.class),
+                openRegistrationGate()
+        );
+
+        Result<Void> sendCodeResult = controller.forgotPasswordSendCode(
+                requestFrom("127.0.0.1"),
+                new ForgotPasswordSendCodeRequest("alice@example.com")
+        );
+        assertThat(sendCodeResult.getCode()).isEqualTo(200);
+        verify(passwordResetService).sendResetCode("alice@example.com");
+
+        Result<Void> resetResult = controller.forgotPasswordReset(
+                requestFrom("127.0.0.1"),
+                new ForgotPasswordResetRequest("alice@example.com", "123456", "NewPassw0rd!")
+        );
+        assertThat(resetResult.getCode()).isEqualTo(200);
+        verify(passwordResetService).resetPassword("alice@example.com", "123456", "NewPassw0rd!");
     }
 
     private static HttpServletRequest requestFrom(String remoteAddress) {

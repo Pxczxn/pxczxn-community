@@ -146,6 +146,13 @@ public class TeamSeriesServiceImpl implements TeamSeriesService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<TeamSeriesView> publicTeamSeries(Long teamId) {
+        activeTeam(teamId);
+        return seriesMapper.findPublicByTeam(teamId).stream().map(series -> view(series, true)).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<TeamSeriesView> reviewQueue() { return seriesMapper.findReviewQueue().stream().map(series -> view(series, false)).toList(); }
 
     @Override

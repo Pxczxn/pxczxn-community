@@ -53,6 +53,12 @@ public class AdminCommunityQueryController {
         ));
     }
 
+    @GetMapping("/users/{userId}")
+    @SaCheckPermission("community:user:list")
+    public Result<AdminCommunityUserResponse> user(@PathVariable Long userId) {
+        return Result.ok(AdminCommunityUserResponse.from(queryService.user(userId)));
+    }
+
     @GetMapping("/blogs")
     @SaCheckPermission("community:blog:list")
     public Result<PageResult<AdminCommunityBlogResponse>> blogs(

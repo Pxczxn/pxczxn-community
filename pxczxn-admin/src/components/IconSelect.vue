@@ -473,4 +473,30 @@ defineExpose({ getIconComponent, iconMap })
     max-width: 100%;
   }
 }
+
+// 深色主题
+body.dark-theme .icon-item {
+  &:hover {
+    background-color: #2d2d30;
+  }
+
+  &.active {
+    background-color: rgba(96, 165, 250, 0.15);
+    border-color: #60a5fa;
+    color: #60a5fa;
+  }
+}
+
+// 星空主题（深空蓝）
+body.starry-theme .icon-item {
+  &:hover {
+    background-color: #1E2A50;
+  }
+
+  &.active {
+    background-color: rgba(124, 131, 255, 0.16);
+    border-color: #7C83FF;
+    color: #A5ABFF;
+  }
+}
 </style>

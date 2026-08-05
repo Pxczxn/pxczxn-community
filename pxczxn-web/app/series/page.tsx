@@ -42,7 +42,7 @@ export default function SeriesPage() {
       <main className="series-page page-shell">
         <section className="series-hero surface-lg shadow-sm">
           <div className="series-hero__copy">
-            <span className="eyebrow"><LibraryBig size={15} /> 连载书架</span>
+            <span className="eyebrow"><LibraryBig size={15} /> 连载系列</span>
             <h1>把一篇篇好内容，读成完整的故事</h1>
             <p>这里收录已公开的团队系列。按章节顺序展开，方便你从第一篇读到最后一篇。</p>
             <div className="series-hero__actions">
@@ -89,7 +89,7 @@ export default function SeriesPage() {
           </div>
         </section>
 
-        {loading && <div className="series-loading surface" aria-busy="true"><Loader2 className="animate-spin" size={22} /> 正在整理连载书架…</div>}
+        {loading && <div className="series-loading surface" aria-busy="true"><Loader2 className="animate-spin" size={22} /> 正在整理连载系列…</div>}
         {error && <p className="inline-feedback error" role="alert">{error}</p>}
         {!loading && !error && filteredSeries.length === 0 && (
           <section className="series-empty surface">

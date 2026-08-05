@@ -47,7 +47,7 @@ public class CommentService {
     private static final int REPLY_PREVIEW_SIZE = 3;
     private static final int MAX_MENTION_RECIPIENTS = 20;
     private static final Pattern MENTION_PATTERN = Pattern.compile(
-            "(?<![a-z0-9_-])@([a-z0-9][a-z0-9_-]{2,31})",
+            "(?<![a-z0-9_-])@([a-z][a-z0-9_-]{0,30}[a-z0-9])",
             Pattern.CASE_INSENSITIVE
     );
 

@@ -2,6 +2,8 @@ export type StatusTone = 'default' | 'success' | 'warning' | 'error' | 'info'
 
 const labelMap: Record<string, string> = {
   NORMAL: '正常',
+  FROZEN: '已冻结',
+  DEACTIVATED: '已停用',
   DISABLED: '禁用',
   BANNED: '封禁',
   ACTIVE: '启用',
@@ -83,10 +85,10 @@ export function statusTone(value?: string | null): StatusTone {
   if (['NORMAL', 'ACTIVE', 'VERIFIED', 'APPROVED', 'PUBLISHED', 'COMPLETED', 'PLATFORM_APPROVED', 'PLATFORM_RESTORED'].includes(value)) {
     return 'success'
   }
-  if (['PENDING', 'PENDING_REVIEW', 'SCHEDULED', 'QUEUED', 'AUTO_REVIEWING', 'MANUAL_REVIEWING', 'MEDIUM'].includes(value)) {
+  if (['PENDING', 'PENDING_REVIEW', 'SCHEDULED', 'QUEUED', 'AUTO_REVIEWING', 'MANUAL_REVIEWING', 'MEDIUM', 'FROZEN'].includes(value)) {
     return 'warning'
   }
-  if (['DISABLED', 'BANNED', 'DELETED', 'REJECTED', 'PUBLISH_FAILED', 'CRITICAL', 'HIGH', 'TAKEN_DOWN', 'SPAM', 'PLATFORM_REJECTED', 'PLATFORM_TAKEN_DOWN'].includes(value)) {
+  if (['DISABLED', 'BANNED', 'DELETED', 'REJECTED', 'PUBLISH_FAILED', 'CRITICAL', 'HIGH', 'TAKEN_DOWN', 'SPAM', 'PLATFORM_REJECTED', 'PLATFORM_TAKEN_DOWN', 'DEACTIVATED'].includes(value)) {
     return 'error'
   }
   if (['PUBLIC', 'PERSONAL', 'TEAM', 'HIDDEN', 'MERGED', 'LOW', 'REVISION_REQUIRED'].includes(value)) {

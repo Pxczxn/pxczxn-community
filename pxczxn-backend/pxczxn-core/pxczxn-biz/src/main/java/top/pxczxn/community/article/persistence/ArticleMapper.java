@@ -100,4 +100,92 @@ public interface ArticleMapper extends BaseMapper<Article> {
     List<Map<String, Object>> selectDailyCreations(
             @Param("from") LocalDateTime from
     );
+
+    // ---------------------------------------------------------------------
+    // Team workspace aggregates
+    // ---------------------------------------------------------------------
+
+    /** Article counts grouped by publish status, feeding the workspace stat cards in one round trip. */
+    @Select("""
+            SELECT publish_status AS status, COUNT(*) AS total
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+            GROUP BY publish_status
+            """)
+    List<ArticleStatusCountRow> countByBlogGroupedByPublishStatus(@Param("blogId") Long blogId);
+
+    /** Newest articles of a blog regardless of publish status; the workspace shows drafts too. */
+    @Select("""
+            SELECT *
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+            ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+            LIMIT #{limit}
+            """)
+    List<Article> findRecentByBlog(@Param("blogId") Long blogId, @Param("limit") int limit);
+
+    @Select("""
+            SELECT COALESCE(SUM(view_count), 0)
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+            """)
+    long sumViewCountByBlog(@Param("blogId") Long blogId);
+
+    @Select("""
+            SELECT COALESCE(SUM(like_count + comment_count + favorite_count), 0)
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+            """)
+    long sumInteractionCountByBlog(@Param("blogId") Long blogId);
+
+    /** Articles that need human attention: rejected review, taken down, or failed publication. */
+    @Select("""
+            SELECT COUNT(*)
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+              AND (review_status IN ('REVISION_REQUIRED', 'REJECTED')
+                   OR publish_status IN ('TAKEN_DOWN', 'PUBLISH_FAILED'))
+            """)
+    int countRiskByBlog(@Param("blogId") Long blogId);
+
+    /**
+     * Articles of one blog regardless of publish status, newest first, optionally filtered by a
+     * single {@code publish_status}. Backs the team workspace content page.
+     */
+    @Select("""
+            <script>
+            SELECT *
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+              <if test="publishStatus != null">
+                AND publish_status = #{publishStatus}
+              </if>
+            ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+            LIMIT #{limit}
+            </script>
+            """)
+    List<Article> findByBlog(@Param("blogId") Long blogId,
+                             @Param("publishStatus") String publishStatus,
+                             @Param("limit") int limit);
+
+    /** Per-author article counts inside one blog, used by the member list contribution column. */
+    @Select("""
+            <script>
+            SELECT author_user_id AS authorUserId, COUNT(*) AS total
+            FROM article
+            WHERE blog_id = #{blogId}
+              AND deleted_at IS NULL
+              AND author_user_id IN
+              <foreach item="item" collection="authorUserIds" open="(" separator="," close=")">#{item}</foreach>
+            GROUP BY author_user_id
+            </script>
+            """)
+    List<ArticleAuthorCountRow> countByBlogAndAuthors(@Param("blogId") Long blogId,
+                                                      @Param("authorUserIds") List<Long> authorUserIds);
 }

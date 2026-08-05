@@ -80,20 +80,18 @@ class CommunitySessionServiceImplTest {
     }
 
     @Test
-    void frozenUserCanLoginForAppealOnlySession() {
+    void frozenUserCanStartAppealOnlySession() {
         CommunityUserLoginAccount account = account(100L, 200L, 0, null);
         when(loginAccountMapper.selectOne(any())).thenReturn(account);
         when(userMapper.selectById(200L)).thenReturn(user(200L, "FROZEN"));
         when(loginAccountMapper.recordLoginSuccess(anyLong(), any())).thenReturn(1);
         when(userMapper.recordLoginSuccess(anyLong(), any())).thenReturn(1);
-        when(communityAuth.getTokenValue()).thenReturn("appeal-token");
-        when(communityAuth.getTokenTimeout()).thenReturn(604800L);
 
         CommunityLoginSession result = service.login(
                 new CommunityLoginCommand("alice@example.com", "correct-password")
         );
 
-        assertThat(result.tokenValue()).isEqualTo("appeal-token");
+        assertThat(result.userId()).isEqualTo(200L);
         verify(communityAuth).login(200L);
     }
 

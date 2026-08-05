@@ -8,8 +8,16 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { LoaderCircle, MessageCircle, Send } from "lucide-react";
-import { UserTopbar } from "../components/prototype-ui";
+import {
+  LoaderCircle,
+  MessageSquare,
+  Send,
+  UserCheck,
+  Users,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import { Avatar, UserTopbar } from "../components/prototype-ui";
 import {
   COMMUNITY_API_BASE_URL,
   SESSION_EVENT,
@@ -48,6 +56,18 @@ function subscribeToSession(onStoreChange: () => void) {
   };
 }
 
+let cachedSessionRaw: string | null | undefined;
+let cachedSession: ReturnType<typeof readSession> = null;
+
+function readSessionSnapshot() {
+  const raw = typeof window === "undefined" ? null : window.localStorage.getItem("pxczxn-community-session");
+  if (raw !== cachedSessionRaw) {
+    cachedSessionRaw = raw;
+    cachedSession = readSession();
+  }
+  return cachedSession;
+}
+
 function readChatEvent(value: string): CommunityChatMessage | null {
   try {
     const payload = JSON.parse(value) as Partial<CommunityChatMessage> & {
@@ -79,7 +99,7 @@ function readChatEvent(value: string): CommunityChatMessage | null {
 export default function ChatPage() {
   const session = useSyncExternalStore(
     subscribeToSession,
-    readSession,
+    readSessionSnapshot,
     () => null,
   );
   const [contacts, setContacts] = useState<SocialProfile[]>([]);
@@ -92,6 +112,7 @@ export default function ChatPage() {
   const [error, setError] = useState("");
   const [connection, setConnection] = useState<ConnectionState>("offline");
   const activePeerRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const loadConversation = useCallback(async (targetPeerId: string) => {
     setLoadingConversation(true);
@@ -141,6 +162,12 @@ export default function ChatPage() {
       void Promise.resolve().then(() => loadConversation(peerId));
     }
   }, [loadConversation, peerId]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!session || !COMMUNITY_API_BASE_URL) return;
@@ -203,63 +230,147 @@ export default function ChatPage() {
 
   const peer = contacts.find((contact) => contact.userId === peerId) ?? null;
 
-  return <>
-    <UserTopbar title="即时聊天" />
-    <main className="page-shell" style={{ paddingTop: 28, paddingBottom: 48 }}>
-      <header>
-        <h1>即时聊天</h1>
-        <p className="secondary">与互相关注的社区创作者交流</p>
-      </header>
-      {error && <p role="alert" className="inline-feedback error">{error}</p>}
-      <section className="surface community-chat-layout">
-        <aside className="community-chat-contacts">
-          <strong>联系人</strong>
-          <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
-            {loadingContacts && <LoaderCircle className="spin" size={20} />}
-            {!loadingContacts && contacts.length === 0 && <p className="secondary">暂无可聊天的联系人</p>}
-            {contacts.map((contact) => <button
-              className={contact.userId === peerId ? "secondary-button" : "ghost-button"}
-              key={contact.userId}
-              onClick={() => setPeerId(contact.userId)}
-              type="button"
-            >
-              {contact.displayName || contact.username}
-            </button>)}
+  return (
+    <>
+      <UserTopbar title="即时聊天" />
+      <main className="chat-page-container page-shell">
+        <header className="chat-page-header">
+          <div className="chat-header-title-box">
+            <MessageSquare className="chat-header-icon" size={24} />
+            <div>
+              <h1>即时聊天</h1>
+              <p className="chat-header-desc">与互相关注的社区创作者进行私密即时交流</p>
+            </div>
           </div>
-        </aside>
-        <section className="community-chat-conversation">
-          <header style={{ alignItems: "center", display: "flex", justifyContent: "space-between" }}>
-            <strong>{peer ? (peer.displayName || peer.username) : "选择联系人"}</strong>
-            <span className="secondary">{connection === "online" ? "已连接" : connection === "connecting" ? "连接中" : "离线"}</span>
-          </header>
-          <div aria-live="polite" className="community-chat-messages">
-            {loadingConversation && <LoaderCircle className="spin" size={22} />}
-            {!loadingConversation && peer && messages.length === 0 && <p className="secondary">还没有消息，开始对话吧。</p>}
-            {!loadingConversation && messages.map((message) => <article
-              className="community-chat-bubble"
-              key={message.id}
-              data-own-message={message.senderUserId === session?.userId}
-            >
-              <p style={{ margin: 0 }}>{message.contentText}</p>
-            </article>)}
-          </div>
-          <form onSubmit={send} style={{ display: "flex", gap: 10 }}>
-            <input
-              disabled={!peer || sending}
-              maxLength={2000}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="输入消息"
-              value={content}
-            />
-            <button className="primary-button" disabled={!peer || !content.trim() || sending} type="submit">
-              {sending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
-              发送
-            </button>
-          </form>
+          <span className={`chat-conn-status conn-${connection}`}>
+            {connection === "online" ? <Wifi size={14} /> : <WifiOff size={14} />}
+            <span>{connection === "online" ? "实时就绪" : connection === "connecting" ? "连接中…" : "离线"}</span>
+          </span>
+        </header>
+
+        {error && <p className="inline-feedback error" role="alert">{error}</p>}
+        {!session && <p className="inline-feedback error">请先登录后继续查看对话。</p>}
+
+        <section className="surface community-chat-layout">
+          <aside className="community-chat-contacts">
+            <div className="contacts-header">
+              <Users size={16} />
+              <span>互关联系人 ({contacts.length})</span>
+            </div>
+            <div className="contacts-list">
+              {loadingContacts && (
+                <div className="contacts-loading">
+                  <LoaderCircle className="spin" size={18} />
+                  <span>加载联系人…</span>
+                </div>
+              )}
+              {!loadingContacts && contacts.length === 0 && (
+                <p className="contacts-empty">暂无可聊天的互关联系人</p>
+              )}
+              {contacts.map((contact) => (
+                <button
+                  className={`contact-item ${contact.userId === peerId ? "active" : ""}`}
+                  key={contact.userId}
+                  onClick={() => setPeerId(contact.userId)}
+                  type="button"
+                >
+                  <Avatar label={(contact.displayName || contact.username).slice(0, 1)} size="md" />
+                  <div className="contact-info">
+                    <strong>{contact.displayName || contact.username}</strong>
+                    <small>@{contact.username}</small>
+                  </div>
+                  <UserCheck className="contact-mutual-icon" size={14} aria-label="互相关注" />
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <section className="community-chat-conversation">
+            <header className="conversation-header">
+              {peer ? (
+                <div className="conversation-peer-info">
+                  <Avatar label={(peer.displayName || peer.username).slice(0, 1)} size="md" />
+                  <div>
+                    <strong>{peer.displayName || peer.username}</strong>
+                    <span className="peer-handle">@{peer.username} · {peer.blogName}</span>
+                  </div>
+                </div>
+              ) : (
+                <strong>请在左侧选择联系人</strong>
+              )}
+              <span className={`status-pill pill-${connection}`}>
+                {connection === "online" ? "在线" : connection === "connecting" ? "连接中" : "离线"}
+              </span>
+            </header>
+
+            <div aria-live="polite" className="community-chat-messages">
+              {loadingConversation && (
+                <div className="messages-loading">
+                  <LoaderCircle className="spin" size={20} />
+                  <span>正在同步聊天记录…</span>
+                </div>
+              )}
+              {!loadingConversation && peer && messages.length === 0 && (
+                <div className="messages-empty">
+                  <MessageSquare size={32} />
+                  <p>还没有消息，输入下方文本开启对话吧。</p>
+                </div>
+              )}
+              {!loadingConversation &&
+                messages.map((message) => {
+                  const isOwn = message.senderUserId === session?.userId;
+                  return (
+                    <article
+                      className={`community-chat-bubble ${isOwn ? "bubble-own" : "bubble-peer"}`}
+                      data-own-message={isOwn}
+                      key={message.id}
+                    >
+                      {!isOwn && (
+                        <Avatar label={(peer?.displayName || peer?.username || "?").slice(0, 1)} size="sm" />
+                      )}
+                      <div className="bubble-content-wrap">
+                        <div className="bubble-body">
+                          <p>{message.contentText}</p>
+                        </div>
+                        <span className="bubble-time">{formatTime(message.createdAt)}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <form className="chat-composer-form" onSubmit={send}>
+              <input
+                className="chat-input"
+                disabled={!peer || sending}
+                maxLength={2000}
+                onChange={(event) => setContent(event.target.value)}
+                placeholder={peer ? `发消息给 ${peer.displayName || peer.username}…` : "请先选择联系人"}
+                value={content}
+              />
+              <button
+                className="primary-button chat-send-btn"
+                disabled={!peer || !content.trim() || sending}
+                type="submit"
+              >
+                {sending ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
+                <span>发送</span>
+              </button>
+            </form>
+          </section>
         </section>
-      </section>
-      {!session && <p className="inline-feedback error">请先登录后继续。</p>}
-      <p className="secondary" style={{ display: "flex", gap: 6, marginTop: 14 }}><MessageCircle size={16} />消息会保存在当前会话中。</p>
-    </main>
-  </>;
+
+        <p className="chat-footer-note">
+          <MessageSquare size={14} /> 消息已通过端到端与加密通道建立安全连接。
+        </p>
+      </main>
+    </>
+  );
+}
+
+function formatTime(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" }).format(date);
 }

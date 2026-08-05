@@ -1,1 +1,10 @@
-*.sh text eol=lf
+# 统一换行符：仓库内始终以 LF 存储，检出时按操作系统自动转换。
+# 项目部署目标为 Linux 服务器，此设置保证跨平台一致性，避免部署时换行符漂移。
+* text=auto
+
+# 二进制资源：不纳入换行符处理与文本差异。
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

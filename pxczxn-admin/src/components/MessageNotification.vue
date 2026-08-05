@@ -134,6 +134,60 @@ function handleView() {
   color: #999;
 }
 
+/* 深色主题 */
+body.dark-theme .notification-popup {
+  background: #27272a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-theme .notification-header {
+  border-bottom-color: #3f3f46;
+}
+
+body.dark-theme .notification-icon {
+  background: rgba(54, 173, 106, 0.18);
+  color: #36ad6a;
+}
+
+body.dark-theme .notification-title {
+  color: #F4F4F5;
+}
+
+body.dark-theme .notification-content {
+  color: #A1A1AA;
+}
+
+body.dark-theme .notification-time {
+  color: #71717a;
+}
+
+/* 星空主题（深空蓝） */
+body.starry-theme .notification-popup {
+  background: #1E2A50;
+  box-shadow: 0 8px 28px rgba(1, 4, 16, 0.6), 0 0 0 1px rgba(124, 131, 255, 0.16);
+}
+
+body.starry-theme .notification-header {
+  border-bottom-color: #29345C;
+}
+
+body.starry-theme .notification-icon {
+  background: rgba(34, 197, 94, 0.16);
+  color: #22C55E;
+}
+
+body.starry-theme .notification-title {
+  color: #EAF1FF;
+}
+
+body.starry-theme .notification-content {
+  color: #C8D4F0;
+}
+
+body.starry-theme .notification-time {
+  color: #6B7DA6;
+}
+
 /* 动画 */
 .slide-up-enter-active,
 .slide-up-leave-active {

@@ -48,6 +48,7 @@ public class CommunityAuthenticationInterceptor implements HandlerInterceptor {
 
     private static boolean frozenAccountRoute(String path) {
         return path.startsWith("/api/v1/account-enforcements")
+                || path.startsWith("/api/v1/files")
                 || "/api/v1/account/me".equals(path)
                 || "/api/v1/account/password".equals(path)
                 || "/api/v1/auth/logout".equals(path);

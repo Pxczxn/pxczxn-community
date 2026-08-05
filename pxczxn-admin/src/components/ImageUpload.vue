@@ -96,6 +96,14 @@ function handleRemove() {
   gap: 4px;
 }
 
+body.dark-theme .upload-placeholder {
+  color: #A1A1AA;
+}
+
+body.starry-theme .upload-placeholder {
+  color: #8FA3C9;
+}
+
 :deep(.n-upload-file-list .n-upload-file.n-upload-file--image-card-type) {
   width: 100px;
   height: 100px;

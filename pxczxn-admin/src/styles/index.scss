@@ -29,80 +29,90 @@ body.dark-theme {
   --community-primary-soft: rgba(96, 165, 250, 0.13);
 }
 
-// 星空主题使用低干扰星云底色；表格与正文区域保持纯净实色以保证运营可读性。
+// 星空主题（深空蓝）：低干扰星云底色；表格与正文区域保持纯净实色以保证运营可读性。
+// 色板：底 #080B1A / 卡 #11172D / 浮层 #182342 / 边 #29345C / 主色 #7C83FF / 辅助 #38BDF8
 body.starry-theme {
-  --primary-color: #7C8CFF;
-  --community-text: #F4F7FF;
-  --community-muted: #A8B3CF;
-  --community-border: #26345F;
-  --community-soft: #121C3D;
-  --community-primary-soft: rgba(124, 140, 255, 0.15);
+  --primary-color: #7C83FF;
+  --community-text: #EAF1FF;
+  --community-muted: #8FA3C9;
+  --community-border: #29345C;
+  --community-soft: #182342;
+  --community-primary-soft: rgba(124, 131, 255, 0.15);
+  // 深层变量：与下方共享覆盖块（body.dark-theme, body.starry-theme）配套
+  --community-deep: #11172D;
+  --community-ink: #080B1A;
+  --community-surface-raised: #1E2A50;
+  --community-surface-overlay: #182342;
+  --community-border-strong: #29345C;
+  --community-border-mid: #3A4A7A;
+  --community-accent: #7C83FF;
+  --community-ink-muted: #6B7DA6;
   background:
-    radial-gradient(circle at 14% 8%, rgba(77, 109, 255, .15), transparent 30%),
-    radial-gradient(circle at 88% 16%, rgba(56, 217, 242, .08), transparent 25%),
-    #070B1D;
-  color: #F4F7FF;
+    radial-gradient(circle at 14% 8%, rgba(124, 131, 255, .12), transparent 30%),
+    radial-gradient(circle at 88% 16%, rgba(56, 189, 248, .07), transparent 25%),
+    #080B1A;
+  color: #EAF1FF;
 
   #app,
   .layout,
   .layout-content {
     background:
-      radial-gradient(circle at 16% 6%, rgba(77, 109, 255, .12), transparent 28%),
-      radial-gradient(circle at 92% 12%, rgba(56, 217, 242, .06), transparent 24%),
-      #070B1D !important;
+      radial-gradient(circle at 16% 6%, rgba(124, 131, 255, .10), transparent 28%),
+      radial-gradient(circle at 92% 12%, rgba(56, 189, 248, .06), transparent 24%),
+      #080B1A !important;
   }
 
   .layout-sider,
   .theme-starry {
-    border-right-color: #26345F !important;
-    background: #0F1733 !important;
+    border-right-color: #29345C !important;
+    background: #11172D !important;
   }
 
   .layout-header {
-    border-bottom-color: #26345F !important;
-    background: rgba(15, 23, 51, .96) !important;
+    border-bottom-color: #29345C !important;
+    background: rgba(17, 23, 45, .96) !important;
     backdrop-filter: blur(12px);
   }
 
   .logo {
-    border-bottom-color: #26345F !important;
+    border-bottom-color: #29345C !important;
   }
 
   .logo-text,
   .user-name {
-    color: #F4F7FF !important;
+    color: #EAF1FF !important;
   }
 
   .logo-icon {
-    background: linear-gradient(135deg, #7C8CFF, #38D9F2) !important;
+    background: linear-gradient(135deg, #7C83FF, #38BDF8) !important;
   }
 
   .header-icon:hover,
   .user-info:hover {
-    background: #18254B !important;
+    background: #1E2A50 !important;
   }
 
   .n-card {
-    border-color: #26345F !important;
-    background: #0F1733 !important;
-    box-shadow: 0 8px 28px rgba(1, 5, 20, .18);
+    border-color: #29345C !important;
+    background: #11172D !important;
+    box-shadow: 0 8px 28px rgba(1, 4, 16, .3);
   }
 
   .n-data-table-th {
-    background: #121C3D !important;
+    background: #182342 !important;
   }
 
   .n-data-table-td {
-    background: #0F1733 !important;
+    background: #11172D !important;
   }
 
   .n-data-table-tr:hover .n-data-table-td {
-    background: #18254B !important;
+    background: #1E2A50 !important;
   }
 
   .n-input,
   .n-base-selection {
-    background: #121C3D !important;
+    background: #182342 !important;
   }
 }
 
@@ -265,7 +275,7 @@ body.starry-theme {
   }
 }
 
-// 暗色主题全局样式
+// 暗色主题深层变量
 body.dark-theme {
   --community-deep: #18181c;
   --community-ink: #101014;
@@ -275,6 +285,12 @@ body.dark-theme {
   --community-border-mid: #52525b;
   --community-accent: #60a5fa;
   --community-ink-muted: #71717a;
+}
+
+// 暗色与星空主题共享的组件覆盖：所有取值均来自各自主题定义的
+// --community-* 变量，切换主题时无需重复维护两套规则。
+body.dark-theme,
+body.starry-theme {
   background-color: var(--community-ink);
   color: var(--community-text);
 
@@ -371,6 +387,11 @@ body.dark-theme {
   // 表单样式
   .n-form-item-label {
     color: var(--community-text) !important;
+  }
+
+  // 全局 .form-label 硬编码了 #374151，深色/星空下改用主题变量
+  .form-label {
+    color: var(--community-muted) !important;
   }
 
   // 首页欢迎区域样式
@@ -769,6 +790,41 @@ body.dark-theme {
   }
 }
 
+// ==================== 星空主题专属微调 ====================
+// 共享覆盖块之上的星空氛围强化与可读性修正
+body.starry-theme {
+  // 登录表单输入框：共享块的 --n-text-color 取自 --community-ink（近黑），
+  // 在星空深色输入底上不可读，这里改为亮色文字
+  .login-form .n-input {
+    --n-text-color: var(--community-text) !important;
+    --n-caret-color: var(--community-text) !important;
+  }
+
+  // 卡片保留星空专属的大范围柔光阴影（共享块的阴影更扁平，会被其覆盖）
+  .n-card {
+    box-shadow: 0 8px 28px rgba(1, 4, 16, .4), 0 0 0 1px rgba(124, 131, 255, .07) !important;
+  }
+
+  // 弹窗/气泡增加星云微光描边，贴合星空氛围
+  .n-modal,
+  .n-dialog,
+  .n-popover,
+  .n-dropdown-menu {
+    box-shadow: 0 12px 40px rgba(1, 4, 16, .55), 0 0 0 1px rgba(124, 131, 255, .14) !important;
+  }
+
+  // 主按钮与选中态统一为星空微光
+  .n-button--primary-type {
+    box-shadow: 0 4px 16px rgba(124, 131, 255, .35);
+  }
+
+  // 自己发送的消息气泡：星空渐变，白字对比度达标
+  .message-self .message-bubble {
+    background: linear-gradient(135deg, #7C83FF, #5E66E8) !important;
+    color: #fff !important;
+  }
+}
+
 a {
   text-decoration: none;
   color: inherit;
@@ -795,8 +851,9 @@ a {
   }
 }
 
-// 暗色主题滚动条
-body.dark-theme {
+// 暗色/星空主题滚动条
+body.dark-theme,
+body.starry-theme {
   ::-webkit-scrollbar-track {
     background: transparent;
   }
