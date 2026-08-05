@@ -16,5 +16,7 @@ public record TeamArticleBriefView(
         Integer likeCount,
         Integer commentCount,
         LocalDateTime updatedAt,
-        LocalDateTime publishedAt) {
+        LocalDateTime publishedAt,
+        Long seriesId,
+        String seriesTitle) {
 }

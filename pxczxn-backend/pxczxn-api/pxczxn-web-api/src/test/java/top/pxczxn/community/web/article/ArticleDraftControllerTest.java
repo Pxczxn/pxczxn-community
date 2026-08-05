@@ -28,6 +28,7 @@ class ArticleDraftControllerTest {
         ArticleDraftController controller = new ArticleDraftController(service);
 
         ArticleEditorResponse response = controller.create(new CreateArticleRequest(
+                null,
                 "标题",
                 "article",
                 null,
@@ -54,11 +55,41 @@ class ArticleDraftControllerTest {
     }
 
     @Test
+    void teamBlogIdIsPassedToCreateCommand() {
+        ArticleDraftService service = mock(ArticleDraftService.class);
+        when(service.create(any())).thenReturn(editorView());
+        ArticleDraftController controller = new ArticleDraftController(service);
+
+        controller.create(new CreateArticleRequest(
+                "9223372036854771000",
+                "标题",
+                "team-article",
+                null,
+                null,
+                null,
+                "MARKDOWN",
+                null,
+                "# 内容",
+                "PUBLIC",
+                "MANUAL",
+                List.of(),
+                List.of()
+        ));
+
+        ArgumentCaptor<CreateArticleCommand> command =
+                ArgumentCaptor.forClass(CreateArticleCommand.class);
+        verify(service).create(command.capture());
+        assertThat(command.getValue().blogId())
+                .isEqualTo(9223372036854771000L);
+    }
+
+    @Test
     void invalidStringIdIsRejectedBeforeServiceCall() {
         ArticleDraftService service = mock(ArticleDraftService.class);
         ArticleDraftController controller = new ArticleDraftController(service);
 
         assertThatThrownBy(() -> controller.create(new CreateArticleRequest(
+                null,
                 "标题",
                 "article",
                 null,

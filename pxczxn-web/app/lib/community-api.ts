@@ -597,8 +597,19 @@ export interface TeamInvitation {
 
 export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: string; followerCount: string; }
 export interface TeamSubmission { id: string; sourceArticleId: string; sourceArticleTitle: string; fixedSourceVersionId: string; targetTeamId: string; submittedByUserId: string; supersedesSubmissionId: string | null; status: string; teamReviewerUserId: string | null; teamReviewComment: string | null; teamReviewedAt: string | null; platformReviewerAdminId: string | null; platformReviewComment: string | null; platformReviewedAt: string | null; publishedTeamArticleId: string | null; lockVersion: number; createdAt: string; updatedAt: string; }
+export interface TeamPortalSettings {
+  category: string | null;
+  contentDirection: string | null;
+  theme: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  publicMembers: boolean;
+  allowSubmissions: boolean;
+  submissionGuideline: string | null;
+  contactInfo: string | null;
+}
 export interface TeamMemberProfile { userId: string; displayName: string | null; username: string; avatarFileId: string | null; roleCode: string; }
-export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; }
+export interface TeamPortal { team: TeamSummary; ownerDisplayName: string | null; members: TeamMemberProfile[]; settings: TeamPortalSettings; }
 export interface TeamWorkspace { team: TeamPortal; viewerRole: string; capabilities: string[]; permissions: string[]; }
 /** One membership card on the "我的团队" tab and one entry of the workspace team switcher. */
 export interface MyTeam {
@@ -664,6 +675,8 @@ export interface TeamArticleBrief {
   commentCount: number;
   updatedAt: string;
   publishedAt: string | null;
+  seriesId: string | null;
+  seriesTitle: string | null;
 }
 export interface TeamDashboard {
   team: TeamSummary;
@@ -1289,7 +1302,7 @@ export const communityApi = {
   /** Approved series of one team for its public portal; no login required. */
   teamPublicSeries(teamId: string) { return communityRequest<TeamSeries[]>(`/api/v1/public/teams/${encodeURIComponent(teamId)}/series`, {}, false); },
   teamMembers(teamId: string) { return communityRequest<TeamMemberView[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/members`); },
-  updateTeamSettings(teamId: string, input: { name: string; summary?: string | null; avatarFileId?: string | null; backgroundFileId?: string | null }) {
+  updateTeamSettings(teamId: string, input: { name: string; summary?: string | null; avatarFileId?: string | null; backgroundFileId?: string | null; category?: string | null; contentDirection?: string | null; theme?: string | null; seoTitle?: string | null; seoDescription?: string | null; publicMembers?: boolean; allowSubmissions?: boolean; submissionGuideline?: string | null; contactInfo?: string | null }) {
     return communityRequest<TeamSummary>(`/api/v1/teams/${encodeURIComponent(teamId)}`, { method: "PATCH", body: JSON.stringify(input) });
   },
   inviteTeamMember(teamId: string, input: { userId: string; roleCode: string; idempotencyKey?: string }) {

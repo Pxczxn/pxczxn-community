@@ -8,6 +8,9 @@ import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.article.persistence.ArticleStatusCountRow;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.series.model.TeamSeries;
+import top.pxczxn.community.series.model.TeamSeriesArticle;
+import top.pxczxn.community.series.persistence.TeamSeriesArticleMapper;
 import top.pxczxn.community.series.persistence.TeamSeriesMapper;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamAuditEvent;
@@ -43,6 +46,7 @@ class TeamPortalServiceImplTest {
     private TeamPermissionMapper permissionMapper;
     private TeamSubmissionMapper submissionMapper;
     private TeamSeriesMapper seriesMapper;
+    private TeamSeriesArticleMapper seriesArticleMapper;
     private TeamInvitationMapper invitationMapper;
     private TeamAuditEventMapper auditEventMapper;
     private ArticleMapper articleMapper;
@@ -57,11 +61,13 @@ class TeamPortalServiceImplTest {
         permissionMapper = mock(TeamPermissionMapper.class);
         submissionMapper = mock(TeamSubmissionMapper.class);
         seriesMapper = mock(TeamSeriesMapper.class);
+        seriesArticleMapper = mock(TeamSeriesArticleMapper.class);
         invitationMapper = mock(TeamInvitationMapper.class);
         auditEventMapper = mock(TeamAuditEventMapper.class);
         articleMapper = mock(ArticleMapper.class);
         service = new TeamPortalServiceImpl(teamMapper, memberMapper, blogMapper, userMapper,
-                permissionMapper, submissionMapper, seriesMapper, invitationMapper, auditEventMapper, articleMapper);
+                permissionMapper, submissionMapper, seriesMapper, seriesArticleMapper,
+                invitationMapper, auditEventMapper, articleMapper);
     }
 
     @Test
@@ -283,7 +289,7 @@ class TeamPortalServiceImplTest {
         when(permissionMapper.findPermissionsByRole("AUTHOR")).thenReturn(List.of("EDIT_OWN_ARTICLES"));
 
         assertThatThrownBy(() -> service.updateSettings(100L, 1L,
-                new UpdateTeamSettingsCommand("New Name", null, null, null)))
+                new UpdateTeamSettingsCommand("New Name", null, null, null, null, null, null, null, null, true, true, null, null)))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -298,7 +304,7 @@ class TeamPortalServiceImplTest {
         when(blogMapper.updateProfileWithOptimisticLock(10L, "New Name", null, null, null, 0)).thenReturn(0);
 
         assertThatThrownBy(() -> service.updateSettings(100L, 1L,
-                new UpdateTeamSettingsCommand("New Name", null, null, null)))
+                new UpdateTeamSettingsCommand("New Name", null, null, null, null, null, null, null, null, true, true, null, null)))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -311,9 +317,12 @@ class TeamPortalServiceImplTest {
         Blog blog = teamBlog(10L, "team-one");
         when(blogMapper.selectById(10L)).thenReturn(blog);
         when(blogMapper.updateProfileWithOptimisticLock(10L, "New Name", "New summary", 55L, 66L, 0)).thenReturn(1);
+        when(teamMapper.updatePortalSettingsWithOptimisticLock(
+                1L, "技术社区", "AI 应用研究", "default", null, null, true, true, null, null, 0)).thenReturn(1);
 
         TeamSummaryView updated = service.updateSettings(100L, 1L,
-                new UpdateTeamSettingsCommand("New Name", "New summary", 55L, 66L));
+                new UpdateTeamSettingsCommand("New Name", "New summary", 55L, 66L,
+                        "技术社区", "AI 应用研究", "default", null, null, true, true, null, null));
 
         assertThat(updated.name()).isEqualTo("New Name");
         org.mockito.Mockito.verify(auditEventMapper).insert(org.mockito.ArgumentMatchers.argThat(event ->
@@ -321,7 +330,48 @@ class TeamPortalServiceImplTest {
                         && Long.valueOf(1L).equals(event.getTeamId())));
     }
 
-    private static Team activeTeam(Long id, Long blogId, Long ownerId) { Team team = new Team(); team.setId(id); team.setBlogId(blogId); team.setOwnerUserId(ownerId); team.setStatus("ACTIVE"); return team; }
+    @Test
+    void teamArticlesCarrySeriesMembership() {
+        when(teamMapper.selectById(1L)).thenReturn(activeTeam(1L, 10L, 100L));
+        TeamMember member = new TeamMember(); member.setTeamId(1L); member.setUserId(100L); member.setRoleCode("AUTHOR");
+        when(memberMapper.findActiveMember(1L, 100L)).thenReturn(member);
+        when(blogMapper.selectById(10L)).thenReturn(teamBlog(10L, "team-one"));
+        Article draft = new Article();
+        draft.setId(601L); draft.setTitle("Draft post"); draft.setSlug("draft-post");
+        draft.setAuthorUserId(100L); draft.setPublishStatus("DRAFT"); draft.setReviewStatus("NOT_SUBMITTED");
+        draft.setVisibility("PRIVATE");
+        when(articleMapper.findByBlog(10L, null, 200)).thenReturn(List.of(draft));
+        when(userMapper.selectBatchIds(List.of(100L))).thenReturn(List.of());
+        TeamSeriesArticle membership = new TeamSeriesArticle();
+        membership.setArticleId(601L); membership.setSeriesId(77L);
+        when(seriesArticleMapper.findByArticles(List.of(601L))).thenReturn(List.of(membership));
+        TeamSeries series = new TeamSeries(); series.setId(77L); series.setTitle("Spring Boot 实战");
+        when(seriesMapper.selectBatchIds(List.of(77L))).thenReturn(List.of(series));
+
+        List<TeamArticleBriefView> articles = service.teamArticles(100L, 1L, null);
+
+        assertThat(articles).singleElement().satisfies(article -> {
+            assertThat(article.seriesId()).isEqualTo(77L);
+            assertThat(article.seriesTitle()).isEqualTo("Spring Boot 实战");
+        });
+    }
+
+    @Test
+    void publicPortalCarriesSettings() {
+        when(blogMapper.selectOne(any(Wrapper.class))).thenReturn(teamBlog(10L, "team-one"));
+        Team team = activeTeam(1L, 10L, 100L);
+        team.setCategory("技术社区");
+        team.setAllowSubmissions(false);
+        when(teamMapper.selectOne(any(Wrapper.class))).thenReturn(team);
+        when(memberMapper.findActiveMembers(1L)).thenReturn(List.of());
+
+        TeamPortalView portal = service.publicTeam("team-one");
+
+        assertThat(portal.settings().category()).isEqualTo("技术社区");
+        assertThat(portal.settings().allowSubmissions()).isFalse();
+    }
+
+    private static Team activeTeam(Long id, Long blogId, Long ownerId) { Team team = new Team(); team.setId(id); team.setBlogId(blogId); team.setOwnerUserId(ownerId); team.setStatus("ACTIVE"); team.setLockVersion(0); team.setAllowSubmissions(true); team.setPublicMembers(true); return team; }
     private static Blog teamBlog(Long id, String slug) { Blog blog = new Blog(); blog.setId(id); blog.setBlogType("TEAM"); blog.setStatus("ACTIVE"); blog.setName("Team One"); blog.setSlug(slug); blog.setArticleCount(3L); blog.setFollowerCount(5L); blog.setLockVersion(0); return blog; }
     private static TeamCountRow countRow(Long teamId, int total) { TeamCountRow row = new TeamCountRow(); row.setTeamId(teamId); row.setTotal(total); return row; }
     private static ArticleStatusCountRow statusRow(String status, int total) { ArticleStatusCountRow row = new ArticleStatusCountRow(); row.setStatus(status); row.setTotal(total); return row; }

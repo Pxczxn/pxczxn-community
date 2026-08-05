@@ -36,7 +36,7 @@ function matchesTab(article: TeamArticleBrief, tab: ContentTab): boolean {
 }
 
 export default function WorkspaceContentPage() {
-  const { teamId, teamSlug } = useWorkspace();
+  const { teamId, teamSlug, workspace } = useWorkspace();
   const [articles, setArticles] = useState<TeamArticleBrief[]>([]);
   const [tab, setTab] = useState<ContentTab>("ALL");
   const [error, setError] = useState("");
@@ -83,7 +83,12 @@ export default function WorkspaceContentPage() {
           <span className="eyebrow">内容管理</span>
           <p>团队博客下的全部文章，包含草稿与投稿发布结果。</p>
         </div>
-        <Link className="secondary-button" href={`/teams/${teamSlug}/workspace/submissions`}>向团队投稿</Link>
+        <div className="workspace-content-page__header-actions">
+          <Link className="secondary-button" href={`/editor/new?blogId=${workspace?.team.team.blogId ?? ""}`}>
+            写团队文章
+          </Link>
+          <Link className="ghost-button" href={`/teams/${teamSlug}/workspace/submissions`}>向团队投稿</Link>
+        </div>
       </section>
 
       <div className="workspace-tabs" role="tablist" aria-label="内容状态筛选">
@@ -124,6 +129,7 @@ export default function WorkspaceContentPage() {
                 <span title="浏览"><Eye size={12} /> {article.viewCount}</span>
                 <span title="点赞"><ThumbsUp size={12} /> {article.likeCount}</span>
                 <span title="评论"><MessageSquare size={12} /> {article.commentCount}</span>
+                {article.seriesTitle && <span className="chip content-series" title={`所属系列：${article.seriesTitle}`}>{article.seriesTitle}</span>}
                 <span className={`chip content-status is-${article.publishStatus.toLowerCase()}`}>
                   {PUBLISH_STATUS_LABELS[article.publishStatus] || article.publishStatus}
                 </span>

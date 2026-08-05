@@ -84,9 +84,42 @@ public class ArticlePermissionService {
         this.platformAuthority = platformAuthority;
     }
 
+    /**
+     * Authoring context for creating an article directly inside a team blog.
+     * Any active team member may create drafts; publish permissions stay with the publish flow.
+     */
     @Transactional(readOnly = true)
-    public ArticleAuthoringContext requirePersonalAuthoringContext() {
+    public ArticleAuthoringContext requireTeamAuthoringContext(Long blogId) {
         Long actorId = communityAuth.getOptionalLoginUserId();
+        if (actorId == null) {
+            reject(null, null, UNAUTHENTICATED, "请先登录后再创作文章");
+        }
+        CommunityUser actor = userMapper.selectById(actorId);
+        if (actor == null) {
+            reject(null, actorId, UNAUTHENTICATED, "登录用户不存在");
+        }
+        if (!EDITABLE_USER_STATUSES.contains(actor.getStatus())) {
+            reject(null, actorId, FORBIDDEN, "当前账号不能编辑文章");
+        }
+        Blog blog = blogMapper.selectById(blogId);
+        if (blog == null || blog.getDeletedAt() != null || !"ACTIVE".equals(blog.getStatus())) {
+            reject(null, actorId, NOT_FOUND, "团队博客不存在或不可用");
+        }
+        if (!"TEAM".equals(blog.getBlogType())) {
+            reject(null, actorId, FORBIDDEN, "仅团队博客支持团队直接创作");
+        }
+        boolean member = roleResolvers.stream()
+                .map(resolver -> resolver.resolve(actorId, blog))
+                .flatMap(Optional::stream)
+                .anyMatch(role -> role != null);
+        if (!member) {
+            reject(null, actorId, FORBIDDEN, "仅团队成员可以在团队博客创作");
+        }
+        return new ArticleAuthoringContext(actor, blog);
+    }
+
+    @Transactional(readOnly = true)
+    public ArticleAuthoringContext requirePersonalAuthoringContext() {        Long actorId = communityAuth.getOptionalLoginUserId();
         if (actorId == null) {
             reject(null, null, UNAUTHENTICATED, "请先登录后再创作文章");
         }

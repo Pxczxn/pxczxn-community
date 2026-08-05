@@ -7657,6 +7657,23 @@ button {
 }
 .workspace-settings-page { min-width: 0; }
 .workspace-settings-page .workspace-content-page__header p { max-width: 560px; }
+.workspace-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.workspace-settings-form h2 { margin: 0 0 4px; font-size: 16px; }
+.workspace-settings-form__checks { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+.workspace-settings-form__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.workspace-settings-form__check input[type="checkbox"] { width: auto; }
+.workspace-settings-form select { width: 100%; }
 
 /* ---- 二次确认弹窗 ---- */
 .confirm-dialog-backdrop {

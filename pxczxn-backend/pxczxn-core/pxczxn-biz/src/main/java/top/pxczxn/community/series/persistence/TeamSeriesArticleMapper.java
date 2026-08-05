@@ -17,6 +17,13 @@ public interface TeamSeriesArticleMapper extends BaseMapper<TeamSeriesArticle> {
     @Select("SELECT * FROM team_series_article WHERE article_id = #{articleId} LIMIT 1")
     TeamSeriesArticle findByArticle(@Param("articleId") Long articleId);
 
+    /** Series membership of many articles, for the workspace content list. */
+    @Select("<script>"
+            + "SELECT article_id, series_id FROM team_series_article WHERE article_id IN "
+            + "<foreach collection='articleIds' item='id' open='(' separator=',' close=')'>#{id}</foreach>"
+            + "</script>")
+    List<TeamSeriesArticle> findByArticles(@Param("articleIds") List<Long> articleIds);
+
     @Delete("DELETE FROM team_series_article WHERE series_id = #{seriesId}")
     int deleteBySeries(@Param("seriesId") Long seriesId);
 }

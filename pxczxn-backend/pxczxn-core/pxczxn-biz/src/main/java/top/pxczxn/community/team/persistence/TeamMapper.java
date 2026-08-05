@@ -26,4 +26,36 @@ public interface TeamMapper extends BaseMapper<Team> {
     int disbandWithOptimisticLock(@Param("teamId") Long teamId,
                                   @Param("ownerUserId") Long ownerUserId,
                                   @Param("lockVersion") Integer lockVersion);
+
+    /**
+     * Update team portal settings with optimistic lock. Contract: full replace of the listed
+     * columns — callers must send the complete desired profile (the team settings page always
+     * submits all fields). Returns 1 if successful, 0 if concurrent modification.
+     */
+    @Update("""
+            UPDATE team SET
+              category = #{category},
+              content_direction = #{contentDirection},
+              theme = #{theme},
+              seo_title = #{seoTitle},
+              seo_description = #{seoDescription},
+              public_members = #{publicMembers},
+              allow_submissions = #{allowSubmissions},
+              submission_guideline = #{submissionGuideline},
+              contact_info = #{contactInfo},
+              lock_version = lock_version + 1,
+              updated_at = NOW()
+            WHERE id = #{teamId} AND lock_version = #{lockVersion}
+            """)
+    int updatePortalSettingsWithOptimisticLock(@Param("teamId") Long teamId,
+                                               @Param("category") String category,
+                                               @Param("contentDirection") String contentDirection,
+                                               @Param("theme") String theme,
+                                               @Param("seoTitle") String seoTitle,
+                                               @Param("seoDescription") String seoDescription,
+                                               @Param("publicMembers") Boolean publicMembers,
+                                               @Param("allowSubmissions") Boolean allowSubmissions,
+                                               @Param("submissionGuideline") String submissionGuideline,
+                                               @Param("contactInfo") String contactInfo,
+                                               @Param("lockVersion") Integer lockVersion);
 }

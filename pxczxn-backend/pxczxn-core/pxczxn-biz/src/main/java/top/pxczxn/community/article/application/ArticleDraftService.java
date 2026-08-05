@@ -61,8 +61,10 @@ public class ArticleDraftService {
         if (command == null) {
             throw new BusinessException(400, "文章信息不能为空");
         }
-        ArticleAuthoringContext context =
-                permissionService.requirePersonalAuthoringContext();
+        ArticleAuthoringContext context = command.blogId() != null
+                ? permissionService.requireTeamAuthoringContext(command.blogId())
+                : permissionService.requirePersonalAuthoringContext();
+        boolean teamBlog = command.blogId() != null;
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         Long articleId = IdWorker.getId();
         RenderedArticleContent content = contentProcessor.process(
@@ -75,9 +77,9 @@ public class ArticleDraftService {
         article.setId(articleId);
         article.setBlogId(context.blog().getId());
         article.setAuthorUserId(context.user().getId());
-        article.setCategoryId(resolveCategory(
-                context.blog().getId(), command.categoryId()
-        ).getId());
+        // 团队直接创作不归属个人分类，分类由团队内容编排管理
+        article.setCategoryId(teamBlog ? null
+                : resolveCategory(context.blog().getId(), command.categoryId()).getId());
         article.setTitle(requiredText(command.title(), "文章标题", 200));
         article.setSlug(createSlug(command.slug(), articleId));
         article.setSummary(createSummary(command.summary(), content.plainText()));

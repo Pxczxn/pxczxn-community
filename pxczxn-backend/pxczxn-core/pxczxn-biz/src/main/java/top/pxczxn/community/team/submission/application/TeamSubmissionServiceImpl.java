@@ -23,6 +23,7 @@ import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamAuditEvent;
 import top.pxczxn.community.team.persistence.TeamAuditEventMapper;
 import top.pxczxn.community.team.persistence.TeamMapper;
+import top.pxczxn.community.team.persistence.TeamMemberMapper;
 import top.pxczxn.community.team.submission.model.TeamSubmission;
 import top.pxczxn.community.team.submission.persistence.TeamSubmissionMapper;
 import top.pxczxn.platform.common.exception.BusinessException;
@@ -42,6 +43,7 @@ public class TeamSubmissionServiceImpl implements TeamSubmissionService {
     private final ArticleMapper articleMapper;
     private final ArticleVersionMapper versionMapper;
     private final TeamMapper teamMapper;
+    private final TeamMemberMapper teamMemberMapper;
     private final BlogMapper blogMapper;
     private final TeamAuthorityService authorityService;
     private final TeamAuditEventMapper auditMapper;
@@ -62,6 +64,11 @@ public class TeamSubmissionServiceImpl implements TeamSubmissionService {
         Article source = requireSourceArticle(actorUserId, command.sourceArticleId());
         ArticleVersion fixed = requireVersion(source);
         Team team = requireActiveTeam(command.targetTeamId());
+        // 团队可关闭外部投稿:未开放时仅团队成员可以投稿。
+        if (!Boolean.TRUE.equals(team.getAllowSubmissions())
+                && teamMemberMapper.findActiveMember(team.getId(), actorUserId) == null) {
+            throw new BusinessException(403, "该团队未开放外部投稿，仅团队成员可投稿");
+        }
         Long supersedes = command.supersedesSubmissionId();
         if (supersedes != null) requireResubmission(actorUserId, source.getId(), team.getId(), supersedes);
         LocalDateTime now = now();

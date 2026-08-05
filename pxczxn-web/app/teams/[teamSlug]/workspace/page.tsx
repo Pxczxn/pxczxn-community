@@ -74,6 +74,7 @@ export default function WorkspaceOverviewPage() {
           <p>开始一次团队协作。</p>
         </div>
         <div className="workspace-quick__actions">
+          <Link className="secondary-button" href={`/editor/new?blogId=${dashboard.team.blogId}`}><PenLine size={14} /> 写团队文章</Link>
           <Link className="secondary-button" href={workspaceHref("submissions")}><Send size={14} /> 向团队投稿</Link>
           {hasSeriesPermission && <Link className="ghost-button" href={workspaceHref("series")}><BookOpen size={14} /> 创建系列</Link>}
           {hasMemberPermission && <Link className="ghost-button" href={workspaceHref("members")}><UserPlus size={14} /> 邀请成员</Link>}

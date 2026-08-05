@@ -3,6 +3,7 @@ package top.pxczxn.community.article.application;
 import java.util.List;
 
 public record CreateArticleCommand(
+        Long blogId,
         String title,
         String slug,
         String summary,

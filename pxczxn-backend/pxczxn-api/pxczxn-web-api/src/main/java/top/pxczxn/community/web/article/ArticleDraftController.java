@@ -34,6 +34,7 @@ public class ArticleDraftController {
         }
         return Result.ok(ArticleEditorResponse.from(articleService.create(
                 new CreateArticleCommand(
+                        optionalId(request.blogId(), "团队博客"),
                         request.title(),
                         request.slug(),
                         request.summary(),

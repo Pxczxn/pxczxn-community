@@ -64,6 +64,26 @@ export default function WorkspaceSubmissionsPage() {
     }
   }
 
+  async function resubmit(submission: TeamSubmission) {
+    if (!teamId) return;
+    setBusy(submission.id);
+    setError("");
+    setNotice("");
+    try {
+      await communityApi.createTeamSubmission({
+        sourceArticleId: submission.sourceArticleId,
+        targetTeamId: teamId,
+        supersedesSubmissionId: submission.id,
+      });
+      setNotice("已重新提交，当前版本已固定并进入团队审核。");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "重新提交失败，请稍后重试");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function createSubmission() {
     if (!teamId || !sourceArticleId.trim()) return;
     setSubmitting(true);
@@ -174,11 +194,9 @@ export default function WorkspaceSubmissionsPage() {
                       type="button"
                       className="secondary-button"
                       disabled={busy === submission.id}
-                      onClick={() => {
-                        setSourceArticleId(submission.sourceArticleId);
-                        setTab("MINE");
-                      }}
+                      onClick={() => void resubmit(submission)}
                     >
+                      {busy === submission.id ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
                       重新提交
                     </button>
                   )}

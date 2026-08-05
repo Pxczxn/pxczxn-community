@@ -14,6 +14,8 @@ import top.pxczxn.community.team.application.TeamAuthorityService;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.persistence.TeamAuditEventMapper;
 import top.pxczxn.community.team.persistence.TeamMapper;
+import top.pxczxn.community.team.persistence.TeamMemberMapper;
+import top.pxczxn.community.team.model.TeamMember;
 import top.pxczxn.community.team.submission.model.TeamSubmission;
 import top.pxczxn.community.team.submission.persistence.TeamSubmissionMapper;
 import top.pxczxn.community.sanction.application.CommunitySanctionService;
@@ -32,6 +34,7 @@ class TeamSubmissionServiceImplTest {
     private ArticleMapper articleMapper;
     private ArticleVersionMapper versionMapper;
     private TeamMapper teamMapper;
+    private TeamMemberMapper teamMemberMapper;
     private BlogMapper blogMapper;
     private TeamAuthorityService authorityService;
     private TeamSubmissionServiceImpl service;
@@ -39,8 +42,8 @@ class TeamSubmissionServiceImplTest {
     @BeforeEach
     void setUp() {
         submissionMapper = mock(TeamSubmissionMapper.class); articleMapper = mock(ArticleMapper.class); versionMapper = mock(ArticleVersionMapper.class);
-        teamMapper = mock(TeamMapper.class); blogMapper = mock(BlogMapper.class); authorityService = mock(TeamAuthorityService.class);
-        service = new TeamSubmissionServiceImpl(submissionMapper, articleMapper, versionMapper, teamMapper, blogMapper, authorityService, mock(TeamAuditEventMapper.class), mock(ApplicationEventPublisher.class), mock(CommunitySanctionService.class));
+        teamMapper = mock(TeamMapper.class); teamMemberMapper = mock(TeamMemberMapper.class); blogMapper = mock(BlogMapper.class); authorityService = mock(TeamAuthorityService.class);
+        service = new TeamSubmissionServiceImpl(submissionMapper, articleMapper, versionMapper, teamMapper, teamMemberMapper, blogMapper, authorityService, mock(TeamAuditEventMapper.class), mock(ApplicationEventPublisher.class), mock(CommunitySanctionService.class));
     }
 
     @Test
@@ -76,9 +79,41 @@ class TeamSubmissionServiceImplTest {
         assertThat(article.getValue().getBlogId()).isEqualTo(200L); assertThat(article.getValue().getAuthorUserId()).isEqualTo(3L); assertThat(article.getValue().getId()).isNotEqualTo(10L); assertThat(article.getValue().getCurrentVersionId()).isNotEqualTo(101L); assertThat(result.status()).isEqualTo("PUBLISHED"); assertThat(result.publishedTeamArticleId()).isEqualTo(article.getValue().getId());
     }
 
+    @Test
+    void submitRejectsOutsiderWhenTeamClosedSubmissions() {
+        when(submissionMapper.findByIdempotencyKey("submit-003")).thenReturn(null);
+        when(articleMapper.selectById(10L)).thenReturn(sourceArticle(10L, 3L, 101L));
+        when(versionMapper.selectById(101L)).thenReturn(version(101L, 10L));
+        Team closed = activeTeam(20L, 200L);
+        closed.setAllowSubmissions(false);
+        when(teamMapper.selectById(20L)).thenReturn(closed);
+        when(teamMemberMapper.findActiveMember(20L, 3L)).thenReturn(null);
+
+        assertThatThrownBy(() -> service.submit(3L, new CreateTeamSubmissionCommand(10L, 20L, null, "submit-003")))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void submitAllowsMemberWhenTeamClosedSubmissions() {
+        when(submissionMapper.findByIdempotencyKey("submit-004")).thenReturn(null);
+        when(articleMapper.selectById(10L)).thenReturn(sourceArticle(10L, 3L, 101L));
+        when(versionMapper.selectById(101L)).thenReturn(version(101L, 10L));
+        when(blogMapper.selectById(3L)).thenReturn(personalBlog(3L));
+        Team closed = activeTeam(20L, 200L);
+        closed.setAllowSubmissions(false);
+        when(teamMapper.selectById(20L)).thenReturn(closed);
+        TeamMember member = new TeamMember(); member.setTeamId(20L); member.setUserId(3L); member.setRoleCode("AUTHOR");
+        when(teamMemberMapper.findActiveMember(20L, 3L)).thenReturn(member);
+        when(submissionMapper.insert(any())).thenReturn(1);
+
+        TeamSubmissionView result = service.submit(3L, new CreateTeamSubmissionCommand(10L, 20L, null, "submit-004"));
+
+        assertThat(result.status()).isEqualTo("TEAM_PENDING");
+    }
+
     private static Article sourceArticle(Long id, Long author, Long currentVersion) { Article a = new Article(); a.setId(id); a.setBlogId(3L); a.setAuthorUserId(author); a.setCurrentVersionId(currentVersion); a.setTitle("Source article"); a.setSlug("source-article"); a.setSummary("Summary"); return a; }
     private static ArticleVersion version(Long id, Long articleId) { ArticleVersion v = new ArticleVersion(); v.setId(id); v.setArticleId(articleId); v.setContentMode("MARKDOWN"); v.setMarkdownContent("# fixed"); v.setRenderedHtml("<h1>fixed</h1>"); v.setPlainText("fixed"); v.setContentHash("a".repeat(64)); v.setWordCount(1); v.setReadingTimeMinutes(1); return v; }
-    private static Team activeTeam(Long id, Long blogId) { Team t = new Team(); t.setId(id); t.setBlogId(blogId); t.setOwnerUserId(4L); t.setStatus("ACTIVE"); return t; }
+    private static Team activeTeam(Long id, Long blogId) { Team t = new Team(); t.setId(id); t.setBlogId(blogId); t.setOwnerUserId(4L); t.setStatus("ACTIVE"); t.setAllowSubmissions(true); t.setPublicMembers(true); return t; }
     private static Blog personalBlog(Long id) { Blog b = new Blog(); b.setId(id); b.setBlogType("PERSONAL"); return b; }
     private static Blog teamBlog(Long id) { Blog b = new Blog(); b.setId(id); b.setBlogType("TEAM"); b.setSlug("team"); return b; }
     private static TeamSubmission submission(Long id, Long source, Long fixed, Long team, Long author, Integer lock) { TeamSubmission s = new TeamSubmission(); s.setId(id); s.setSourceArticleId(source); s.setFixedSourceVersionId(fixed); s.setTargetTeamId(team); s.setSubmittedByUserId(author); s.setStatus("PLATFORM_PENDING"); s.setLockVersion(lock); return s; }

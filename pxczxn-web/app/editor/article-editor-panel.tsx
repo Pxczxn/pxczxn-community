@@ -213,7 +213,16 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
     });
   }
 
-  function payload(current: EditorForm, lockVersion?: number) {
+  const [teamBlogId, setTeamBlogId] = useState<string | null>(null);
+  useEffect(() => {
+    // 团队工作台“写团队文章”入口会携带 ?blogId=；创建时把文章写入团队博客。
+    const timer = window.setTimeout(() => {
+      setTeamBlogId(new URLSearchParams(window.location.search).get("blogId"));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function payload(current: EditorForm, lockVersion?: number, creating = false) {
     return {
       title: current.title.trim(),
       slug: current.slug.trim(),
@@ -230,6 +239,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
       publishMethod: current.publishMethod,
       tagIds: current.tagIds,
       contentFileIds: [],
+      ...(creating && teamBlogId ? { blogId: teamBlogId } : {}),
       expectedLockVersion: lockVersion,
     };
   }
@@ -261,7 +271,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
           payload(current, currentEditor.lockVersion),
           autosave,
         )
-        : await communityApi.createArticle(payload(current));
+        : await communityApi.createArticle(payload(current, undefined, true));
       hydrate(next);
       if (!currentEditor) {
         window.history.replaceState(null, "", `/editor/${next.articleId}`);

@@ -9,6 +9,9 @@ import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.article.persistence.ArticleStatusCountRow;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.series.model.TeamSeries;
+import top.pxczxn.community.series.model.TeamSeriesArticle;
+import top.pxczxn.community.series.persistence.TeamSeriesArticleMapper;
 import top.pxczxn.community.series.persistence.TeamSeriesMapper;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamAuditEvent;
@@ -51,6 +54,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private final TeamPermissionMapper permissionMapper;
     private final TeamSubmissionMapper submissionMapper;
     private final TeamSeriesMapper seriesMapper;
+    private final TeamSeriesArticleMapper seriesArticleMapper;
     private final TeamInvitationMapper invitationMapper;
     private final TeamAuditEventMapper auditEventMapper;
     private final ArticleMapper articleMapper;
@@ -164,6 +168,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
 
         List<Article> recent = articleMapper.findRecentByBlog(blog.getId(), RECENT_ARTICLE_LIMIT);
         Map<Long, CommunityUser> recentAuthors = resolveUsers(recent.stream().map(Article::getAuthorUserId).toList());
+        Map<Long, SeriesRef> recentSeries = resolveSeriesForArticles(recent);
 
         TeamTodoView todos = new TeamTodoView(
                 submissionMapper.countByTeamAndStatus(teamId, "TEAM_PENDING"),
@@ -177,7 +182,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
                 .map(TeamAuditEvent::getActorUserId).filter(Objects::nonNull).toList());
 
         return new TeamDashboardView(summary(team, blog), role, capabilities, permissions, stats,
-                recent.stream().map(article -> articleBrief(article, recentAuthors)).toList(),
+                recent.stream().map(article -> articleBrief(article, recentAuthors, recentSeries.get(article.getId()))).toList(),
                 todos, events.stream().map(event -> activity(event, eventActors)).toList());
     }
 
@@ -207,7 +212,8 @@ public class TeamPortalServiceImpl implements TeamPortalService {
         String status = publishStatus == null || publishStatus.isBlank() ? null : publishStatus.trim().toUpperCase(java.util.Locale.ROOT);
         List<Article> articles = articleMapper.findByBlog(blog.getId(), status, CONTENT_LIST_LIMIT);
         Map<Long, CommunityUser> authors = resolveUsers(articles.stream().map(Article::getAuthorUserId).toList());
-        return articles.stream().map(article -> articleBrief(article, authors)).toList();
+        Map<Long, SeriesRef> seriesByArticle = resolveSeriesForArticles(articles);
+        return articles.stream().map(article -> articleBrief(article, authors, seriesByArticle.get(article.getId()))).toList();
     }
 
     @Override
@@ -229,16 +235,41 @@ public class TeamPortalServiceImpl implements TeamPortalService {
         String summary = command.summary() == null ? null : command.summary().trim();
         if (summary != null && summary.length() > 500) throw new BusinessException(400, "Team summary is too long");
 
-        int updated = blogMapper.updateProfileWithOptimisticLock(
+        String category = trimMax(command.category(), 50, "团队分类");
+        String contentDirection = trimMax(command.contentDirection(), 500, "内容方向");
+        String theme = trimMax(command.theme(), 50, "主页主题");
+        String seoTitle = trimMax(command.seoTitle(), 200, "SEO 标题");
+        String seoDescription = trimMax(command.seoDescription(), 500, "SEO 描述");
+        String submissionGuideline = trimMax(command.submissionGuideline(), 2000, "投稿说明");
+        String contactInfo = trimMax(command.contactInfo(), 500, "联系方式");
+        Boolean publicMembers = command.publicMembers() == null || Boolean.TRUE.equals(command.publicMembers());
+        Boolean allowSubmissions = command.allowSubmissions() == null || Boolean.TRUE.equals(command.allowSubmissions());
+
+        int blogUpdated = blogMapper.updateProfileWithOptimisticLock(
                 blog.getId(), name, summary, command.avatarFileId(), command.backgroundFileId(), blog.getLockVersion());
-        if (updated != 1) throw new BusinessException(409, "Team profile has changed; refresh and retry");
+        if (blogUpdated != 1) throw new BusinessException(409, "Team profile has changed; refresh and retry");
+        int teamUpdated = teamMapper.updatePortalSettingsWithOptimisticLock(
+                team.getId(), category, contentDirection, theme, seoTitle, seoDescription,
+                publicMembers, allowSubmissions, submissionGuideline, contactInfo, team.getLockVersion());
+        if (teamUpdated != 1) throw new BusinessException(409, "Team settings have changed; refresh and retry");
 
         auditEventMapper.insert(auditEvent(team.getId(), viewerUserId, "TEAM_PROFILE_UPDATED", "TEAM", team.getId(),
                 "{\"name\":\"" + escape(blog.getName()) + "\"}", "{\"name\":\"" + escape(name) + "\"}"));
 
         blog.setName(name); blog.setSummary(summary);
         blog.setAvatarFileId(command.avatarFileId()); blog.setBackgroundFileId(command.backgroundFileId());
+        team.setCategory(category); team.setContentDirection(contentDirection); team.setTheme(theme);
+        team.setSeoTitle(seoTitle); team.setSeoDescription(seoDescription);
+        team.setPublicMembers(publicMembers); team.setAllowSubmissions(allowSubmissions);
+        team.setSubmissionGuideline(submissionGuideline); team.setContactInfo(contactInfo);
         return summary(team, blog);
+    }
+
+    private static String trimMax(String value, int max, String label) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        if (trimmed.length() > max) throw new BusinessException(400, label + " is too long");
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private static TeamAuditEvent auditEvent(Long teamId, Long actorUserId, String eventType,
@@ -272,10 +303,20 @@ public class TeamPortalServiceImpl implements TeamPortalService {
             return user == null ? null : new TeamPortalMemberView(user.getId(), user.getDisplayName(), user.getUsername(), user.getAvatarFileId(), member.getRoleCode());
         }).filter(Objects::nonNull).toList();
         CommunityUser owner = users.get(team.getOwnerUserId());
-        return new TeamPortalView(summary(team, blog), owner == null ? null : owner.getDisplayName(), views);
+        return new TeamPortalView(summary(team, blog), owner == null ? null : owner.getDisplayName(), views,
+                settings(team));
     }
 
-    private TeamArticleBriefView articleBrief(Article article, Map<Long, CommunityUser> authors) {
+    private static TeamPortalSettingsView settings(Team team) {
+        return new TeamPortalSettingsView(
+                team.getCategory(), team.getContentDirection(), team.getTheme(),
+                team.getSeoTitle(), team.getSeoDescription(),
+                team.getPublicMembers() == null || Boolean.TRUE.equals(team.getPublicMembers()),
+                team.getAllowSubmissions() == null || Boolean.TRUE.equals(team.getAllowSubmissions()),
+                team.getSubmissionGuideline(), team.getContactInfo());
+    }
+
+    private TeamArticleBriefView articleBrief(Article article, Map<Long, CommunityUser> authors, SeriesRef series) {
         CommunityUser author = authors.get(article.getAuthorUserId());
         return new TeamArticleBriefView(
                 article.getId(), article.getTitle(), article.getSlug(),
@@ -284,8 +325,29 @@ public class TeamPortalServiceImpl implements TeamPortalService {
                 article.getViewCount() == null ? 0 : article.getViewCount().intValue(),
                 article.getLikeCount() == null ? 0 : article.getLikeCount().intValue(),
                 article.getCommentCount() == null ? 0 : article.getCommentCount().intValue(),
-                article.getUpdatedAt(), article.getPublishedAt());
+                article.getUpdatedAt(), article.getPublishedAt(),
+                series == null ? null : series.seriesId(),
+                series == null ? null : series.seriesTitle());
     }
+
+    /** 文章 → 所属系列(一篇文章最多属于一个系列,与章节编排一致)。 */
+    private Map<Long, SeriesRef> resolveSeriesForArticles(List<Article> articles) {
+        if (articles.isEmpty()) return Map.of();
+        List<Long> articleIds = articles.stream().map(Article::getId).toList();
+        List<TeamSeriesArticle> memberships = seriesArticleMapper.findByArticles(articleIds);
+        if (memberships.isEmpty()) return Map.of();
+        List<Long> seriesIds = memberships.stream().map(TeamSeriesArticle::getSeriesId).distinct().toList();
+        Map<Long, String> titles = seriesMapper.selectBatchIds(seriesIds).stream()
+                .collect(Collectors.toMap(TeamSeries::getId, TeamSeries::getTitle));
+        Map<Long, SeriesRef> result = new java.util.HashMap<>();
+        for (TeamSeriesArticle membership : memberships) {
+            result.putIfAbsent(membership.getArticleId(),
+                    new SeriesRef(membership.getSeriesId(), titles.get(membership.getSeriesId())));
+        }
+        return result;
+    }
+
+    private record SeriesRef(Long seriesId, String seriesTitle) { }
 
     private TeamActivityView activity(TeamAuditEvent event, Map<Long, CommunityUser> actors) {
         CommunityUser actor = event.getActorUserId() == null ? null : actors.get(event.getActorUserId());

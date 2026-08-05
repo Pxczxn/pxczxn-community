@@ -165,6 +165,7 @@ export default function TeamDetailPage() {
             <p className="muted">
               由 {team.ownerDisplayName || "团队成员"} 维护 · {team.team.articleCount} 篇文章 · {team.team.followerCount} 位关注者
             </p>
+            {team.settings.category && <span className="chip">{team.settings.category}</span>}
           </div>
           <div className="team-detail-hero__actions">
             {isMember && (
@@ -304,25 +305,31 @@ export default function TeamDetailPage() {
 
         {tab === "members" && (
           <section className="surface team-portal-panel">
-            <header className="workspace-panel__header">
-              <h2>团队成员</h2>
-              <span className="secondary">共 {team.members.length} 位成员</span>
-            </header>
-            <div className="team-portal-member-grid">
-              {team.members.map((member) => {
-                const name = member.displayName || member.username;
-                return (
-                  <div className="team-member-row" key={member.userId}>
-                    <Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} />
-                    <div className="team-member-copy">
-                      <strong>{name}</strong>
-                      <span>@{member.username}</span>
-                    </div>
-                    <span className="chip team-member-role">{ROLE_LABELS[member.roleCode] || member.roleCode}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {team.settings.publicMembers ? (
+              <>
+                <header className="workspace-panel__header">
+                  <h2>团队成员</h2>
+                  <span className="secondary">共 {team.members.length} 位成员</span>
+                </header>
+                <div className="team-portal-member-grid">
+                  {team.members.map((member) => {
+                    const name = member.displayName || member.username;
+                    return (
+                      <div className="team-member-row" key={member.userId}>
+                        <Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} />
+                        <div className="team-member-copy">
+                          <strong>{name}</strong>
+                          <span>@{member.username}</span>
+                        </div>
+                        <span className="chip team-member-role">{ROLE_LABELS[member.roleCode] || member.roleCode}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <p className="workspace-panel__empty">该团队未公开成员列表。</p>
+            )}
           </section>
         )}
 
@@ -331,6 +338,24 @@ export default function TeamDetailPage() {
             <section className="surface team-portal-panel">
               <h2>团队介绍</h2>
               <p>{team.team.summary || "这个团队还没有添加简介。"}</p>
+              {team.settings.contentDirection && (
+                <>
+                  <h3>内容方向</h3>
+                  <p>{team.settings.contentDirection}</p>
+                </>
+              )}
+              {team.settings.submissionGuideline && (
+                <>
+                  <h3>投稿说明</h3>
+                  <p>{team.settings.submissionGuideline}</p>
+                </>
+              )}
+              {team.settings.contactInfo && (
+                <>
+                  <h3>联系方式</h3>
+                  <p>{team.settings.contactInfo}</p>
+                </>
+              )}
             </section>
             <aside className="surface team-portal-panel">
               <h2>团队数据</h2>
@@ -341,7 +366,10 @@ export default function TeamDetailPage() {
                 <div><strong>{series.length}</strong><span>公开系列</span></div>
               </div>
               <p className="muted">
-                团队文章保留真实作者归属；想加入团队可以关注团队动态或等待团队邀请。
+                团队文章保留真实作者归属。
+                {team.settings.allowSubmissions
+                  ? "本团队开放外部投稿，欢迎投稿你的文章。"
+                  : "本团队暂未开放外部投稿，仅团队成员可以投稿。"}
               </p>
             </aside>
           </div>
