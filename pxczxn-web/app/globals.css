@@ -7334,6 +7334,7 @@ button {
 .workspace-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
   padding: 16px 20px;
   border-radius: 12px;
@@ -7613,6 +7614,49 @@ button {
 .workspace-members-page__danger h2 { margin: 0 0 6px; font-size: 16px; }
 .workspace-members-page__danger p { margin: 0 0 12px; }
 .workspace-members-page__danger-actions { display: flex; gap: 10px; }
+
+.workspace-settings-form__avatar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.workspace-settings-form__media {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.workspace-settings-form__media-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.workspace-settings-form__background {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.workspace-settings-form__background-preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+}
+.workspace-settings-form__background-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.workspace-settings-page { min-width: 0; }
+.workspace-settings-page .workspace-content-page__header p { max-width: 560px; }
 
 /* ---- 二次确认弹窗 ---- */
 .confirm-dialog-backdrop {

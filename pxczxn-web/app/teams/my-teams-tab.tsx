@@ -5,32 +5,18 @@ import { ArrowUpRight, BookOpen, FileText, Inbox, LayoutDashboard, Users } from 
 import { Avatar } from "../components/prototype-ui";
 import { publicFileUrl, type MyTeam } from "../lib/community-api";
 import { formatCount, formatDateTime, ROLE_LABELS } from "./team-labels";
-import { defaultTeamSelection, TeamSwitcher } from "./team-switcher";
 
-/** “我的团队”Tab：团队切换器 + 我的团队卡片。 */
-export function MyTeamsTab({
-  teams,
-  selectedTeamId,
-  onSelectTeam,
-}: {
-  teams: MyTeam[];
-  selectedTeamId: string | null;
-  onSelectTeam: (teamId: string) => void;
-}) {
-  const selected = selectedTeamId ?? defaultTeamSelection(teams) ?? teams[0].teamId;
-
+/** “我的团队”Tab：展示用户加入的全部团队卡片。 */
+export function MyTeamsTab({ teams }: { teams: MyTeam[] }) {
   return (
     <div className="my-teams">
       <section className="my-teams__summary surface">
         <div className="my-teams__summary-copy">
           <span className="eyebrow"><Users size={15} /> 我的团队</span>
           <p>
-            你参与了 <strong>{teams.length}</strong> 个团队，可切换团队进入各自的工作台。
+            你参与了 <strong>{teams.length}</strong> 个团队。进入工作台后可在顶部切换团队；最近访问的团队会被记住。
           </p>
         </div>
-        {teams.length > 1 && (
-          <TeamSwitcher teams={teams} selected={selected} onSelect={onSelectTeam} />
-        )}
       </section>
 
       <div className="my-teams__grid">

@@ -22,7 +22,7 @@ import { activityText, formatCount, formatDateTime, PUBLISH_STATUS_LABELS } from
 import { useWorkspace } from "./workspace-context";
 
 export default function WorkspaceOverviewPage() {
-  const { teamId } = useWorkspace();
+  const { teamId, teamSlug } = useWorkspace();
   const [dashboard, setDashboard] = useState<TeamDashboard | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,12 +56,13 @@ export default function WorkspaceOverviewPage() {
   const hasSettingsPermission = permissions.includes("MANAGE_TEAM");
 
   const todoItems: Array<{ label: string; count: number; href: string; show: boolean }> = [
-    { label: "待审核投稿", count: todos.pendingSubmissionCount, href: "submissions", show: hasReviewPermission },
-    { label: "待修改投稿", count: todos.revisionRequiredCount, href: "submissions", show: true },
-    { label: "待处理邀请", count: todos.pendingInvitationCount, href: "members", show: hasMemberPermission },
-    { label: "待审核系列", count: todos.pendingSeriesReviewCount, href: "series", show: hasSeriesPermission },
-    { label: "内容审核异常", count: todos.contentRiskCount, href: "content", show: true },
+    { label: "待审核投稿", count: todos.pendingSubmissionCount, href: `submissions`, show: hasReviewPermission },
+    { label: "待修改投稿", count: todos.revisionRequiredCount, href: `submissions`, show: true },
+    { label: "待处理邀请", count: todos.pendingInvitationCount, href: `members`, show: hasMemberPermission },
+    { label: "待审核系列", count: todos.pendingSeriesReviewCount, href: `series`, show: hasSeriesPermission },
+    { label: "内容审核异常", count: todos.contentRiskCount, href: `content`, show: true },
   ];
+  const workspaceHref = (segment: string) => `/teams/${teamSlug}/workspace/${segment}`;
   const visibleTodos = todoItems.filter((item) => item.show);
   const todoTotal = visibleTodos.reduce((sum, item) => sum + item.count, 0);
 
@@ -73,10 +74,10 @@ export default function WorkspaceOverviewPage() {
           <p>开始一次团队协作。</p>
         </div>
         <div className="workspace-quick__actions">
-          <Link className="secondary-button" href="submissions"><Send size={14} /> 向团队投稿</Link>
-          {hasSeriesPermission && <Link className="ghost-button" href="series"><BookOpen size={14} /> 创建系列</Link>}
-          {hasMemberPermission && <Link className="ghost-button" href="members"><UserPlus size={14} /> 邀请成员</Link>}
-          {hasSettingsPermission && <Link className="ghost-button" href="settings"><Settings2 size={14} /> 编辑团队资料</Link>}
+          <Link className="secondary-button" href={workspaceHref("submissions")}><Send size={14} /> 向团队投稿</Link>
+          {hasSeriesPermission && <Link className="ghost-button" href={workspaceHref("series")}><BookOpen size={14} /> 创建系列</Link>}
+          {hasMemberPermission && <Link className="ghost-button" href={workspaceHref("members")}><UserPlus size={14} /> 邀请成员</Link>}
+          {hasSettingsPermission && <Link className="ghost-button" href={workspaceHref("settings")}><Settings2 size={14} /> 编辑团队资料</Link>}
         </div>
       </section>
 
@@ -106,7 +107,7 @@ export default function WorkspaceOverviewPage() {
         <section className="surface workspace-panel">
           <header className="workspace-panel__header">
             <h2>最近文章</h2>
-            <Link className="ghost-button" href="content">全部内容 <ArrowUpRight size={14} /></Link>
+            <Link className="ghost-button" href={workspaceHref("content")}>全部内容 <ArrowUpRight size={14} /></Link>
           </header>
           {recentArticles.length === 0 ? (
             <p className="workspace-panel__empty">团队还没有文章，可以投稿或创建系列开始内容建设。</p>
@@ -150,7 +151,7 @@ export default function WorkspaceOverviewPage() {
               <ul className="workspace-todo-list">
                 {visibleTodos.map((item) => (
                   <li key={item.label}>
-                    <Link href={item.href}>
+                    <Link href={workspaceHref(item.href)}>
                       <span className="workspace-todo-list__label">{item.label}</span>
                       <strong>{item.count}</strong>
                     </Link>

@@ -36,7 +36,7 @@ function matchesTab(article: TeamArticleBrief, tab: ContentTab): boolean {
 }
 
 export default function WorkspaceContentPage() {
-  const { teamId } = useWorkspace();
+  const { teamId, teamSlug } = useWorkspace();
   const [articles, setArticles] = useState<TeamArticleBrief[]>([]);
   const [tab, setTab] = useState<ContentTab>("ALL");
   const [error, setError] = useState("");
@@ -83,7 +83,7 @@ export default function WorkspaceContentPage() {
           <span className="eyebrow">内容管理</span>
           <p>团队博客下的全部文章，包含草稿与投稿发布结果。</p>
         </div>
-        <Link className="secondary-button" href="submissions">向团队投稿</Link>
+        <Link className="secondary-button" href={`/teams/${teamSlug}/workspace/submissions`}>向团队投稿</Link>
       </section>
 
       <div className="workspace-tabs" role="tablist" aria-label="内容状态筛选">

@@ -4,27 +4,28 @@ import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "../components/prototype-ui";
 import { publicFileUrl, type MyTeam } from "../lib/community-api";
-import { ROLE_LABELS, readLastTeamSelection, saveLastTeamSelection } from "./team-labels";
+import { ROLE_LABELS, saveLastTeamSelection } from "./team-labels";
 
 /**
- * 工作台团队切换器：展示当前团队与我的角色，可下拉切换。
- * 默认选择规则：上次访问团队 → 我拥有的团队 → 最近加入（列表第一项）。
+ * 团队工作台顶部切换器：展示当前团队与我的角色，下拉选择其他团队后
+ * 导航到目标团队工作台，并把选择写入本地存储（最近访问团队）。
  */
 export function TeamSwitcher({
   teams,
-  selected,
-  onSelect,
-  disabled,
+  currentTeamId,
+  onNavigate,
+  loading,
 }: {
   teams: MyTeam[];
-  selected: string;
-  onSelect: (teamId: string) => void;
-  disabled?: boolean;
+  currentTeamId: string;
+  onNavigate: (team: MyTeam) => void;
+  loading?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const current = teams.find((team) => team.teamId === selected) ?? teams[0];
+  const current = teams.find((team) => team.teamId === currentTeamId) ?? teams[0];
+  const switchable = teams.length > 1;
 
   useEffect(() => {
     if (!open) return;
@@ -37,10 +38,10 @@ export function TeamSwitcher({
 
   if (!current) return null;
 
-  function choose(teamId: string) {
-    saveLastTeamSelection(teamId);
-    onSelect(teamId);
+  function choose(team: MyTeam) {
+    saveLastTeamSelection(team.teamId);
     setOpen(false);
+    onNavigate(team);
   }
 
   return (
@@ -48,10 +49,11 @@ export function TeamSwitcher({
       <button
         type="button"
         className="team-switcher__current"
-        onClick={() => !disabled && setOpen((value) => !value)}
-        disabled={disabled || teams.length <= 1}
+        onClick={() => switchable && setOpen((value) => !value)}
+        disabled={!switchable || loading}
         aria-haspopup="listbox"
         aria-expanded={open}
+        title={switchable ? "切换到其他团队" : "当前团队"}
       >
         <Avatar
           alt={`${current.name}头像`}
@@ -65,12 +67,12 @@ export function TeamSwitcher({
             @{current.slug} · {ROLE_LABELS[current.viewerRole] || current.viewerRole}
           </span>
         </span>
-        {teams.length > 1 && <ChevronDown className="team-switcher__chevron" size={16} />}
+        {switchable && <ChevronDown className="team-switcher__chevron" size={16} />}
       </button>
 
-      {open && teams.length > 1 && (
+      {open && (
         <div className="team-switcher__menu surface-lg" role="listbox">
-          <div className="team-switcher__menu-label">切换团队</div>
+          <div className="team-switcher__menu-label">切换团队（将进入对应工作台）</div>
           {teams.map((team) => (
             <button
               type="button"
@@ -78,7 +80,7 @@ export function TeamSwitcher({
               role="option"
               aria-selected={team.teamId === current.teamId}
               className="team-switcher__option"
-              onClick={() => choose(team.teamId)}
+              onClick={() => choose(team)}
             >
               <Avatar
                 alt={`${team.name}头像`}
@@ -95,7 +97,7 @@ export function TeamSwitcher({
               {team.teamId === current.teamId && <Check size={16} className="team-switcher__check" />}
             </button>
           ))}
-          {disabled && (
+          {loading && (
             <div className="team-switcher__loading">
               <Loader2 className="animate-spin" size={14} /> 正在加载团队…
             </div>
@@ -104,13 +106,4 @@ export function TeamSwitcher({
       )}
     </div>
   );
-}
-
-/** 按默认规则计算团队切换器的初始选择。 */
-export function defaultTeamSelection(teams: MyTeam[]): string | null {
-  if (teams.length === 0) return null;
-  const saved = readLastTeamSelection();
-  if (saved && teams.some((team) => team.teamId === saved)) return saved;
-  const owned = teams.find((team) => team.viewerRole === "OWNER");
-  return (owned ?? teams[0]).teamId;
 }

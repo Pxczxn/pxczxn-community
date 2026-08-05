@@ -39,7 +39,6 @@ export default function TeamsPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
   const [application, setApplication] = useState<TeamApplication | null>(null);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   const refreshSession = useCallback(() => setSession(readSession()), []);
   useEffect(() => {
@@ -110,6 +109,10 @@ export default function TeamsPage() {
     communityApi.myTeamApplication()
       .then(setApplication)
       .catch(() => setRequestsError("申请状态刷新失败，请稍后重试"));
+    // 接受邀请会建立成员关系：同步刷新“我的团队”，新团队无需刷新页面即可出现。
+    communityApi.myTeams()
+      .then(setMine)
+      .catch(() => setMineError("我的团队刷新失败，请稍后重试"));
   }, [session]);
 
   const reloadMine = useCallback(() => {
@@ -239,7 +242,7 @@ export default function TeamsPage() {
           </section>
         )}
         {activeTab === "mine" && loggedIn && !mineLoading && !mineError && mine && mine.length > 0 && (
-          <MyTeamsTab teams={mine} selectedTeamId={selectedTeamId} onSelectTeam={setSelectedTeamId} />
+          <MyTeamsTab teams={mine} />
         )}
 
         {activeTab === "discover" && (

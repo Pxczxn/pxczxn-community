@@ -251,17 +251,25 @@ export default function TeamDetailPage() {
                 ))}
               </div>
             )}
-            {(articles?.pageNum ?? 1) > 1 || (articles?.records.length ?? 0) >= 10 ? (
-              <div className="team-portal-pagination">
-                <button type="button" className="ghost-button" disabled={pageNum <= 1} onClick={() => setPageNum((value) => value - 1)}>
-                  上一页
-                </button>
-                <span className="secondary">第 {pageNum} 页</span>
-                <button type="button" className="ghost-button" disabled={(articles?.records.length ?? 0) < 10} onClick={() => setPageNum((value) => value + 1)}>
-                  下一页
-                </button>
-              </div>
-            ) : null}
+            {(() => {
+              const currentPage = articles?.pageNum ?? 1;
+              const pageSize = articles?.pageSize ?? 10;
+              const total = articles?.total ?? 0;
+              const hasPrev = currentPage > 1;
+              const hasNext = currentPage * pageSize < total;
+              if (!hasPrev && !hasNext) return null;
+              return (
+                <div className="team-portal-pagination">
+                  <button type="button" className="ghost-button" disabled={!hasPrev} onClick={() => setPageNum((value) => value - 1)}>
+                    上一页
+                  </button>
+                  <span className="secondary">第 {currentPage} 页 / 共 {total} 篇</span>
+                  <button type="button" className="ghost-button" disabled={!hasNext} onClick={() => setPageNum((value) => value + 1)}>
+                    下一页
+                  </button>
+                </div>
+              );
+            })()}
           </section>
         )}
 

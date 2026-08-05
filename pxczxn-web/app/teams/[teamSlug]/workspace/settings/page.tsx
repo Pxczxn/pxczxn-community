@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Loader2, Save } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, ImagePlus, Loader2, Save, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar } from "../../../../components/prototype-ui";
 import { communityApi, publicFileUrl } from "../../../../lib/community-api";
 import { useWorkspace } from "../workspace-context";
@@ -16,9 +16,13 @@ export default function WorkspaceSettingsPage() {
   const [summary, setSummary] = useState("");
   const [avatarFileId, setAvatarFileId] = useState("");
   const [backgroundFileId, setBackgroundFileId] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [backgroundUploading, setBackgroundUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!team) return;
@@ -30,6 +34,29 @@ export default function WorkspaceSettingsPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [team]);
+
+  async function uploadImage(file: File | undefined, target: "avatar" | "background") {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("请选择图片文件（PNG/JPG/WebP 等）");
+      return;
+    }
+    if (target === "avatar") setAvatarUploading(true);
+    else setBackgroundUploading(true);
+    setError("");
+    setNotice("");
+    try {
+      const uploaded = await communityApi.uploadFile(file);
+      if (target === "avatar") setAvatarFileId(uploaded.fileId);
+      else setBackgroundFileId(uploaded.fileId);
+      setNotice(target === "avatar" ? "头像已上传，点击「保存资料」生效。" : "背景图已上传，点击「保存资料」生效。");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "图片上传失败，请稍后重试");
+    } finally {
+      if (target === "avatar") setAvatarUploading(false);
+      else setBackgroundUploading(false);
+    }
+  }
 
   async function save() {
     if (!teamId || !name.trim()) return;
@@ -55,6 +82,9 @@ export default function WorkspaceSettingsPage() {
     return <div className="series-loading surface" aria-live="polite"><Loader2 className="animate-spin" size={22} /> 正在加载团队设置…</div>;
   }
 
+  const avatarSrc = publicFileUrl(avatarFileId || team.avatarFileId);
+  const backgroundSrc = publicFileUrl(backgroundFileId || team.backgroundFileId);
+
   return (
     <div className="workspace-settings-page">
       <header className="workspace-content-page__header">
@@ -78,14 +108,75 @@ export default function WorkspaceSettingsPage() {
       {notice && <p className="inline-feedback success" role="status">{notice}</p>}
 
       <section className="surface workspace-settings-form">
-        <div className="workspace-settings-form__avatar">
-          <Avatar
-            alt={`${team.name}头像`}
-            label={team.name.slice(0, 1)}
-            size="lg"
-            src={publicFileUrl(team.avatarFileId)}
-          />
+        <div className="workspace-settings-form__media">
+          <div className="workspace-settings-form__avatar">
+            <Avatar
+              alt={`${team.name}头像`}
+              label={team.name.slice(0, 1)}
+              size="lg"
+              src={avatarSrc}
+            />
+            {canManage && (
+              <div className="workspace-settings-form__media-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={avatarUploading}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarUploading ? <Loader2 className="animate-spin" size={14} /> : <ImagePlus size={14} />}
+                  {avatarFileId ? "更换头像" : "上传头像"}
+                </button>
+                {avatarFileId && (
+                  <button type="button" className="ghost-button" disabled={avatarUploading} onClick={() => setAvatarFileId("")}>
+                    <Trash2 size={14} /> 清除
+                  </button>
+                )}
+              </div>
+            )}
+            <input
+              accept="image/*"
+              className="settings-avatar-file-input"
+              ref={avatarInputRef}
+              type="file"
+              onChange={(event) => { void uploadImage(event.target.files?.[0], "avatar"); event.target.value = ""; }}
+            />
+          </div>
+
+          <div className="workspace-settings-form__background">
+            {backgroundSrc ? (
+              <img className="workspace-settings-form__background-preview" src={backgroundSrc} alt="团队背景图预览" />
+            ) : (
+              <div className="workspace-settings-form__background-empty">暂无背景图</div>
+            )}
+            {canManage && (
+              <div className="workspace-settings-form__media-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={backgroundUploading}
+                  onClick={() => backgroundInputRef.current?.click()}
+                >
+                  {backgroundUploading ? <Loader2 className="animate-spin" size={14} /> : <ImagePlus size={14} />}
+                  {backgroundFileId ? "更换背景图" : "上传背景图"}
+                </button>
+                {backgroundFileId && (
+                  <button type="button" className="ghost-button" disabled={backgroundUploading} onClick={() => setBackgroundFileId("")}>
+                    <Trash2 size={14} /> 清除
+                  </button>
+                )}
+              </div>
+            )}
+            <input
+              accept="image/*"
+              className="settings-avatar-file-input"
+              ref={backgroundInputRef}
+              type="file"
+              onChange={(event) => { void uploadImage(event.target.files?.[0], "background"); event.target.value = ""; }}
+            />
+          </div>
         </div>
+
         <label>
           团队名称
           <input
@@ -110,26 +201,6 @@ export default function WorkspaceSettingsPage() {
             rows={3}
             disabled={!canManage}
             aria-label="团队简介"
-          />
-        </label>
-        <label>
-          头像文件 ID（可选）
-          <input
-            value={avatarFileId}
-            onChange={(event) => setAvatarFileId(event.target.value.trim())}
-            placeholder="上传头像后填入文件 ID"
-            disabled={!canManage}
-            aria-label="头像文件 ID"
-          />
-        </label>
-        <label>
-          背景图文件 ID（可选）
-          <input
-            value={backgroundFileId}
-            onChange={(event) => setBackgroundFileId(event.target.value.trim())}
-            placeholder="上传背景图后填入文件 ID"
-            disabled={!canManage}
-            aria-label="背景图文件 ID"
           />
         </label>
         {canManage && (

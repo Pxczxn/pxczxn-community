@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Avatar, UserTopbar } from "../../../components/prototype-ui";
-import { communityApi, publicFileUrl, type TeamWorkspace } from "../../../lib/community-api";
+import { communityApi, publicFileUrl, type MyTeam, type TeamWorkspace } from "../../../lib/community-api";
 import { ROLE_LABELS } from "../../team-labels";
+import { TeamSwitcher } from "../../team-switcher";
 import { WorkspaceContextProvider } from "./workspace-context";
 
 interface NavItem {
@@ -40,16 +41,26 @@ const NAV_ITEMS: NavItem[] = [
 export default function TeamWorkspaceLayout({ children }: { children: ReactNode }) {
   const params = useParams<{ teamSlug: string }>();
   const pathname = usePathname();
+  const router = useRouter();
   const slug = params.teamSlug;
   const [workspace, setWorkspace] = useState<TeamWorkspace | null>(null);
+  const [myTeams, setMyTeams] = useState<MyTeam[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     communityApi.team(slug)
-      .then((portal) => communityApi.teamWorkspace(portal.team.teamId))
-      .then((value) => { if (active) setWorkspace(value); })
+      .then((portal) => Promise.all([
+        communityApi.teamWorkspace(portal.team.teamId),
+        communityApi.myTeams().catch(() => [] as MyTeam[]),
+      ]))
+      .then(([value, mine]) => {
+        if (active) {
+          setWorkspace(value);
+          setMyTeams(mine);
+        }
+      })
       .catch((cause: unknown) => {
         if (active) setError(cause instanceof Error ? cause.message : "工作台加载失败");
       })
@@ -104,6 +115,12 @@ export default function TeamWorkspaceLayout({ children }: { children: ReactNode 
                   @{team.slug} · 你的角色：{ROLE_LABELS[workspace.viewerRole] || workspace.viewerRole}
                 </p>
               </div>
+              <TeamSwitcher
+                teams={myTeams}
+                currentTeamId={workspace.team.team.teamId}
+                loading={loading}
+                onNavigate={(target) => router.push(`/teams/${target.slug}/workspace`)}
+              />
               <Link className="ghost-button" href={`/teams/${team.slug}`}>
                 公开主页 <ArrowUpRight size={14} />
               </Link>
