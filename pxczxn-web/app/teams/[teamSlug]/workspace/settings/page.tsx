@@ -8,7 +8,7 @@ import { communityApi, publicFileUrl } from "../../../../lib/community-api";
 import { useWorkspace } from "../workspace-context";
 
 export default function WorkspaceSettingsPage() {
-  const { teamId, teamSlug, workspace } = useWorkspace();
+  const { teamId, teamSlug, workspace, reloadWorkspace } = useWorkspace();
   const canManage = Boolean(workspace?.permissions.includes("MANAGE_TEAM"));
   const team = workspace?.team.team;
 
@@ -71,6 +71,8 @@ export default function WorkspaceSettingsPage() {
         backgroundFileId: backgroundFileId.trim() || null,
       });
       setNotice("团队资料已保存。");
+      // 让工作台头部（标题/头像）同步最新资料，无需刷新页面。
+      reloadWorkspace();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "保存失败，请稍后重试");
     } finally {
@@ -82,8 +84,10 @@ export default function WorkspaceSettingsPage() {
     return <div className="series-loading surface" aria-live="polite"><Loader2 className="animate-spin" size={22} /> 正在加载团队设置…</div>;
   }
 
-  const avatarSrc = publicFileUrl(avatarFileId || team.avatarFileId);
-  const backgroundSrc = publicFileUrl(backgroundFileId || team.backgroundFileId);
+  // 状态已在初始化时复制团队现有文件 ID；清除后为空字符串，不能再回退到团队旧值，
+  // 否则“清除”按钮看起来无效。
+  const avatarSrc = publicFileUrl(avatarFileId);
+  const backgroundSrc = publicFileUrl(backgroundFileId);
 
   return (
     <div className="workspace-settings-page">

@@ -13,7 +13,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Avatar, UserTopbar } from "../../../components/prototype-ui";
 import { communityApi, publicFileUrl, type MyTeam, type TeamWorkspace } from "../../../lib/community-api";
 import { ROLE_LABELS } from "../../team-labels";
@@ -48,25 +48,42 @@ export default function TeamWorkspaceLayout({ children }: { children: ReactNode 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
+  const load = useCallback((reset: boolean) => {
+    if (reset) {
+      // 切换团队/首次进入：立即清掉上一个团队的标题与内容，避免短暂残留。
+      setLoading(true);
+      setError("");
+      setWorkspace(null);
+    }
+    let cancelled = false;
     communityApi.team(slug)
       .then((portal) => Promise.all([
         communityApi.teamWorkspace(portal.team.teamId),
         communityApi.myTeams().catch(() => [] as MyTeam[]),
       ]))
       .then(([value, mine]) => {
-        if (active) {
+        if (!cancelled) {
           setWorkspace(value);
           setMyTeams(mine);
         }
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "工作台加载失败");
+        if (!cancelled) setError(cause instanceof Error ? cause.message : "工作台加载失败");
       })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [slug]);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    const timer = window.setTimeout(() => {
+      cleanup = load(true);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      cleanup?.();
+    };
+  }, [load]);
 
   const capabilities = new Set(workspace?.capabilities ?? []);
   const visibleNav = NAV_ITEMS.filter((item) => !item.capability || capabilities.has(item.capability));
@@ -101,7 +118,14 @@ export default function TeamWorkspaceLayout({ children }: { children: ReactNode 
         )}
 
         {!loading && !error && workspace && team && (
-          <WorkspaceContextProvider value={{ teamSlug: slug, teamId: workspace.team.team.teamId, workspace }}>
+          <WorkspaceContextProvider
+            value={{
+              teamSlug: slug,
+              teamId: workspace.team.team.teamId,
+              workspace,
+              reloadWorkspace: () => load(false),
+            }}
+          >
             <header className="workspace-header surface">
               <Avatar
                 alt={`${team.name}头像`}
