@@ -52,15 +52,11 @@ export function RequestsTab({
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
   // 接受邀请后记录刚加入的团队,在邀请页就地展示“已加入”反馈与后续操作,不自动跳转。
-  const [lastAccepted, setLastAccepted] = useState<{ teamName: string; teamSlug: string } | null>(null);
+  const [lastAccepted, setLastAccepted] = useState<{ teamName: string; teamSlug: string | null } | null>(null);
 
   const myTeamByTeamId = new Map((mine ?? []).map((team) => [team.teamId, team]));
 
   async function respond(invitation: TeamInvitation, action: "accept" | "reject") {
-    if (!mine) {
-      onRequireLogin();
-      return;
-    }
     setBusy(invitation.id);
     setActionError("");
     try {
@@ -68,7 +64,7 @@ export function RequestsTab({
         await communityApi.acceptTeamInvitation(invitation.id);
         setLastAccepted({
           teamName: invitation.teamName ?? `团队 #${invitation.teamId}`,
-          teamSlug: invitation.teamSlug ?? invitation.teamId,
+          teamSlug: invitation.teamSlug ?? null,
         });
       } else {
         await communityApi.rejectTeamInvitation(invitation.id);
@@ -135,9 +131,11 @@ export function RequestsTab({
                   <p>快去工作台开始协作吧。</p>
                 </div>
                 <div className="requests-panel__accepted-actions">
-                  <Link className="primary-button" href={`/teams/${encodeURIComponent(lastAccepted.teamSlug)}/workspace`}>
-                    进入团队工作台 <ArrowUpRight size={14} />
-                  </Link>
+                  {lastAccepted.teamSlug && (
+                    <Link className="primary-button" href={`/teams/${encodeURIComponent(lastAccepted.teamSlug)}/workspace`}>
+                      进入团队工作台 <ArrowUpRight size={14} />
+                    </Link>
+                  )}
                   {invitations.length > 0 ? (
                     <button type="button" className="ghost-button" onClick={() => setLastAccepted(null)}>
                       继续处理邀请
