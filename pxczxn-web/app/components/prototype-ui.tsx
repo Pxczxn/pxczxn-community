@@ -66,6 +66,7 @@ export function Avatar({
 }) {
   if (src) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element -- 动态用户图片,尺寸由 CSS 控制
       <img
         alt={alt}
         className={`avatar avatar-${size} avatar-image`}
@@ -217,7 +218,7 @@ export function UserTopbar({ title }: { title?: string }) {
         {session ? (
           <div className="account-menu" ref={accountMenuRef}>
             <button aria-expanded={accountMenuOpen} aria-haspopup="menu" className="user-chip" onClick={() => setAccountMenuOpen((open) => !open)} type="button">
-              <Avatar label={(session.displayName || session.username).slice(0, 1)} size="sm" />
+              <Avatar label={(session.displayName || session.username || "?").slice(0, 1)} size="sm" />
               <span>{session.displayName || session.username}</span>
               <ChevronDown size={15} />
             </button>

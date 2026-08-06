@@ -36,6 +36,21 @@ public class TeamMemberController {
                 new InviteTeamMemberCommand(teamId, request.userId(), request.roleCode(), request.idempotencyKey())));
     }
 
+    /**
+     * Invitations issued by one team. The literal path {@code /invitations/me} below stays reachable
+     * because Spring matches literal segments before {@code {teamId}}.
+     */
+    @GetMapping("/{teamId}/invitations")
+    public Result<List<TeamInvitationView>> teamInvitations(@PathVariable Long teamId) {
+        return Result.ok(memberService.teamInvitations(communityAuth.getLoginUserId(), teamId));
+    }
+
+    @DeleteMapping("/{teamId}/invitations/{invitationId}")
+    public Result<Void> revokeInvitation(@PathVariable Long teamId, @PathVariable Long invitationId) {
+        memberService.revokeInvitation(communityAuth.getLoginUserId(), teamId, invitationId);
+        return Result.ok();
+    }
+
     @GetMapping("/invitations/me")
     public Result<List<TeamInvitationView>> invitations() {
         return Result.ok(memberService.myPendingInvitations(communityAuth.getLoginUserId()));

@@ -8,6 +8,7 @@ import {
   communityApi,
   readSession,
   SESSION_EVENT,
+  type CommunitySession,
   type MyTeam,
   type TeamApplication,
   type TeamInvitation,
@@ -27,7 +28,8 @@ function tabFromUrl(): TabKey | null {
 }
 
 export default function TeamsPage() {
-  const [session, setSession] = useState(() => readSession());
+  // 初始为 null,effect 中再读 localStorage,避免 SSR(无 window)与客户端首帧不一致导致 hydration 错误
+  const [session, setSession] = useState<CommunitySession | null>(null);
   const [explicitTab, setExplicitTab] = useState<TabKey | null>(null);
   const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(true);
@@ -42,9 +44,12 @@ export default function TeamsPage() {
 
   const refreshSession = useCallback(() => setSession(readSession()), []);
   useEffect(() => {
+    // 首次读取会话推迟一帧：localStorage 只能在客户端读，同步 setState 会触发级联渲染。
+    const timer = window.setTimeout(refreshSession, 0);
     window.addEventListener(SESSION_EVENT, refreshSession);
     window.addEventListener("storage", refreshSession);
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener(SESSION_EVENT, refreshSession);
       window.removeEventListener("storage", refreshSession);
     };
@@ -157,7 +162,7 @@ export default function TeamsPage() {
             <Link href="/team-applications" className="primary-button" onClick={requireLogin}>
               <Sparkles size={15} /> 申请建立团队
             </Link>
-            <Link href="/team-invitations" className="ghost-button" onClick={requireLogin}>
+            <Link href="/teams?tab=requests" className="ghost-button" onClick={(event) => { requireLogin(event); selectTab("requests"); }}>
               <Inbox size={15} /> 处理邀请
               {pendingInvitationCount > 0 && <span className="badge badge--warn">{pendingInvitationCount}</span>}
             </Link>

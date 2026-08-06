@@ -18,7 +18,14 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { communityApi, type TeamDashboard } from "../../../lib/community-api";
-import { activityText, formatCount, formatDateTime, PUBLISH_STATUS_LABELS } from "../../team-labels";
+import {
+  activityText,
+  formatCount,
+  formatDateTime,
+  hasTeamPermission,
+  PUBLISH_STATUS_LABELS,
+  TEAM_PERMISSIONS,
+} from "../../team-labels";
 import { useWorkspace } from "./workspace-context";
 
 export default function WorkspaceOverviewPage() {
@@ -50,10 +57,10 @@ export default function WorkspaceOverviewPage() {
   }
 
   const { stats, todos, recentArticles, recentActivities, permissions } = dashboard;
-  const hasReviewPermission = permissions.includes("MANAGE_SUBMISSIONS");
-  const hasSeriesPermission = permissions.includes("MANAGE_SERIES");
-  const hasMemberPermission = permissions.includes("MANAGE_MEMBERS");
-  const hasSettingsPermission = permissions.includes("MANAGE_TEAM");
+  const hasReviewPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_SUBMISSIONS);
+  const hasSeriesPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_SERIES);
+  const hasMemberPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_MEMBERS);
+  const hasSettingsPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_TEAM);
 
   const todoItems: Array<{ label: string; count: number; href: string; show: boolean }> = [
     { label: "待审核投稿", count: todos.pendingSubmissionCount, href: `submissions`, show: hasReviewPermission },

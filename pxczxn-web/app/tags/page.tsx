@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Compass, Hash, Sparkles, Tag as TagIcon } from "lucide-react";
+import { Compass, Hash, Tag as TagIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EmptyState, UserTopbar } from "../components/prototype-ui";
 import { type PlatformTag, communityApi } from "../lib/community-api";

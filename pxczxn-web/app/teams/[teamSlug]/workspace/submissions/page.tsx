@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { AlertCircle, Check, Loader2, RefreshCw, Send, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { communityApi, type TeamSubmission } from "../../../../lib/community-api";
-import { formatDateTime, SUBMISSION_STATUS_LABELS } from "../../../team-labels";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { communityApi, type SubmittableArticle, type TeamSubmission } from "../../../../lib/community-api";
+import {
+  formatDateTime,
+  hasTeamPermission,
+  PUBLISH_STATUS_LABELS,
+  SUBMISSION_STATUS_LABELS,
+  TEAM_PERMISSIONS,
+} from "../../../team-labels";
 import { useWorkspace } from "../workspace-context";
 
 type SubmissionTab = "MINE" | "QUEUE";
+
+/** 这些状态下投稿仍在流转，同一篇文章不能再次投给同一团队（后端有唯一约束）。 */
+const IN_FLIGHT_STATUSES = new Set(["TEAM_PENDING", "PLATFORM_PENDING", "PLATFORM_PUBLISHING"]);
 
 export default function WorkspaceSubmissionsPage() {
   const { teamId, workspace } = useWorkspace();
@@ -18,17 +27,21 @@ export default function WorkspaceSubmissionsPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [comment, setComment] = useState<Record<string, string>>({});
+  const [candidates, setCandidates] = useState<SubmittableArticle[]>([]);
   const [sourceArticleId, setSourceArticleId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
 
-  const canReview = Boolean(workspace?.permissions.includes("SUBMISSION_REVIEW"));
+  const canReview = hasTeamPermission(workspace?.permissions, TEAM_PERMISSIONS.MANAGE_SUBMISSIONS);
 
   const load = useCallback(() => {
     if (!teamId) return;
     setLoading(true);
     setError("");
-    const jobs: Array<Promise<unknown>> = [communityApi.myTeamSubmissions().then(setMine)];
+    const jobs: Array<Promise<unknown>> = [
+      communityApi.myTeamSubmissions().then(setMine),
+      communityApi.submittableArticles().then(setCandidates),
+    ];
     if (canReview) jobs.push(communityApi.teamSubmissions(teamId).then(setQueue));
     void Promise.all(jobs)
       .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "投稿记录加载失败"))
@@ -40,6 +53,7 @@ export default function WorkspaceSubmissionsPage() {
     let active = true;
     const jobs: Array<Promise<unknown>> = [
       communityApi.myTeamSubmissions().then((value) => { if (active) setMine(value); }),
+      communityApi.submittableArticles().then((value) => { if (active) setCandidates(value); }),
     ];
     if (canReview) jobs.push(communityApi.teamSubmissions(teamId).then((value) => { if (active) setQueue(value); }));
     void Promise.all(jobs)
@@ -85,13 +99,13 @@ export default function WorkspaceSubmissionsPage() {
   }
 
   async function createSubmission() {
-    if (!teamId || !sourceArticleId.trim()) return;
+    if (!teamId || !sourceArticleId) return;
     setSubmitting(true);
     setError("");
     setNotice("");
     try {
       await communityApi.createTeamSubmission({
-        sourceArticleId: sourceArticleId.trim(),
+        sourceArticleId,
         targetTeamId: teamId,
       });
       setNotice("投稿已创建，当前版本已固定并进入团队审核。");
@@ -104,8 +118,17 @@ export default function WorkspaceSubmissionsPage() {
     }
   }
 
-  const mySubmissions = mine.filter((submission) => submission.targetTeamId === teamId);
+  const mySubmissions = useMemo(
+    () => mine.filter((submission) => submission.targetTeamId === teamId),
+    [mine, teamId],
+  );
   const pendingQueue = queue.filter((submission) => submission.status === "TEAM_PENDING");
+  /** 已经在流转中的文章不能重复投稿，列表里直接置灰，省得点了才报 409。 */
+  const inFlightArticleIds = useMemo(
+    () => new Set(mySubmissions.filter((item) => IN_FLIGHT_STATUSES.has(item.status)).map((item) => item.sourceArticleId)),
+    [mySubmissions],
+  );
+  const selectedCandidate = candidates.find((item) => item.articleId === sourceArticleId) ?? null;
 
   if (loading || !teamId) {
     return <div className="series-loading surface" aria-live="polite"><Loader2 className="animate-spin" size={22} /> 正在加载投稿记录…</div>;
@@ -134,19 +157,37 @@ export default function WorkspaceSubmissionsPage() {
 
       <section className="surface workspace-submit-form">
         <h2>向本团队投稿</h2>
-        <p className="secondary">输入你要投稿的个人文章 ID（文章作者必须是你的账号）。</p>
-        <div className="workspace-submit-form__fields">
-          <input
-            value={sourceArticleId}
-            onChange={(event) => setSourceArticleId(event.target.value.trim())}
-            placeholder="个人文章 ID"
-            inputMode="numeric"
-            aria-label="来源文章 ID"
-          />
-          <button className="primary-button" disabled={submitting || !sourceArticleId.trim()} onClick={() => void createSubmission()}>
-            {submitting ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />} 提交投稿
-          </button>
-        </div>
+        <p className="secondary">从你的个人文章中选择一篇；投稿会固定文章的当前版本，之后再改动个人文章不影响本次投稿。</p>
+        {candidates.length === 0 ? (
+          <p className="workspace-panel__empty">你的个人博客还没有可投稿的文章，先去写一篇再回来。</p>
+        ) : (
+          <div className="workspace-submit-form__fields">
+            <select
+              value={sourceArticleId}
+              onChange={(event) => setSourceArticleId(event.target.value)}
+              aria-label="选择要投稿的个人文章"
+            >
+              <option value="">选择一篇我的文章…</option>
+              {candidates.map((article) => {
+                const status = PUBLISH_STATUS_LABELS[article.publishStatus] || article.publishStatus;
+                const blocked = inFlightArticleIds.has(article.articleId);
+                return (
+                  <option key={article.articleId} value={article.articleId} disabled={blocked}>
+                    {article.title || `文章 #${article.articleId}`}（{status}）{blocked ? " · 已在投稿流程中" : ""}
+                  </option>
+                );
+              })}
+            </select>
+            <button className="primary-button" disabled={submitting || !sourceArticleId} onClick={() => void createSubmission()}>
+              {submitting ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />} 提交投稿
+            </button>
+          </div>
+        )}
+        {selectedCandidate && (
+          <p className="secondary workspace-submit-form__hint">
+            将固定《{selectedCandidate.title}》当前版本 · 最近更新 {formatDateTime(selectedCandidate.updatedAt)}
+          </p>
+        )}
       </section>
 
       <div className="workspace-tabs" role="tablist" aria-label="投稿视角">

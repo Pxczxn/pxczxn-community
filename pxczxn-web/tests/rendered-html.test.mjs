@@ -135,12 +135,18 @@ test("keeps M1 user flows connected to the real community API", async () => {
 });
 
 test("fails instead of changing the configured development port", async () => {
-  const [packageJson, viteConfig] = await Promise.all([
+  const [packageJson, viteConfig, serveScript] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/serve.mjs", import.meta.url), "utf8"),
   ]);
 
-  assert.match(packageJson, /vinext dev --port 8847 --strictPort/);
+  // dev/start 统一走 serve.mjs 包装：vinext 不认 vite.config.ts 的 strictPort，
+  // 端口被占用会静默切换，因此由脚本先做占用预检再启动，绝不自动改端口。
+  assert.match(packageJson, /"dev":\s*"node scripts\/serve\.mjs dev"/);
+  assert.match(packageJson, /"start":\s*"node scripts\/serve\.mjs start"/);
+  assert.match(serveScript, /DEFAULT_PORT\s*=\s*8847/);
+  assert.doesNotMatch(serveScript, /--strictPort\s*false/);
   assert.match(viteConfig, /port:\s*8847/);
   assert.match(viteConfig, /strictPort:\s*true/);
 });

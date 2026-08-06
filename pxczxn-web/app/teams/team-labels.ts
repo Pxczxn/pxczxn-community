@@ -7,6 +7,53 @@ export const ROLE_LABELS: Record<string, string> = {
   AUTHOR: "作者",
 };
 
+/** 团队分类选项结构：value 入库、label 展示、desc 用于建团申请的选项说明。 */
+export interface TeamCategoryOption {
+  value: string;
+  label: string;
+  desc: string;
+}
+
+/** 团队分类字典（团队模块唯一来源）。设置页、发现筛选、建团申请共用同一份。 */
+export const TEAM_CATEGORIES: TeamCategoryOption[] = [
+  { value: "技术社区", label: "技术社区", desc: "技术交流、工程实践与前沿探讨" },
+  { value: "开源项目", label: "开源项目", desc: "开源库、工具与社区协作" },
+  { value: "兴趣小组", label: "兴趣小组", desc: "同好交流、兴趣驱动的内容" },
+  { value: "校园社团", label: "校园社团", desc: "高校社团与校园创作者" },
+  { value: "游戏攻略", label: "游戏攻略", desc: "游戏玩法、攻略与赛事" },
+  { value: "小说创作", label: "小说创作", desc: "原创小说与文学创作" },
+  { value: "其他", label: "其他", desc: "不属于以上分类的方向" },
+];
+
+/**
+ * 团队权限码，与 `team_permission` 种子数据(V023)逐字对齐，是前端判断权限的唯一事实来源。
+ *
+ * 页面里散写字符串曾经导致真实故障：投稿页用了后端不存在的 `SUBMISSION_REVIEW`，
+ * 审核 Tab 因此永远不显示，而概览页却在提示"有待审投稿"。集中定义后类型系统会拦住这类拼写。
+ */
+export const TEAM_PERMISSIONS = {
+  MANAGE_TEAM: "MANAGE_TEAM",
+  MANAGE_MEMBERS: "MANAGE_MEMBERS",
+  TRANSFER_OWNERSHIP: "TRANSFER_OWNERSHIP",
+  DISBAND_TEAM: "DISBAND_TEAM",
+  EDIT_ALL_ARTICLES: "EDIT_ALL_ARTICLES",
+  DELETE_ALL_ARTICLES: "DELETE_ALL_ARTICLES",
+  MANAGE_SUBMISSIONS: "MANAGE_SUBMISSIONS",
+  MANAGE_SERIES: "MANAGE_SERIES",
+  VIEW_AUDIT: "VIEW_AUDIT",
+  EDIT_OWN_ARTICLES: "EDIT_OWN_ARTICLES",
+} as const;
+
+export type TeamPermission = (typeof TEAM_PERMISSIONS)[keyof typeof TEAM_PERMISSIONS];
+
+/** 判断权限集合是否包含某权限码；permissions 可能因接口未就绪而为空。 */
+export function hasTeamPermission(
+  permissions: readonly string[] | null | undefined,
+  permission: TeamPermission,
+): boolean {
+  return Boolean(permissions?.includes(permission));
+}
+
 export const PUBLISH_STATUS_LABELS: Record<string, string> = {
   DRAFT: "草稿",
   PENDING_REVIEW: "审核中",
@@ -60,6 +107,7 @@ export const INVITATION_STATUS_LABELS: Record<string, string> = {
   ACCEPTED: "已接受",
   REJECTED: "已拒绝",
   EXPIRED: "已过期",
+  REVOKED: "已撤销",
 };
 
 export const APPLICATION_STATUS_LABELS: Record<string, string> = {
@@ -74,6 +122,7 @@ export const ACTIVITY_LABELS: Record<string, (actor: string | null) => string> =
   MEMBER_INVITED: (actor) => `${actor || "成员"} 邀请了新成员加入团队`,
   INVITATION_ACCEPTED: (actor) => `${actor || "成员"} 接受了邀请，加入了团队`,
   INVITATION_REJECTED: (actor) => `${actor || "成员"} 拒绝了团队邀请`,
+  INVITATION_REVOKED: (actor) => `${actor || "成员"} 撤销了一条团队邀请`,
   MEMBER_LEFT: (actor) => `${actor || "成员"} 退出了团队`,
   MEMBER_REMOVED: (actor) => `${actor || "成员"} 将一名成员移出团队`,
   MEMBER_ROLE_CHANGED: (actor) => `${actor || "成员"} 调整了成员角色`,

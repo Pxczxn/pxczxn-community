@@ -21,7 +21,6 @@ import top.pxczxn.community.team.persistence.TeamCountRow;
 import top.pxczxn.community.team.persistence.TeamInvitationMapper;
 import top.pxczxn.community.team.persistence.TeamMapper;
 import top.pxczxn.community.team.persistence.TeamMemberMapper;
-import top.pxczxn.community.team.persistence.TeamPermissionMapper;
 import top.pxczxn.community.team.submission.persistence.TeamSubmissionMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
@@ -51,13 +50,13 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private final TeamMemberMapper memberMapper;
     private final BlogMapper blogMapper;
     private final CommunityUserMapper userMapper;
-    private final TeamPermissionMapper permissionMapper;
     private final TeamSubmissionMapper submissionMapper;
     private final TeamSeriesMapper seriesMapper;
     private final TeamSeriesArticleMapper seriesArticleMapper;
     private final TeamInvitationMapper invitationMapper;
     private final TeamAuditEventMapper auditEventMapper;
     private final ArticleMapper articleMapper;
+    private final TeamAuthorityService authorityService;
 
     @Override
     @Transactional(readOnly = true)
@@ -93,7 +92,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
         if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "Team does not exist");
         return new TeamWorkspaceView(portal(team, blog), member.getRoleCode(),
                 CAPABILITIES.getOrDefault(member.getRoleCode(), List.of()),
-                permissionMapper.findPermissionsByRole(member.getRoleCode()));
+                authorityService.getPermissions(viewerUserId, teamId));
     }
 
     @Override
@@ -126,7 +125,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
                     return new MyTeamView(
                             team.getId(), blog.getId(), blog.getName(), blog.getSlug(), blog.getSummary(),
                             blog.getAvatarFileId(), blog.getBackgroundFileId(),
-                            role, CAPABILITIES.getOrDefault(role, List.of()), permissionMapper.findPermissionsByRole(role),
+                            role, CAPABILITIES.getOrDefault(role, List.of()), authorityService.getPermissions(viewerUserId, membership.getTeamId()),
                             memberCounts.getOrDefault(team.getId(), 0),
                             blog.getArticleCount() == null ? 0 : blog.getArticleCount().intValue(),
                             seriesCounts.getOrDefault(team.getId(), 0),
@@ -150,7 +149,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
 
         String role = member.getRoleCode();
         List<String> capabilities = CAPABILITIES.getOrDefault(role, List.of());
-        List<String> permissions = permissionMapper.findPermissionsByRole(role);
+        List<String> permissions = authorityService.getPermissions(viewerUserId, teamId);
 
         Map<String, Integer> statusCounts = articleMapper.countByBlogGroupedByPublishStatus(blog.getId()).stream()
                 .collect(Collectors.toMap(ArticleStatusCountRow::getStatus, ArticleStatusCountRow::getTotal, Integer::sum));
@@ -220,10 +219,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     @Transactional(rollbackFor = Exception.class)
     public TeamSummaryView updateSettings(Long viewerUserId, Long teamId, UpdateTeamSettingsCommand command) {
         Team team = requireActiveTeam(teamId);
-        TeamMember member = memberMapper.findActiveMember(teamId, viewerUserId);
-        if (member == null) throw new BusinessException(403, "Not allowed to update team settings");
-        List<String> permissions = permissionMapper.findPermissionsByRole(member.getRoleCode());
-        if (!permissions.contains("MANAGE_TEAM")) {
+        if (!authorityService.hasPermission(viewerUserId, teamId, "MANAGE_TEAM")) {
             throw new BusinessException(403, "Not allowed to update team settings");
         }
         Blog blog = blogMapper.selectById(team.getBlogId());
@@ -388,7 +384,8 @@ public class TeamPortalServiceImpl implements TeamPortalService {
         if (blog == null) return null;
         return new TeamSummaryView(team.getId(), blog.getId(), blog.getName(), blog.getSlug(), blog.getSummary(),
                 blog.getAvatarFileId(), blog.getBackgroundFileId(), blog.getArticleCount() == null ? 0 : blog.getArticleCount(),
-                blog.getFollowerCount() == null ? 0 : blog.getFollowerCount());
+                blog.getFollowerCount() == null ? 0 : blog.getFollowerCount(),
+                team.getCategory());
     }
 
     private static String normalizeSlug(String value) {

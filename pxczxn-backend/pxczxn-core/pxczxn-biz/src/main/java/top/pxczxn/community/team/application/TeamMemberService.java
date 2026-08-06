@@ -8,6 +8,12 @@ public interface TeamMemberService {
 
     List<TeamInvitationView> myPendingInvitations(Long userId);
 
+    /** Invitations this team has issued, for the member page "已邀请" list. Requires MANAGE_MEMBERS. */
+    List<TeamInvitationView> teamInvitations(Long actorUserId, Long teamId);
+
+    /** Withdraw a still-pending invitation so the invitee can be invited again later. */
+    void revokeInvitation(Long actorUserId, Long teamId, Long invitationId);
+
     void accept(Long inviteeUserId, Long invitationId);
 
     void reject(Long inviteeUserId, Long invitationId);

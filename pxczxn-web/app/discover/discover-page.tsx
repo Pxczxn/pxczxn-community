@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, BookOpen, Clock, Compass, Flame, Layers, LibraryBig, LoaderCircle, MessageSquare, Orbit, PenLine, Rss, Sparkles, Tag as TagIcon, ThumbsUp, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Compass, Flame, Layers, LibraryBig, LoaderCircle, MessageSquare, Orbit, PenLine, Sparkles, Tag as TagIcon, ThumbsUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
 import { type Moment, type PlatformTag, type PublicArticleSummary, type TeamSeries, communityApi, readSession } from "../lib/community-api";

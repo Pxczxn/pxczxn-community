@@ -20,7 +20,6 @@ import top.pxczxn.community.team.persistence.TeamCountRow;
 import top.pxczxn.community.team.persistence.TeamInvitationMapper;
 import top.pxczxn.community.team.persistence.TeamMapper;
 import top.pxczxn.community.team.persistence.TeamMemberMapper;
-import top.pxczxn.community.team.persistence.TeamPermissionMapper;
 import top.pxczxn.community.team.submission.persistence.TeamSubmissionMapper;
 import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
@@ -43,7 +42,7 @@ class TeamPortalServiceImplTest {
     private TeamMemberMapper memberMapper;
     private BlogMapper blogMapper;
     private CommunityUserMapper userMapper;
-    private TeamPermissionMapper permissionMapper;
+    private TeamAuthorityService authorityService;
     private TeamSubmissionMapper submissionMapper;
     private TeamSeriesMapper seriesMapper;
     private TeamSeriesArticleMapper seriesArticleMapper;
@@ -58,7 +57,7 @@ class TeamPortalServiceImplTest {
         memberMapper = mock(TeamMemberMapper.class);
         blogMapper = mock(BlogMapper.class);
         userMapper = mock(CommunityUserMapper.class);
-        permissionMapper = mock(TeamPermissionMapper.class);
+        authorityService = mock(TeamAuthorityService.class);
         submissionMapper = mock(TeamSubmissionMapper.class);
         seriesMapper = mock(TeamSeriesMapper.class);
         seriesArticleMapper = mock(TeamSeriesArticleMapper.class);
@@ -66,8 +65,8 @@ class TeamPortalServiceImplTest {
         auditEventMapper = mock(TeamAuditEventMapper.class);
         articleMapper = mock(ArticleMapper.class);
         service = new TeamPortalServiceImpl(teamMapper, memberMapper, blogMapper, userMapper,
-                permissionMapper, submissionMapper, seriesMapper, seriesArticleMapper,
-                invitationMapper, auditEventMapper, articleMapper);
+                submissionMapper, seriesMapper, seriesArticleMapper,
+                invitationMapper, auditEventMapper, articleMapper, authorityService);
     }
 
     @Test
@@ -99,7 +98,7 @@ class TeamPortalServiceImplTest {
         when(memberMapper.findActiveMembers(1L)).thenReturn(List.of(author));
         CommunityUser user = new CommunityUser(); user.setId(100L); user.setUsername("author"); user.setDisplayName("Author");
         when(userMapper.selectBatchIds(List.of(100L))).thenReturn(List.of(user));
-        when(permissionMapper.findPermissionsByRole("AUTHOR")).thenReturn(List.of("EDIT_OWN_ARTICLES"));
+        when(authorityService.getPermissions(100L, 1L)).thenReturn(List.of("EDIT_OWN_ARTICLES"));
 
         TeamWorkspaceView workspace = service.workspace(100L, 1L);
 
@@ -130,7 +129,7 @@ class TeamPortalServiceImplTest {
         when(seriesMapper.countByTeams(List.of(1L))).thenReturn(List.of(countRow(1L, 4)));
         when(submissionMapper.countPendingByTeams(List.of(1L))).thenReturn(List.of(countRow(1L, 3)));
         when(submissionMapper.countRevisionRequiredForAuthor(1L, 100L)).thenReturn(1);
-        when(permissionMapper.findPermissionsByRole("ADMIN")).thenReturn(List.of("TEAM_VIEW", "SUBMISSION_REVIEW"));
+        when(authorityService.getPermissions(100L, 1L)).thenReturn(List.of("TEAM_VIEW", "SUBMISSION_REVIEW"));
 
         List<MyTeamView> mine = service.myTeams(100L);
 
@@ -174,7 +173,7 @@ class TeamPortalServiceImplTest {
         TeamMember editor = new TeamMember(); editor.setTeamId(1L); editor.setUserId(100L); editor.setRoleCode("EDITOR");
         when(memberMapper.findActiveMember(1L, 100L)).thenReturn(editor);
         when(blogMapper.selectById(10L)).thenReturn(teamBlog(10L, "team-one"));
-        when(permissionMapper.findPermissionsByRole("EDITOR")).thenReturn(List.of("SUBMISSION_REVIEW", "MANAGE_SERIES"));
+        when(authorityService.getPermissions(100L, 1L)).thenReturn(List.of("SUBMISSION_REVIEW", "MANAGE_SERIES"));
         when(articleMapper.countByBlogGroupedByPublishStatus(10L)).thenReturn(List.of(
                 statusRow("PUBLISHED", 5), statusRow("DRAFT", 2), statusRow("PENDING_REVIEW", 1)));
         when(seriesMapper.countByTeams(List.of(1L))).thenReturn(List.of(countRow(1L, 3)));
@@ -286,7 +285,7 @@ class TeamPortalServiceImplTest {
         when(teamMapper.selectById(1L)).thenReturn(activeTeam(1L, 10L, 100L));
         TeamMember author = new TeamMember(); author.setTeamId(1L); author.setUserId(100L); author.setRoleCode("AUTHOR");
         when(memberMapper.findActiveMember(1L, 100L)).thenReturn(author);
-        when(permissionMapper.findPermissionsByRole("AUTHOR")).thenReturn(List.of("EDIT_OWN_ARTICLES"));
+        when(authorityService.hasPermission(100L, 1L, "MANAGE_TEAM")).thenReturn(false);
 
         assertThatThrownBy(() -> service.updateSettings(100L, 1L,
                 new UpdateTeamSettingsCommand("New Name", null, null, null, null, null, null, null, null, true, true, null, null)))
@@ -298,7 +297,7 @@ class TeamPortalServiceImplTest {
         when(teamMapper.selectById(1L)).thenReturn(activeTeam(1L, 10L, 100L));
         TeamMember admin = new TeamMember(); admin.setTeamId(1L); admin.setUserId(100L); admin.setRoleCode("ADMIN");
         when(memberMapper.findActiveMember(1L, 100L)).thenReturn(admin);
-        when(permissionMapper.findPermissionsByRole("ADMIN")).thenReturn(List.of("MANAGE_TEAM"));
+        when(authorityService.hasPermission(100L, 1L, "MANAGE_TEAM")).thenReturn(true);
         Blog blog = teamBlog(10L, "team-one");
         when(blogMapper.selectById(10L)).thenReturn(blog);
         when(blogMapper.updateProfileWithOptimisticLock(10L, "New Name", null, null, null, 0)).thenReturn(0);
@@ -313,7 +312,7 @@ class TeamPortalServiceImplTest {
         when(teamMapper.selectById(1L)).thenReturn(activeTeam(1L, 10L, 100L));
         TeamMember admin = new TeamMember(); admin.setTeamId(1L); admin.setUserId(100L); admin.setRoleCode("ADMIN");
         when(memberMapper.findActiveMember(1L, 100L)).thenReturn(admin);
-        when(permissionMapper.findPermissionsByRole("ADMIN")).thenReturn(List.of("MANAGE_TEAM"));
+        when(authorityService.hasPermission(100L, 1L, "MANAGE_TEAM")).thenReturn(true);
         Blog blog = teamBlog(10L, "team-one");
         when(blogMapper.selectById(10L)).thenReturn(blog);
         when(blogMapper.updateProfileWithOptimisticLock(10L, "New Name", "New summary", 55L, 66L, 0)).thenReturn(1);

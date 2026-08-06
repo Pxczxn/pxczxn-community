@@ -7,8 +7,6 @@ import {
   Calendar,
   CheckCircle2,
   Edit3,
-  Eye,
-  FileText,
   Folder,
   FolderHeart,
   FolderPlus,
@@ -23,9 +21,7 @@ import {
   TrendingUp,
   Plus,
   RefreshCw,
-  Sparkles,
   UserCheck,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";

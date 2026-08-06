@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.community.team.submission.application.CreateTeamSubmissionCommand;
 import top.pxczxn.community.team.submission.application.DecideTeamSubmissionCommand;
+import top.pxczxn.community.team.submission.application.SubmittableArticleView;
 import top.pxczxn.community.team.submission.application.TeamSubmissionService;
 import top.pxczxn.platform.common.result.Result;
 
@@ -30,6 +31,9 @@ public class TeamSubmissionController {
     }
     @GetMapping("/me")
     public Result<List<TeamSubmissionResponse>> mine() { return Result.ok(submissionService.mine(communityAuth.getLoginUserId()).stream().map(TeamSubmissionResponse::from).toList()); }
+    /** 投稿页的"选择我的文章"下拉数据源：只返回当前用户可投稿的个人文章。 */
+    @GetMapping("/candidates")
+    public Result<List<SubmittableArticleView>> candidates() { return Result.ok(submissionService.submittableArticles(communityAuth.getLoginUserId())); }
     @GetMapping("/teams/{teamId}")
     public Result<List<TeamSubmissionResponse>> teamQueue(@PathVariable Long teamId) { return Result.ok(submissionService.teamQueue(communityAuth.getLoginUserId(), teamId).stream().map(TeamSubmissionResponse::from).toList()); }
     @PostMapping("/{submissionId}/team/approve")

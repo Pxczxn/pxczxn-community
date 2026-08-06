@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { UserTopbar } from "../components/prototype-ui";
 import { communityApi, type TeamApplication } from "../lib/community-api";
+import { TEAM_CATEGORIES } from "../teams/team-labels";
 import {
   CheckCircle2,
   XCircle,
@@ -17,26 +18,13 @@ import {
   RotateCcw,
   RefreshCw,
   Feather,
-  Target,
   LayoutList,
-  Users,
   Info,
-  ChevronDown,
 } from "lucide-react";
 
 /* ──────────────────────────────────────────
    Constants
 ────────────────────────────────────────── */
-const TEAM_CATEGORIES = [
-  { value: "frontend", label: "前端开发", desc: "Web 前端、小程序、跨端技术" },
-  { value: "backend", label: "后端开发", desc: "服务端架构、数据库、微服务" },
-  { value: "mobile", label: "移动端", desc: "iOS、Android、Flutter、React Native" },
-  { value: "ai", label: "AI / 大模型", desc: "LLM 应用、Agent、模型优化" },
-  { value: "devops", label: "DevOps", desc: "CI/CD、容器化、基础设施" },
-  { value: "opensource", label: "开源项目", desc: "开源库、工具、社区运营" },
-  { value: "product", label: "产品设计", desc: "产品策划、UX/UI 设计" },
-  { value: "other", label: "其他领域", desc: "不属于以上分类的方向" },
-] as const;
 
 const TEAM_SIZE_OPTIONS = [
   { value: "2-5", label: "2–5 人", desc: "小而精的初创团队" },
@@ -112,7 +100,7 @@ function buildDescription(data: FormData): string {
     .join("、");
   const parts = [
     `【团队分类】${catLabels || "（未填写）"}`,
-    data.categories.includes("other") && data.otherCategoryDetail
+    data.categories.includes("其他") && data.otherCategoryDetail
       ? `【其他说明】${data.otherCategoryDetail}`
       : null,
     `【团队规模】${TEAM_SIZE_OPTIONS.find((s) => s.value === data.teamSize)?.label || "（未填写）"}`,
@@ -180,9 +168,9 @@ export default function TeamApplicationsPage() {
     if (formData.categories.length === 0) {
       errors.categories = "请至少选择一个团队分类";
     }
-    if (formData.categories.includes("other") && !formData.otherCategoryDetail.trim()) {
+    if (formData.categories.includes("其他") && !formData.otherCategoryDetail.trim()) {
       errors.otherCategoryDetail = "请填写其他领域的具体说明";
-    } else if (formData.categories.includes("other") && formData.otherCategoryDetail.trim().length < 10) {
+    } else if (formData.categories.includes("其他") && formData.otherCategoryDetail.trim().length < 10) {
       errors.otherCategoryDetail = "其他说明至少需要 10 个字符";
     }
     if (!formData.teamGoal.trim()) {
@@ -959,7 +947,7 @@ function ApplicationForm({
               })}
             </div>
 
-            {formData.categories.includes("other") && (
+            {formData.categories.includes("其他") && (
               <div className="ta-field" style={{ marginTop: 14 }}>
                 <label className="ta-field__label">
                   其他领域说明 <span className="req">*</span>

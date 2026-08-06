@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar } from "../../../../components/prototype-ui";
 import { communityApi, publicFileUrl } from "../../../../lib/community-api";
 import { useWorkspace } from "../workspace-context";
+import { hasTeamPermission, TEAM_CATEGORIES, TEAM_PERMISSIONS } from "../../../team-labels";
 
 const THEME_OPTIONS = [
   { value: "default", label: "默认" },
@@ -15,7 +16,7 @@ const THEME_OPTIONS = [
 
 export default function WorkspaceSettingsPage() {
   const { teamId, teamSlug, workspace, reloadWorkspace } = useWorkspace();
-  const canManage = Boolean(workspace?.permissions.includes("MANAGE_TEAM"));
+  const canManage = hasTeamPermission(workspace?.permissions, TEAM_PERMISSIONS.MANAGE_TEAM);
   const team = workspace?.team.team;
   const settings = workspace?.team.settings;
 
@@ -184,6 +185,7 @@ export default function WorkspaceSettingsPage() {
 
           <div className="workspace-settings-form__background">
             {backgroundSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element -- 团队背景图预览
               <img className="workspace-settings-form__background-preview" src={backgroundSrc} alt="团队背景图预览" />
             ) : (
               <div className="workspace-settings-form__background-empty">暂无背景图</div>
@@ -252,10 +254,14 @@ export default function WorkspaceSettingsPage() {
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             maxLength={50}
-            placeholder="例如：技术社区 / 开源项目 / 兴趣小组"
+            list="team-category-options"
+            placeholder="选择或输入分类，例如：技术社区 / 开源项目"
             disabled={!canManage}
             aria-label="团队分类"
           />
+          <datalist id="team-category-options">
+            {TEAM_CATEGORIES.map((cat) => <option key={cat.value} value={cat.value} />)}
+          </datalist>
         </label>
         <label>
           内容方向

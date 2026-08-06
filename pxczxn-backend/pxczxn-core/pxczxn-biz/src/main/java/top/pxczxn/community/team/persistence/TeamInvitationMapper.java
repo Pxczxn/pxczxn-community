@@ -27,6 +27,27 @@ public interface TeamInvitationMapper extends BaseMapper<TeamInvitation> {
     @Select("SELECT COUNT(*) FROM team_invitation WHERE team_id = #{teamId} AND status = 'PENDING' AND expires_at > NOW()")
     int countPendingByTeam(@Param("teamId") Long teamId);
 
+    /**
+     * Invitations issued by one team, newest first, all statuses included so the manager can show
+     * what happened to earlier invites instead of silently dropping them.
+     */
+    @Select("SELECT * FROM team_invitation WHERE team_id = #{teamId} ORDER BY created_at DESC, id DESC LIMIT #{limit}")
+    java.util.List<TeamInvitation> findByTeam(@Param("teamId") Long teamId, @Param("limit") int limit);
+
+    @Select("SELECT * FROM team_invitation WHERE id = #{id} AND team_id = #{teamId} LIMIT 1")
+    TeamInvitation findForTeam(@Param("id") Long id, @Param("teamId") Long teamId);
+
+    /**
+     * Revoke a pending invitation from the team side.
+     *
+     * <p>{@code is_pending} is a generated column derived from {@code status}, so leaving PENDING also
+     * releases {@code uk_pending_invitation} - the same user can then be invited again, which is the
+     * whole point of revoking a mistaken invite.
+     */
+    @Update("UPDATE team_invitation SET status = 'REVOKED', lock_version = lock_version + 1 "
+            + "WHERE id = #{id} AND team_id = #{teamId} AND status = 'PENDING' AND lock_version = #{lockVersion}")
+    int revoke(@Param("id") Long id, @Param("teamId") Long teamId, @Param("lockVersion") Integer lockVersion);
+
     @Update("UPDATE team_invitation SET status = 'ACCEPTED', accepted_at = NOW(), lock_version = lock_version + 1 "
             + "WHERE id = #{id} AND invitee_user_id = #{userId} AND status = 'PENDING' AND expires_at > NOW() "
             + "AND lock_version = #{lockVersion}")

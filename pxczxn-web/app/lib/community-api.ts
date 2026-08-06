@@ -585,17 +585,38 @@ export interface CommunityAppeal { id: string; reportId: string; status: "PENDIN
 export interface CommunitySanction { id: string; type: string; reasonCode: string; reasonNote: string | null; status: string; expiresAt: string | null; }
 export interface AppealContext { reportId: string; targetType: string; targetId: string; resolutionCode: string | null; resolutionNote: string | null; }
 
+/**
+ * 团队邀请。团队名与邀请人信息由后端内联返回：被邀请人还不是成员，
+ * 无权读取团队详情，缺了这些字段卡片只能显示"团队 #123"。
+ */
 export interface TeamInvitation {
   id: string;
   teamId: string;
+  teamName: string | null;
+  teamSlug: string | null;
+  teamAvatarFileId: string | null;
   inviteeUserId: string;
+  inviteeDisplayName: string | null;
+  inviteeUsername: string | null;
+  inviteeAvatarFileId: string | null;
   roleCode: "OWNER" | "ADMIN" | "EDITOR" | "AUTHOR";
-  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED" | "REVOKED";
+  inviterUserId: string | null;
+  inviterDisplayName: string | null;
+  inviterUsername: string | null;
   expiresAt: string;
   createdAt: string;
 }
 
-export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: string; followerCount: string; }
+/** 投稿页"选择我的文章"下拉的一条候选（GET /api/v1/team-submissions/candidates）。 */
+export interface SubmittableArticle {
+  articleId: string;
+  title: string;
+  publishStatus: string;
+  visibility: string;
+  updatedAt: string | null;
+}
+export interface TeamSummary { teamId: string; blogId: string; name: string; slug: string; summary: string | null; avatarFileId: string | null; backgroundFileId: string | null; articleCount: string; followerCount: string; category: string | null; }
 export interface TeamSubmission { id: string; sourceArticleId: string; sourceArticleTitle: string; fixedSourceVersionId: string; targetTeamId: string; submittedByUserId: string; supersedesSubmissionId: string | null; status: string; teamReviewerUserId: string | null; teamReviewComment: string | null; teamReviewedAt: string | null; platformReviewerAdminId: string | null; platformReviewComment: string | null; platformReviewedAt: string | null; publishedTeamArticleId: string | null; lockVersion: number; createdAt: string; updatedAt: string; }
 export interface TeamPortalSettings {
   category: string | null;
@@ -688,7 +709,20 @@ export interface TeamDashboard {
   todos: TeamTodo;
   recentActivities: TeamActivity[];
 }
-export interface TeamMemberView { userId: string; roleCode: string; joinedAt: string; }
+/**
+ * 团队成员行。资料字段内联返回，成员页无需再拉一次门户接口按 userId 手动合并。
+ * contributionCount 是该成员在团队博客下的存活文章数，无文章时为 0（不是 null）。
+ */
+export interface TeamMemberView {
+  userId: string;
+  displayName: string | null;
+  username: string | null;
+  avatarFileId: string | null;
+  roleCode: string;
+  joinedAt: string;
+  contributionCount: number;
+  lastActiveAt: string | null;
+}
 export interface TeamSeriesChapter { articleId: string; title: string; slug: string; publishStatus: string; chapterOrder: number; }
 export interface TeamSeries { id: string; teamId: string; title: string; slug: string; summary: string | null; coverFileId: string | null; serializationStatus: "ONGOING" | "COMPLETED" | "PAUSED"; reviewStatus: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED"; reviewComment: string | null; lockVersion: number; publishedAt: string | null; updatedAt: string; chapters: TeamSeriesChapter[]; }
 export interface CommunityChatMessage { id: string; senderUserId: string; recipientUserId: string; contentText: string; status: string; readAt: string | null; createdAt: string; }
@@ -1279,6 +1313,8 @@ export const communityApi = {
   saveSeriesChapters(seriesId: string, articleIds: string[], expectedLockVersion: number) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}/chapters`, { method: "POST", body: JSON.stringify({ articleIds, expectedLockVersion }) }); },
   submitSeriesReview(seriesId: string, expectedLockVersion: number) { return communityRequest<TeamSeries>(`/api/v1/series/${encodeURIComponent(seriesId)}/submit-review`, { method: "POST", body: JSON.stringify({ expectedLockVersion }) }); },
   myTeamSubmissions() { return communityRequest<TeamSubmission[]>("/api/v1/team-submissions/me"); },
+  /** 可投稿的个人文章：后端已按"作者本人 + 个人博客 + 有当前版本"过滤，前端直接列出即可。 */
+  submittableArticles() { return communityRequest<SubmittableArticle[]>("/api/v1/team-submissions/candidates"); },
   createTeamSubmission(input: { sourceArticleId: string; targetTeamId: string; supersedesSubmissionId?: string | null; idempotencyKey?: string }) { const idempotencyKey = input.idempotencyKey || `team-submission-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`; return communityRequest<TeamSubmission>("/api/v1/team-submissions", { method: "POST", body: JSON.stringify({ ...input, idempotencyKey }) }); },
   teamSubmissions(teamId: string) { return communityRequest<TeamSubmission[]>(`/api/v1/team-submissions/teams/${encodeURIComponent(teamId)}`); },
   decideTeamSubmission(submissionId: string, action: "approve" | "revision" | "reject", expectedLockVersion: number, comment?: string) { return communityRequest<TeamSubmission>(`/api/v1/team-submissions/${encodeURIComponent(submissionId)}/team/${action}`, { method: "POST", body: JSON.stringify({ expectedLockVersion, comment }) }); },
@@ -1308,6 +1344,17 @@ export const communityApi = {
   inviteTeamMember(teamId: string, input: { userId: string; roleCode: string; idempotencyKey?: string }) {
     const idempotencyKey = input.idempotencyKey || `team-invite-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     return communityRequest<TeamInvitation>(`/api/v1/teams/${encodeURIComponent(teamId)}/invitations`, { method: "POST", body: JSON.stringify({ userId: input.userId, roleCode: input.roleCode, idempotencyKey }) });
+  },
+  /** 团队已发出的邀请（含历史状态），需要 MANAGE_MEMBERS 权限。 */
+  teamInvitations(teamId: string) {
+    return communityRequest<TeamInvitation[]>(`/api/v1/teams/${encodeURIComponent(teamId)}/invitations`);
+  },
+  /** 撤销尚未处理的邀请；撤销后可以重新邀请同一人。 */
+  revokeTeamInvitation(teamId: string, invitationId: string) {
+    return communityRequest<void>(
+      `/api/v1/teams/${encodeURIComponent(teamId)}/invitations/${encodeURIComponent(invitationId)}`,
+      { method: "DELETE" },
+    );
   },
   changeTeamMemberRole(teamId: string, userId: string, roleCode: string) {
     return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(userId)}/role`, { method: "POST", body: JSON.stringify({ roleCode }) });

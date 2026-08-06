@@ -174,10 +174,15 @@ public interface ArticleMapper extends BaseMapper<Article> {
                              @Param("publishStatus") String publishStatus,
                              @Param("limit") int limit);
 
-    /** Per-author article counts inside one blog, used by the member list contribution column. */
+    /**
+     * Per-author article counts inside one blog plus the newest authoring timestamp, used by the
+     * member list contribution column and the "last active" hint.
+     */
     @Select("""
             <script>
-            SELECT author_user_id AS authorUserId, COUNT(*) AS total
+            SELECT author_user_id AS authorUserId,
+                   COUNT(*) AS total,
+                   MAX(COALESCE(updated_at, created_at)) AS lastActiveAt
             FROM article
             WHERE blog_id = #{blogId}
               AND deleted_at IS NULL
@@ -188,4 +193,26 @@ public interface ArticleMapper extends BaseMapper<Article> {
             """)
     List<ArticleAuthorCountRow> countByBlogAndAuthors(@Param("blogId") Long blogId,
                                                       @Param("authorUserIds") List<Long> authorUserIds);
+
+    /**
+     * 当前用户可投稿的个人文章：作者本人、未删除、归属个人博客、且已有可固定的当前版本。
+     *
+     * <p>筛选条件刻意与 {@code TeamSubmissionServiceImpl#requireSourceArticle} 与
+     * {@code #requireVersion} 对齐，否则候选列表会出现"选了才报错"的条目。这里只比校验更严格
+     * （额外排除已删除的博客），不会更宽松。
+     */
+    @Select("""
+            SELECT a.*
+            FROM article a
+            INNER JOIN blog b
+                    ON b.id = a.blog_id
+                   AND b.blog_type = 'PERSONAL'
+                   AND b.deleted_at IS NULL
+            WHERE a.author_user_id = #{authorUserId}
+              AND a.deleted_at IS NULL
+              AND a.current_version_id IS NOT NULL
+            ORDER BY COALESCE(a.updated_at, a.created_at) DESC, a.id DESC
+            LIMIT #{limit}
+            """)
+    List<Article> findSubmittableByAuthor(@Param("authorUserId") Long authorUserId, @Param("limit") int limit);
 }

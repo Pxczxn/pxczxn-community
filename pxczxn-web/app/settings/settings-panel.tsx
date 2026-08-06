@@ -488,7 +488,10 @@ export function SettingsPanel() {
           <button aria-label="关闭头像预览" className="settings-password-backdrop" onClick={() => setAvatarPreviewOpen(false)} type="button" />
           <section className="surface settings-avatar-preview-dialog">
             <header><h2 id="avatar-preview-title">头像预览</h2><button aria-label="关闭" className="icon-button" onClick={() => setAvatarPreviewOpen(false)} type="button">×</button></header>
-            {blog?.avatarFileId || currentUser?.avatarFileId ? <img alt="当前头像预览" src={publicFileUrl(blog?.avatarFileId || currentUser?.avatarFileId) || undefined} /> : <Avatar label={(currentUser?.displayName || currentUser?.username || name).slice(0, 1)} size="lg" />}
+            {blog?.avatarFileId || currentUser?.avatarFileId ? (
+    // eslint-disable-next-line @next/next/no-img-element -- 头像预览,尺寸由 CSS 控制
+    <img alt="当前头像预览" src={publicFileUrl(blog?.avatarFileId || currentUser?.avatarFileId) || undefined} />
+  ) : <Avatar label={(currentUser?.displayName || currentUser?.username || name).slice(0, 1)} size="lg" />}
           </section>
         </div>
       )}

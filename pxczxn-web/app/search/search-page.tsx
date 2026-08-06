@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Compass, Flame, LoaderCircle, Orbit, Rss, Search, Tag, Users } from "lucide-react";
+import { BookOpen, LoaderCircle, Orbit, Rss, Search, Tag, Users } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { UserTopbar } from "../components/prototype-ui";
 import { type UnifiedSearchPage, type UnifiedSearchResult, type UnifiedSearchType, communityApi } from "../lib/community-api";

@@ -39,6 +39,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TeamSubmissionServiceImpl implements TeamSubmissionService {
     private static final Set<String> RESUBMITTABLE = Set.of("TEAM_REVISION_REQUIRED", "TEAM_REJECTED", "PLATFORM_REVISION_REQUIRED", "PLATFORM_REJECTED");
+    /** 候选文章下拉的上限：够用即可，避免高产作者一次拉回整个文章库。 */
+    private static final int SUBMITTABLE_ARTICLE_LIMIT = 200;
     private final TeamSubmissionMapper submissionMapper;
     private final ArticleMapper articleMapper;
     private final ArticleVersionMapper versionMapper;
@@ -89,6 +91,12 @@ public class TeamSubmissionServiceImpl implements TeamSubmissionService {
 
     @Override @Transactional(readOnly = true)
     public List<TeamSubmissionView> mine(Long actorUserId) { return submissionMapper.findByAuthor(actorUserId).stream().map(this::view).toList(); }
+
+    @Override @Transactional(readOnly = true)
+    public List<SubmittableArticleView> submittableArticles(Long actorUserId) {
+        return articleMapper.findSubmittableByAuthor(actorUserId, SUBMITTABLE_ARTICLE_LIMIT)
+                .stream().map(SubmittableArticleView::from).toList();
+    }
 
     @Override @Transactional(readOnly = true)
     public List<TeamSubmissionView> teamQueue(Long actorUserId, Long teamId) {

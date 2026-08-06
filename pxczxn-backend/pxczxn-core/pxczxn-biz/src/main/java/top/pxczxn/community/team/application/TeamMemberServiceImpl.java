@@ -5,6 +5,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.article.persistence.ArticleAuthorCountRow;
+import top.pxczxn.community.article.persistence.ArticleMapper;
+import top.pxczxn.community.blog.model.Blog;
+import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamInvitation;
@@ -21,11 +25,18 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.HexFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +44,16 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
     private static final Set<String> ROLES = Set.of("OWNER", "ADMIN", "EDITOR", "AUTHOR");
     private static final Set<String> ACTIVE_USER_STATUSES = Set.of("NORMAL", "LIMITED");
+    /** The team-side invitation list is a management panel, not a feed; a hard cap keeps it one query. */
+    private static final int TEAM_INVITATION_LIMIT = 100;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final TeamInvitationMapper invitationMapper;
     private final TeamMemberMapper memberMapper;
     private final TeamMapper teamMapper;
     private final CommunityUserMapper userMapper;
+    private final BlogMapper blogMapper;
+    private final ArticleMapper articleMapper;
     private final TeamAuthorityService authorityService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -110,10 +125,43 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<TeamInvitationView> myPendingInvitations(Long userId) {
-        return invitationMapper.findPendingForInvitee(userId).stream()
+        List<TeamInvitation> live = invitationMapper.findPendingForInvitee(userId).stream()
                 .filter(invitation -> !expireIfNecessary(invitation))
-                .map(this::invitationView)
                 .toList();
+        return invitationViews(live);
+    }
+
+    @Override
+    public List<TeamInvitationView> teamInvitations(Long actorUserId, Long teamId) {
+        requireActiveTeam(teamId);
+        if (!authorityService.hasPermission(actorUserId, teamId, "MANAGE_MEMBERS")) {
+            throw new BusinessException(403, "Not allowed to view team invitations");
+        }
+        return invitationViews(invitationMapper.findByTeam(teamId, TEAM_INVITATION_LIMIT));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void revokeInvitation(Long actorUserId, Long teamId, Long invitationId) {
+        requireActiveTeam(teamId);
+        TeamInvitation invitation = invitationMapper.findForTeam(
+                requirePositive(invitationId, "Invalid invitation ID"),
+                requirePositive(teamId, "Invalid team ID"));
+        if (invitation == null) {
+            throw new BusinessException(404, "Invitation does not exist");
+        }
+        // Judged against the invited role, so an ADMIN cannot cancel an invitation addressed to an ADMIN.
+        if (!authorityService.canManageMember(actorUserId, teamId, invitation.getRoleCode())) {
+            throw new BusinessException(403, "Not allowed to revoke this invitation");
+        }
+        if (!"PENDING".equals(invitation.getStatus())) {
+            throw new BusinessException(409, "Only pending invitations can be revoked");
+        }
+        if (invitationMapper.revoke(invitationId, teamId, invitation.getLockVersion()) != 1) {
+            throw new BusinessException(409, "Invitation state has changed; refresh and retry");
+        }
+        authorityService.recordAuditEvent(teamId, actorUserId, "INVITATION_REVOKED", "TEAM_INVITATION",
+                invitationId, UUID.randomUUID().toString(), "{\"status\":\"PENDING\"}", "{\"status\":\"REVOKED\"}");
     }
 
     @Override
@@ -221,13 +269,48 @@ public class TeamMemberServiceImpl implements TeamMemberService {
 
     @Override
     public List<TeamMemberView> members(Long viewerUserId, Long teamId) {
-        requireActiveTeam(teamId);
+        Team team = requireActiveTeam(teamId);
         if (!authorityService.isMember(viewerUserId, teamId)) {
             throw new BusinessException(403, "Not allowed to view team members");
         }
-        return memberMapper.findActiveMembers(teamId).stream()
-                .map(member -> new TeamMemberView(member.getUserId(), member.getRoleCode(), member.getJoinedAt()))
+        List<TeamMember> members = memberMapper.findActiveMembers(teamId);
+        if (members.isEmpty()) {
+            return List.of();
+        }
+        List<Long> userIds = members.stream()
+                .map(TeamMember::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
+        Map<Long, CommunityUser> users = loadByIds(userIds.stream(), userMapper::selectBatchIds, CommunityUser::getId);
+        Map<Long, ArticleAuthorCountRow> contributions = contributionsOf(team.getBlogId(), userIds);
+
+        return members.stream()
+                .map(member -> {
+                    CommunityUser user = users.get(member.getUserId());
+                    ArticleAuthorCountRow contribution = contributions.get(member.getUserId());
+                    Integer total = contribution == null ? null : contribution.getTotal();
+                    return new TeamMemberView(
+                            member.getUserId(),
+                            user == null ? null : user.getDisplayName(),
+                            user == null ? null : user.getUsername(),
+                            user == null ? null : user.getAvatarFileId(),
+                            member.getRoleCode(),
+                            member.getJoinedAt(),
+                            total == null ? 0 : total,
+                            contribution == null ? null : contribution.getLastActiveAt());
+                })
+                .toList();
+    }
+
+    /** Article counts per member inside the team blog; empty when the team has no blog or no members. */
+    private Map<Long, ArticleAuthorCountRow> contributionsOf(Long blogId, List<Long> userIds) {
+        if (blogId == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        return articleMapper.countByBlogAndAuthors(blogId, userIds).stream()
+                .filter(row -> row.getAuthorUserId() != null)
+                .collect(Collectors.toMap(ArticleAuthorCountRow::getAuthorUserId, Function.identity(), (first, ignored) -> first));
     }
 
     private TeamInvitation pendingInvitation(Long userId, Long invitationId) {
@@ -317,7 +400,65 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     }
 
     private TeamInvitationView invitationView(TeamInvitation invitation) {
-        return new TeamInvitationView(invitation.getId(), invitation.getTeamId(), invitation.getInviteeUserId(),
-                invitation.getRoleCode(), invitation.getStatus(), invitation.getExpiresAt(), invitation.getCreatedAt());
+        return invitationViews(List.of(invitation)).getFirst();
+    }
+
+    /**
+     * Build invitation views for a batch in a bounded number of queries (teams, blogs, users), so the
+     * "邀请与申请" list never degenerates into an N+1 loop.
+     *
+     * <p>Team display data lives on {@code blog}, hence the team -&gt; blog hop. Missing rows degrade to
+     * null fields instead of throwing: a disbanded team or a deleted inviter must not break the list.
+     */
+    private List<TeamInvitationView> invitationViews(List<TeamInvitation> invitations) {
+        if (invitations.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Team> teams = loadByIds(invitations.stream().map(TeamInvitation::getTeamId),
+                teamMapper::selectBatchIds, Team::getId);
+        Map<Long, Blog> blogs = loadByIds(teams.values().stream().map(Team::getBlogId),
+                blogMapper::selectBatchIds, Blog::getId);
+        Map<Long, CommunityUser> users = loadByIds(
+                invitations.stream().flatMap(item -> Stream.of(item.getInviteeUserId(), item.getInvitedByUserId())),
+                userMapper::selectBatchIds, CommunityUser::getId);
+
+        return invitations.stream()
+                .map(invitation -> {
+                    Team team = teams.get(invitation.getTeamId());
+                    Blog blog = team == null || team.getBlogId() == null ? null : blogs.get(team.getBlogId());
+                    CommunityUser invitee = users.get(invitation.getInviteeUserId());
+                    CommunityUser inviter = users.get(invitation.getInvitedByUserId());
+                    return new TeamInvitationView(
+                            invitation.getId(),
+                            invitation.getTeamId(),
+                            blog == null ? null : blog.getName(),
+                            blog == null ? null : blog.getSlug(),
+                            blog == null ? null : blog.getAvatarFileId(),
+                            invitation.getInviteeUserId(),
+                            invitee == null ? null : invitee.getDisplayName(),
+                            invitee == null ? null : invitee.getUsername(),
+                            invitee == null ? null : invitee.getAvatarFileId(),
+                            invitation.getRoleCode(),
+                            invitation.getStatus(),
+                            invitation.getInvitedByUserId(),
+                            inviter == null ? null : inviter.getDisplayName(),
+                            inviter == null ? null : inviter.getUsername(),
+                            invitation.getExpiresAt(),
+                            invitation.getCreatedAt());
+                })
+                .toList();
+    }
+
+    /** Batch-load rows keyed by id, skipping the query entirely when there is nothing to look up. */
+    private static <T> Map<Long, T> loadByIds(Stream<Long> ids,
+                                              Function<Collection<Long>, List<T>> loader,
+                                              Function<T, Long> keyFunction) {
+        Set<Long> unique = ids.filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (unique.isEmpty()) {
+            return Map.of();
+        }
+        return loader.apply(unique).stream()
+                .collect(Collectors.toMap(keyFunction, Function.identity(), (first, ignored) -> first));
     }
 }

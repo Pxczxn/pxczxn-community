@@ -149,7 +149,7 @@ export default function TeamDetailPage() {
   return (
     <>
       <UserTopbar title="团队" />
-      <main className="page-shell team-detail-page">
+      <main className="page-shell team-detail-page" data-team-theme={team.settings.theme || "default"}>
         <section className="surface team-detail-hero">
           <Avatar
             alt={`${team.team.name}头像`}

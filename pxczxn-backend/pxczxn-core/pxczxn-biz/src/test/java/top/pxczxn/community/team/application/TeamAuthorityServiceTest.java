@@ -88,6 +88,26 @@ class TeamAuthorityServiceTest {
     }
 
     @Test
+    void getPermissionsReturnsPermissionListForActiveMember() {
+        TeamMember member = new TeamMember();
+        member.setRoleCode("ADMIN");
+        when(teamMemberMapper.findActiveMember(1L, 100L)).thenReturn(member);
+        when(teamPermissionMapper.findPermissionsByRole("ADMIN"))
+                .thenReturn(List.of("MANAGE_TEAM", "MANAGE_MEMBERS"));
+
+        List<String> permissions = service.getPermissions(100L, 1L);
+
+        assertThat(permissions).containsExactly("MANAGE_TEAM", "MANAGE_MEMBERS");
+    }
+
+    @Test
+    void getPermissionsReturnsEmptyListForNonMember() {
+        when(teamMemberMapper.findActiveMember(1L, 100L)).thenReturn(null);
+
+        assertThat(service.getPermissions(100L, 1L)).isEmpty();
+    }
+
+    @Test
     void canManageMemberAllowsOwnerToManageAll() {
         TeamMember owner = new TeamMember();
         owner.setRoleCode("OWNER");

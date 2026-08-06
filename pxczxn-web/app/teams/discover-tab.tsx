@@ -5,7 +5,7 @@ import { ArrowUpRight, BookOpen, CheckCircle2, Loader2, Search, Sparkles, Users 
 import { useState } from "react";
 import { Avatar } from "../components/prototype-ui";
 import { communityApi, publicFileUrl, type MyTeam, type TeamSummary } from "../lib/community-api";
-import { formatCount } from "./team-labels";
+import { formatCount, TEAM_CATEGORIES } from "./team-labels";
 
 type SortKey = "LATEST" | "ARTICLES" | "FOLLOWERS";
 
@@ -25,6 +25,7 @@ export function DiscoverTeamsTab({
 }) {
   const [keyword, setKeyword] = useState("");
   const [sort, setSort] = useState<SortKey>("LATEST");
+  const [category, setCategory] = useState("");
   const [followBusy, setFollowBusy] = useState<string | null>(null);
   const [followError, setFollowError] = useState("");
   const [following, setFollowing] = useState<Record<string, boolean>>({});
@@ -34,12 +35,13 @@ export function DiscoverTeamsTab({
   const filtered = teams
     .filter((team) => {
       const query = keyword.trim().toLowerCase();
-      if (!query) return true;
-      return (
+      if (query && !(
         team.name.toLowerCase().includes(query)
         || team.slug.toLowerCase().includes(query)
         || (team.summary ?? "").toLowerCase().includes(query)
-      );
+      )) return false;
+      if (category && (team.category ?? "") !== category) return false;
+      return true;
     })
     .sort((a, b) => {
       if (sort === "ARTICLES") return Number(b.articleCount) - Number(a.articleCount);
@@ -79,6 +81,15 @@ export function DiscoverTeamsTab({
             aria-label="搜索团队"
           />
         </div>
+        <select
+          className="discover-teams__sort"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          aria-label="团队分类筛选"
+        >
+          <option value="">全部分类</option>
+          {TEAM_CATEGORIES.map((cat) => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
+        </select>
         <select
           className="discover-teams__sort"
           value={sort}
@@ -146,6 +157,7 @@ export function DiscoverTeamsTab({
                 <div className="team-card__meta">
                   <span><BookOpen size={13} /> {team.articleCount} 篇公开文章</span>
                   <span><Users size={13} /> {formatCount(Number(team.followerCount))} 位关注者</span>
+                  {team.category && <span className="chip">{team.category}</span>}
                 </div>
                 <footer className="team-card__actions">
                   {isMember ? (

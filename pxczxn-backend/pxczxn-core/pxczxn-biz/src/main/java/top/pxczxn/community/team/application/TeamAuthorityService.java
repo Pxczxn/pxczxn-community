@@ -50,6 +50,22 @@ public class TeamAuthorityService {
     }
 
     /**
+     * Get the full permission set for a user on a team (empty list if not a member).
+     * Used by portal views that need to expose the permission list to the frontend for UI gating,
+     * so the permission source stays in one place instead of each service calling the mapper directly.
+     */
+    public List<String> getPermissions(Long userId, Long teamId) {
+        if (userId == null || teamId == null) {
+            return List.of();
+        }
+        TeamMember member = teamMemberMapper.findActiveMember(teamId, userId);
+        if (member == null) {
+            return List.of();
+        }
+        return teamPermissionMapper.findPermissionsByRole(member.getRoleCode());
+    }
+
+    /**
      * Check if user can manage a specific member (for add/remove/role change).
      * OWNER can manage all; ADMIN can manage EDITOR/AUTHOR only.
      */

@@ -222,7 +222,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
     return () => window.clearTimeout(timer);
   }, []);
 
-  function payload(current: EditorForm, lockVersion?: number, creating = false) {
+  const buildPayload = useCallback((current: EditorForm, lockVersion?: number, creating = false) => {
     return {
       title: current.title.trim(),
       slug: current.slug.trim(),
@@ -242,7 +242,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
       ...(creating && teamBlogId ? { blogId: teamBlogId } : {}),
       expectedLockVersion: lockVersion,
     };
-  }
+  }, [teamBlogId]);
 
   function validate(current: EditorForm) {
     if (!current.title.trim()) return "请输入文章标题";
@@ -268,10 +268,10 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
       const next = currentEditor
         ? await communityApi.saveArticle(
           currentEditor.articleId,
-          payload(current, currentEditor.lockVersion),
+          buildPayload(current, currentEditor.lockVersion),
           autosave,
         )
-        : await communityApi.createArticle(payload(current, undefined, true));
+        : await communityApi.createArticle(buildPayload(current, undefined, true));
       hydrate(next);
       if (!currentEditor) {
         window.history.replaceState(null, "", `/editor/${next.articleId}`);
@@ -290,7 +290,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
     } finally {
       setSaving(false);
     }
-  }, [hydrate, saving]);
+  }, [hydrate, saving, buildPayload]);
 
   useEffect(() => {
     if (!dirty || !editor || saving || reviewing || publishing) return;
