@@ -274,13 +274,13 @@ export default function TeamsPage() {
           <RequestsTab
             invitations={invitations}
             application={application}
-            teams={teams}
             mine={mine}
             loading={requestsLoading}
             error={requestsError}
             onRequireLogin={requireLogin}
             onInvitationChanged={reloadInvitations}
             onApplicationChanged={reloadInvitations}
+            onSwitchTab={selectTab}
           />
         )}
       </main>

@@ -20,7 +20,6 @@ import {
   type MyTeam,
   type TeamApplication,
   type TeamInvitation,
-  type TeamSummary,
 } from "../lib/community-api";
 import {
   APPLICATION_STATUS_LABELS,
@@ -32,42 +31,48 @@ import {
 export function RequestsTab({
   invitations,
   application,
-  teams,
   mine,
   loading,
   error,
   onRequireLogin,
   onInvitationChanged,
   onApplicationChanged,
+  onSwitchTab,
 }: {
   invitations: TeamInvitation[];
   application: TeamApplication | null;
-  teams: TeamSummary[];
   mine: MyTeam[] | null;
   loading: boolean;
   error: string;
   onRequireLogin: () => void;
   onInvitationChanged: () => void;
   onApplicationChanged: () => void;
+  onSwitchTab: (tab: "mine" | "discover" | "requests") => void;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  // 接受邀请后记录刚加入的团队,在邀请页就地展示“已加入”反馈与后续操作,不自动跳转。
+  const [lastAccepted, setLastAccepted] = useState<{ teamName: string; teamSlug: string } | null>(null);
 
-  const teamNameById = new Map<string, string>();
-  for (const team of teams) teamNameById.set(team.teamId, team.name);
-  for (const team of mine ?? []) teamNameById.set(team.teamId, team.name);
   const myTeamByTeamId = new Map((mine ?? []).map((team) => [team.teamId, team]));
 
-  async function respond(invitationId: string, action: "accept" | "reject") {
+  async function respond(invitation: TeamInvitation, action: "accept" | "reject") {
     if (!mine) {
       onRequireLogin();
       return;
     }
-    setBusy(invitationId);
+    setBusy(invitation.id);
     setActionError("");
     try {
-      if (action === "accept") await communityApi.acceptTeamInvitation(invitationId);
-      else await communityApi.rejectTeamInvitation(invitationId);
+      if (action === "accept") {
+        await communityApi.acceptTeamInvitation(invitation.id);
+        setLastAccepted({
+          teamName: invitation.teamName ?? `团队 #${invitation.teamId}`,
+          teamSlug: invitation.teamSlug ?? invitation.teamId,
+        });
+      } else {
+        await communityApi.rejectTeamInvitation(invitation.id);
+      }
       onInvitationChanged();
     } catch (cause) {
       setActionError(cause instanceof Error ? cause.message : "处理邀请失败，请稍后重试");
@@ -122,25 +127,50 @@ export function RequestsTab({
               {invitations.length > 0 && <span className="badge badge--warn">{invitations.length} 条待处理</span>}
             </header>
 
-            {invitations.length === 0 ? (
+            {lastAccepted && (
+              <div className="requests-panel__accepted">
+                <span className="requests-panel__accepted-icon"><Check size={16} /></span>
+                <div className="requests-panel__accepted-copy">
+                  <strong>已加入团队「{lastAccepted.teamName}」</strong>
+                  <p>快去工作台开始协作吧。</p>
+                </div>
+                <div className="requests-panel__accepted-actions">
+                  <Link className="primary-button" href={`/teams/${encodeURIComponent(lastAccepted.teamSlug)}/workspace`}>
+                    进入团队工作台 <ArrowUpRight size={14} />
+                  </Link>
+                  {invitations.length > 0 ? (
+                    <button type="button" className="ghost-button" onClick={() => setLastAccepted(null)}>
+                      继续处理邀请
+                    </button>
+                  ) : (
+                    <button type="button" className="ghost-button" onClick={() => onSwitchTab("mine")}>
+                      查看我的团队
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {invitations.length === 0 && !lastAccepted && (
               <p className="requests-panel__empty">暂时没有待处理的团队邀请。</p>
-            ) : (
+            )}
+
+            {invitations.length > 0 && (
               <ul className="requests-panel__list">
                 {invitations.map((invitation) => {
-                  const name = teamNameById.get(invitation.teamId);
-                  const member = myTeamByTeamId.get(invitation.teamId);
+                  const name = invitation.teamName ?? `团队 #${invitation.teamId}`;
                   return (
                     <li className="request-row" key={invitation.id}>
                       <Avatar
-                        alt={`${name ?? "团队"}头像`}
-                        label={(name ?? "团").slice(0, 1)}
+                        alt={`${name}头像`}
+                        label={name.slice(0, 1)}
                         size="sm"
-                        src={member ? publicFileUrl(member.avatarFileId) : null}
+                        src={publicFileUrl(invitation.teamAvatarFileId)}
                       />
                       <div className="request-row__copy">
-                        <strong>{name ?? `团队 #${invitation.teamId}`}</strong>
+                        <strong>{name}</strong>
                         <span>
-                          邀请你以「{ROLE_LABELS[invitation.roleCode] || invitation.roleCode}」身份加入
+                          {invitation.inviterDisplayName ?? invitation.inviterUsername ?? "未知用户"} 邀请你以「{ROLE_LABELS[invitation.roleCode] || invitation.roleCode}」身份加入
                           · 有效期至 {formatDateTime(invitation.expiresAt)}
                         </span>
                       </div>
@@ -149,7 +179,7 @@ export function RequestsTab({
                           type="button"
                           className="primary-button"
                           disabled={busy === invitation.id}
-                          onClick={() => respond(invitation.id, "accept")}
+                          onClick={() => respond(invitation, "accept")}
                         >
                           {busy === invitation.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
                           接受
@@ -158,7 +188,7 @@ export function RequestsTab({
                           type="button"
                           className="ghost-button"
                           disabled={busy === invitation.id}
-                          onClick={() => respond(invitation.id, "reject")}
+                          onClick={() => respond(invitation, "reject")}
                         >
                           <X size={14} /> 拒绝
                         </button>
