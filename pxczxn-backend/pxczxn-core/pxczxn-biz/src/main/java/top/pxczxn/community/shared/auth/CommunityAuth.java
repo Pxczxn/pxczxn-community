@@ -44,6 +44,18 @@ public final class CommunityAuth {
         stpLogic.login(userId);
     }
 
+    /**
+     * 带记住我选项的登录。
+     * <p>rememberMe=true 时 token 有效期延长至 30 天，否则使用默认的 7 天。</p>
+     */
+    public void login(Long userId, boolean rememberMe) {
+        if (rememberMe) {
+            stpLogic.login(userId, 30 * 24 * 60 * 60);
+        } else {
+            stpLogic.login(userId);
+        }
+    }
+
     public void checkLogin() {
         stpLogic.checkLogin();
     }

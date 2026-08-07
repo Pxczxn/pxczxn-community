@@ -82,6 +82,6 @@ public class SocialLoginStrategy implements LoginStrategy {
             throw new BusinessException("用户已被禁用");
         }
 
-        return loginHelper.doLogin(user);
+        return loginHelper.doLogin(user, request.getRememberMe());
     }
 }

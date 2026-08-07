@@ -123,7 +123,7 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
         updateRequired(loginAccountMapper.recordLoginSuccess(account.getId(), now), "更新登录账号");
         updateRequired(userMapper.recordLoginSuccess(user.getId(), now), "更新用户登录时间");
 
-        communityAuth.login(user.getId());
+        communityAuth.login(user.getId(), Boolean.TRUE.equals(command.rememberMe()));
         String tokenValue = communityAuth.getTokenValue();
         log.info("社区用户登录成功, userId={}", user.getId());
         return new CommunityLoginSession(

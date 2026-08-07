@@ -312,19 +312,25 @@ public class CommunityNotificationInboxService {
                             : null
             );
         }
-        AccessibleContentTarget target =
-                contentAccessService.findAccessible(
-                        LikeTargetType.parse(type), id
-                );
-        if (target == null) {
+        try {
+            AccessibleContentTarget target =
+                    contentAccessService.findAccessible(
+                            LikeTargetType.parse(type), id
+                    );
+            if (target == null) {
+                return TargetResolution.unavailable();
+            }
+            String path = target.canonicalPath();
+            if (path == null && target.targetType()
+                    == LikeTargetType.MOMENT) {
+                path = "/moments/" + target.targetId();
+            }
+            return new TargetResolution(true, path);
+        } catch (BusinessException exception) {
+            // 未知 target_type 或内容不可访问：降级为不可用，
+            // 避免单条通知的异常拖垮整个通知中心列表
             return TargetResolution.unavailable();
         }
-        String path = target.canonicalPath();
-        if (path == null && target.targetType()
-                == LikeTargetType.MOMENT) {
-            path = "/moments/" + target.targetId();
-        }
-        return new TargetResolution(true, path);
     }
 
     private static NotificationSenderView sender(CommunityUser sender) {

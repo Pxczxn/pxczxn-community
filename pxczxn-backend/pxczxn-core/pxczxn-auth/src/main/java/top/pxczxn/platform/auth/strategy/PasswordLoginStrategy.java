@@ -85,7 +85,7 @@ public class PasswordLoginStrategy implements LoginStrategy {
 
         // 6. 清除重试、执行登录
         clearRetry(retryKey);
-        return loginHelper.doLogin(user);
+        return loginHelper.doLogin(user, request.getRememberMe());
     }
 
     private void validateCaptcha(LoginRequest request) {

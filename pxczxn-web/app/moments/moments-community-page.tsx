@@ -1,32 +1,92 @@
 "use client";
 
-import Link from "next/link";
 import {
   AlertTriangle,
   Bookmark,
   Check,
   ChevronDown,
   Globe2,
-  Heart,
+  Hash,
   Image as ImageIcon,
   Link2,
+  Lock,
   LoaderCircle,
+  Maximize2,
   MessageCircle,
+  Minimize2,
   MoreHorizontal,
   RefreshCw,
   Send,
   Share2,
   Smile,
+  Star,
+  TrendingUp,
+  Users,
+  UserPlus,
 } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArticleThumb, Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
 import {
   CommentThread,
-  CommunityApiError,
   Moment,
+  PlatformTag,
   communityApi,
   publicFileUrl,
 } from "../lib/community-api";
+import {
+  MomentActions,
+  MomentBody,
+  messageOf,
+  relativeTime,
+} from "./moment-parts";
+
+/* ─── 左侧导航数据 ─── */
+const NAV_ITEMS: { key: string; label: string; Icon: React.ComponentType<{ size?: number }>; dot?: boolean }[] = [
+  { key: "recommended", label: "推荐", Icon: Star },
+  { key: "following", label: "关注", Icon: Users },
+  { key: "latest", label: "最新", Icon: RefreshCw },
+  { key: "team", label: "团队动态", Icon: Users },
+  { key: "mine", label: "我的互动", Icon: MessageCircle, dot: true },
+];
+
+/* ─── 热门话题与创作者从 API 动态加载 ─── */
+
+/** 格式化数字：≥1000 显示为 1.2k，否则原样 */
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+/** 从动态列表聚合作者（去重，按活跃度排序） */
+function deriveCreators(list: Moment[]) {
+  const map = new Map<string, {
+    blogId: string;
+    name: string;
+    avatar: string | null;
+    momentCount: number;
+    totalLikes: number;
+  }>();
+  for (const m of list) {
+    const key = m.blog.blogId;
+    const existing = map.get(key);
+    const name = m.author.displayName || m.author.username;
+    const avatar = publicFileUrl(m.author.avatarFileId);
+    if (existing) {
+      existing.momentCount += 1;
+      existing.totalLikes += m.likeCount;
+    } else {
+      map.set(key, { blogId: key, name, avatar, momentCount: 1, totalLikes: m.likeCount });
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => b.totalLikes - a.totalLikes)
+    .slice(0, 5)
+    .map((c) => ({
+      ...c,
+      desc: `${c.momentCount} 条动态 · ${c.totalLikes} 次互动`,
+    }));
+}
 
 export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: string }) {
   const [moments, setMoments] = useState<Moment[]>([]);
@@ -35,12 +95,19 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
   const [text, setText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [visibility, setVisibility] = useState("PUBLIC");
+  const [visibilityOpen, setVisibilityOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [activeNav, setActiveNav] = useState<string>("recommended");
+  const [activeTab, setActiveTab] = useState<string>("recommended");
+  const [composerFullscreen, setComposerFullscreen] = useState(false);
+  const [hotTopics, setHotTopics] = useState<PlatformTag[]>([]);
+  const [followingBlogIds, setFollowingBlogIds] = useState<Set<string>>(new Set());
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const loadComments = useCallback(async (momentId: string) => {
     try {
@@ -51,11 +118,60 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     }
   }, []);
 
+  /** 加载热门话题（平台标签，按使用量倒序） */
+  const loadHotTags = useCallback(async () => {
+    try {
+      const tags = await communityApi.tags();
+      setHotTopics(tags.slice(0, 8));
+    } catch {
+      // 静默降级，不阻塞主流程
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const page = await communityApi.moments(1, 20);
+      let page: { records: Moment[]; total: number };
+      switch (activeTab) {
+        case "mine":
+          page = await communityApi.myMoments(1, 20);
+          break;
+        case "recommended": {
+          // 推荐模式：拉更多条，按热度公式本地排序
+          const raw = await communityApi.moments(1, 40);
+          const scored = raw.records
+            .map((m) => ({
+              moment: m,
+              score: m.likeCount + m.favoriteCount * 2 + m.commentCount * 3,
+            }))
+            .sort((a, b) => b.score - a.score);
+          page = { records: scored.slice(0, 20).map((s) => s.moment), total: raw.total };
+          break;
+        }
+        case "following": {
+          // 关注流：取 followingFeed 中 MOMENT 类型的 targetId，批量拉详情
+          const feed = await communityApi.followingFeed(1, 20);
+          const momentIds = feed.records
+            .filter((item) => item.itemType === "MOMENT")
+            .map((item) => item.targetId);
+          if (momentIds.length === 0) {
+            page = { records: [], total: 0 };
+          } else {
+            const detailResults = await Promise.all(
+              momentIds.map((id) => communityApi.moment(id).catch(() => null))
+            );
+            page = {
+              records: detailResults.filter((m): m is Moment => m !== null),
+              total: feed.total,
+            };
+          }
+          break;
+        }
+        default:
+          page = await communityApi.moments(1, 20);
+          break;
+      }
       let nextSelected = page.records[0] ?? null;
       if (initialMomentId) {
         nextSelected =
@@ -70,12 +186,43 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     } finally {
       setLoading(false);
     }
-  }, [initialMomentId, loadComments]);
+  }, [initialMomentId, loadComments, activeTab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadHotTags(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadHotTags]);
+
+  useEffect(() => {
+    if (!visibilityOpen) return;
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".visibility-dropdown")) setVisibilityOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [visibilityOpen]);
+
+  useEffect(() => {
+    if (!composerFullscreen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setComposerFullscreen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => textareaRef.current?.focus(), 60);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      window.clearTimeout(focusTimer);
+    };
+  }, [composerFullscreen, textareaRef]);
 
   async function publish(event: FormEvent) {
     event.preventDefault();
@@ -99,6 +246,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
       setText("");
       setLinkUrl("");
       setNotice(result.moderationWarning ? "动态已发布，部分内容经过安全处理。" : "动态发布成功。");
+      setComposerFullscreen(false);
     } catch (requestError) {
       setError(messageOf(requestError, "动态发布失败"));
     } finally {
@@ -156,6 +304,19 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     setNotice("动态链接已复制。");
   }
 
+  async function toggleCreatorFollow(c: { blogId: string; followed: boolean }) {
+    try {
+      await communityApi.setBlogFollow(c.blogId, !c.followed);
+      setFollowingBlogIds((prev) => {
+        const next = new Set(prev);
+        if (c.followed) next.delete(c.blogId); else next.add(c.blogId);
+        return next;
+      });
+    } catch {
+      // 静默失败，不弹错误
+    }
+  }
+
   async function submitComment(event: FormEvent) {
     event.preventDefault();
     if (!selected || !commentText.trim()) return;
@@ -186,54 +347,67 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     <>
       <UserTopbar title="动态" />
       <main className="moments-page page-shell">
-        <section className="moments-feed stack">
-          <form className="surface composer" onSubmit={publish}>
-            <textarea
-              aria-label="分享你的想法"
-              onChange={(event) => setText(event.target.value)}
-              placeholder="分享你的想法..."
-              value={text}
-            />
-            {linkUrl !== "" && (
-              <input
-                aria-label="动态链接"
-                className="field composer-link-field"
-                onChange={(event) => setLinkUrl(event.target.value)}
-                placeholder="https://example.com"
-                type="url"
-                value={linkUrl}
-              />
-            )}
-            <div className="composer-toolbar">
-              <div>
-                <button disabled type="button"><ImageIcon size={16} /> 图片</button>
-                <button onClick={() => setLinkUrl((value) => value ? "" : "https://")} type="button">
-                  <Link2 size={16} /> 链接
-                </button>
-                <button disabled type="button"><MessageCircle size={16} /> 投票</button>
-                <button disabled type="button"><Smile size={16} /> 话题</button>
-              </div>
-              <div>
-                <label className="visibility-button">
-                  <Globe2 size={15} />
-                  <select
-                    aria-label="动态可见范围"
-                    onChange={(event) => setVisibility(event.target.value)}
-                    value={visibility}
+        {/* ─── 左侧导航栏 ─── */}
+        <aside className="moments-sidebar">
+          <nav className="moments-nav">
+            <h3 className="moments-nav__title">动态导航</h3>
+            <ul className="moments-nav__list">
+              {NAV_ITEMS.map(({ key, label, Icon, dot }) => (
+                <li key={key}>
+                  <button
+                    className={`moments-nav__item ${activeNav === key ? "active" : ""}`}
+                    onClick={() => { setActiveNav(key); setActiveTab(key); }}
+                    type="button"
                   >
-                    <option value="PUBLIC">公开</option>
-                    <option value="FOLLOWERS_ONLY">仅粉丝</option>
-                    <option value="PRIVATE">仅自己</option>
-                  </select>
-                  <ChevronDown size={14} />
-                </label>
-                <button className="primary-button" disabled={publishing} type="submit">
-                  {publishing ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
-                  {publishing ? "发布中" : "发布"}
-                </button>
-              </div>
+                    <Icon size={17} />
+                    <span>{label}</span>
+                    {dot && <span className="moments-nav__dot" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <section className="moments-sidebar__topics">
+            <div className="moments-sidebar__topics-header">
+              <h4>
+                <TrendingUp size={15} />
+                热门话题
+              </h4>
+              <button type="button">换一换</button>
             </div>
-          </form>
+            <ul className="moments-sidebar__topic-list">
+              {hotTopics.slice(0, 5).map((t) => (
+                <li key={t.tagId}>
+                  <button type="button">
+                    <Hash size={14} />
+                    <span className="topic-tag">{t.name}</span>
+                    <span className="topic-count">{formatCount(t.usageCount)}讨论</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button className="moments-sidebar__more-btn" type="button">查看全部话题</button>
+          </section>
+        </aside>
+
+        {/* ─── 中间信息流 ─── */}
+        <section className="moments-feed stack">
+          {/* 发布框 */}
+          <ComposerForm
+            variant="inline"
+            text={text}
+            linkUrl={linkUrl}
+            visibility={visibility}
+            visibilityOpen={visibilityOpen}
+            publishing={publishing}
+            onTextChange={setText}
+            onLinkChange={setLinkUrl}
+            onVisibilityChange={setVisibility}
+            onVisibilityOpenChange={setVisibilityOpen}
+            onSubmit={publish}
+            onRequestFullscreen={() => setComposerFullscreen(true)}
+          />
 
           {(error || notice) && (
             <div className={`inline-feedback ${error ? "error" : "success"}`} role="status">
@@ -242,12 +416,31 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
             </div>
           )}
 
-          <div className="card-title-row">
-            <h1 className="moments-title">动态广场</h1>
-            <button aria-label="刷新动态" className="icon-button" onClick={load} type="button">
-              <RefreshCw size={16} />
+          {/* 标签切换栏 */}
+          <div className="moments-feed__tabs">
+            <div className="moments-feed__tab-bar">
+              {[
+                { key: "recommended", label: "推荐" },
+                { key: "latest", label: "最新" },
+                { key: "following", label: "关注" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  className={`moments-feed__tab ${activeTab === tab.key ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.key)}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <button aria-label="筛选" className="icon-button moments-feed__filter" type="button">
+              <MoreHorizontal size={16} />
+              筛选
             </button>
           </div>
+
+          <h1 className="moments-feed__title">动态广场</h1>
 
           {loading && (
             <div className="surface feed-loading" aria-busy="true">
@@ -273,30 +466,48 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
           ))}
         </section>
 
-        <aside className="surface moment-detail">
-          <header>
-            <h2 className="card-heading">动态详情</h2>
-            {selected && (
-              <Link aria-label="打开独立详情页" href={`/moments/${selected.momentId}`}>
-                <MoreHorizontal size={18} />
-              </Link>
-            )}
-          </header>
-          {!selected ? (
-            <EmptyState title="选择一条动态" description="点击左侧动态查看详情和评论。" />
-          ) : (
-            <>
-              <MomentBody moment={selected} />
-              <MomentActions
-                busyAction={busyAction}
-                moment={selected}
-                onFavorite={() => void toggleFavorite(selected)}
-                onLike={() => void toggleLike(selected)}
-                onShare={() => void copyShare(selected)}
-              />
-              <section className="comments">
-                <h3>评论（{selected.commentCount}）</h3>
-                <form className="moment-comment-form" onSubmit={submitComment}>
+        {/* ─── 右侧面板 ─── */}
+        <aside className="moments-right-panel stack">
+          {/* 动态详情卡片 */}
+          <section className="surface moments-detail-card">
+            <header className="moments-detail-card__header">
+              <h2>动态详情</h2>
+              <a href="#" className="moments-detail-card__view-all">查看全部 →</a>
+            </header>
+            {!selected ? (
+              <div className="moments-detail-card__empty">
+                <p>点击左侧动态查看详情和评论。</p>
+              </div>
+            ) : (
+              <div className="moments-detail-card__body">
+                <div className="moment-author-row">
+                  {(() => {
+                    const avatar = publicFileUrl(selected.author.avatarFileId);
+                    const authorName = selected.author.displayName || selected.author.username;
+                    return avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt="" className="avatar avatar-md avatar-image" src={avatar} />
+                    ) : (
+                      <Avatar label={authorName.slice(0, 1)} size="md" />
+                    );
+                  })()}
+                  <span>
+                    <strong>{selected.author.displayName || selected.author.username}</strong>
+                    <small>{relativeTime(selected.createdAt)}</small>
+                  </span>
+                </div>
+                {selected.renderedHtml ? (
+                  <div className="moment-copy" dangerouslySetInnerHTML={{ __html: selected.renderedHtml }} />
+                ) : (
+                  <p className="moment-copy">{selected.textContent}</p>
+                )}
+                <div className="moments-detail-card__stats">
+                  <span><MessageCircle size={14} /> {selected.likeCount}</span>
+                  <span><MessageCircle size={14} /> {selected.commentCount}</span>
+                  <span><Share2 size={14} /> 分享</span>
+                  <span><Bookmark size={14} /> {selected.favoriteCount}</span>
+                </div>
+                <form className="moments-detail-card__comment-form" onSubmit={submitComment}>
                   <Avatar label="我" size="sm" />
                   <input
                     className="field"
@@ -304,30 +515,283 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                     placeholder="写下你的评论..."
                     value={commentText}
                   />
-                  <button
-                    aria-label="发布评论"
-                    className="icon-button"
-                    disabled={busyAction === "comment"}
-                    type="submit"
-                  >
+                  <button aria-label="发送评论" className="icon-button" disabled={busyAction === "comment"} type="submit">
                     <Send size={16} />
                   </button>
                 </form>
-                {comments.map((thread) => (
-                  <CommentRow key={thread.root.commentId} thread={thread} />
-                ))}
-                {!comments.length && (
-                  <p className="muted comments-empty">还没有评论，来聊聊你的看法。</p>
+                {comments.length > 0 && (
+                  <div className="moments-detail-card__comments-preview">
+                    {comments.slice(0, 3).map((thread) => (
+                      <CommentRowCompact key={thread.root.commentId} thread={thread} />
+                    ))}
+                    {comments.length > 3 && (
+                      <a href="#" className="moments-detail-card__more-comments">
+                        查看全部 {selected.commentCount} 条评论 ›
+                      </a>
+                    )}
+                  </div>
                 )}
-              </section>
-            </>
-          )}
+              </div>
+            )}
+          </section>
+
+          {/* 热门话题 */}
+          <section className="surface moments-right-card">
+            <header className="moments-right-card__header">
+              <h3>
+                <TrendingUp size={15} />
+                热门话题
+              </h3>
+              <a href="#">更多 ›</a>
+            </header>
+            <div className="moments-topics-grid">
+              {hotTopics.slice(0, 4).map((t) => (
+                <a key={t.tagId} href="#" className="moments-topic-pill">
+                  <Hash size={12} />
+                  {t.name}
+                  <span>{formatCount(t.usageCount)}讨论</span>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          {/* 创作者推荐 — 从当前列表聚合作者 */}
+          <section className="surface moments-right-card">
+            <header className="moments-right-card__header">
+              <h3>创作者推荐</h3>
+              <a href="#">更多 ›</a>
+            </header>
+            {moments.length === 0 ? (
+              <p className="muted" style={{ padding: "8px 12px", fontSize: 13 }}>加载动态后显示活跃作者</p>
+            ) : (
+              <ul className="moments-creator-list">
+                {deriveCreators(moments).map((c) => ({
+                  ...c,
+                  followed: followingBlogIds.has(c.blogId),
+                })).map((c) => (
+                  <li key={c.blogId} className="moments-creator-item">
+                    {c.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt="" className="avatar avatar-sm avatar-image" src={c.avatar} />
+                    ) : (
+                      <Avatar label={c.name.slice(0, 1)} size="sm" />
+                    )}
+                    <div className="moments-creator-info">
+                      <strong>{c.name}</strong>
+                      <small>{c.desc}</small>
+                    </div>
+                    <button
+                      className={`${c.followed ? "secondary-button" : "primary-button"} moments-creator-follow`}
+                      onClick={() => void toggleCreatorFollow(c)}
+                      type="button"
+                    >
+                      {c.followed ? "已关注" : <><UserPlus size={13} /> 关注</>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </aside>
       </main>
+
+      {/* 全屏编辑模态 */}
+      {composerFullscreen && (
+        <div
+          className="composer-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="全屏编辑动态"
+          onClick={(event) => { if (event.target === event.currentTarget) setComposerFullscreen(false); }}
+        >
+          <ComposerForm
+            variant="fullscreen"
+            text={text}
+            linkUrl={linkUrl}
+            visibility={visibility}
+            visibilityOpen={visibilityOpen}
+            publishing={publishing}
+            onTextChange={setText}
+            onLinkChange={setLinkUrl}
+            onVisibilityChange={setVisibility}
+            onVisibilityOpenChange={setVisibilityOpen}
+            onSubmit={publish}
+            onRequestClose={() => setComposerFullscreen(false)}
+            textareaRef={textareaRef}
+          />
+        </div>
+      )}
     </>
   );
 }
 
+/* ─── 发布框（普通 / 全屏两种形态复用） ─── */
+interface ComposerFormProps {
+  variant: "inline" | "fullscreen";
+  text: string;
+  linkUrl: string;
+  visibility: string;
+  visibilityOpen: boolean;
+  publishing: boolean;
+  onTextChange: (value: string) => void;
+  onLinkChange: (value: string) => void;
+  onVisibilityChange: (value: string) => void;
+  onVisibilityOpenChange: (open: boolean) => void;
+  onSubmit: (event: FormEvent) => void;
+  onRequestFullscreen?: () => void;
+  onRequestClose?: () => void;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+}
+
+function ComposerForm(props: ComposerFormProps) {
+  const {
+    variant,
+    text,
+    linkUrl,
+    visibility,
+    visibilityOpen,
+    publishing,
+    onTextChange,
+    onLinkChange,
+    onVisibilityChange,
+    onVisibilityOpenChange,
+    onSubmit,
+    onRequestFullscreen,
+    onRequestClose,
+    textareaRef,
+  } = props;
+  const isFull = variant === "fullscreen";
+  return (
+    <form
+      className={`surface composer ${isFull ? "composer--fullscreen" : ""}`}
+      onSubmit={onSubmit}
+    >
+      <div className="composer__input-row">
+        <Avatar label="我" size={isFull ? "lg" : "md"} />
+        <textarea
+          ref={textareaRef}
+          aria-label="分享你的想法"
+          onChange={(event) => onTextChange(event.target.value)}
+          placeholder={isFull ? "在这里写下你的想法，全屏模式下更专注…" : "分享你的想法..."}
+          value={text}
+        />
+      </div>
+      {linkUrl !== "" && (
+        <input
+          aria-label="动态链接"
+          className="field composer-link-field"
+          onChange={(event) => onLinkChange(event.target.value)}
+          placeholder="https://example.com"
+          type="url"
+          value={linkUrl}
+        />
+      )}
+      <div className="composer-toolbar">
+        <div className="composer-toolbar__tools">
+          <button disabled type="button"><ImageIcon size={16} /> 图片</button>
+          <button onClick={() => onLinkChange(linkUrl ? "" : "https://")} type="button">
+            <Link2 size={16} /> 链接
+          </button>
+          <button disabled type="button"><MessageCircle size={16} /> 投票</button>
+          <button disabled type="button"><Smile size={16} /> 话题</button>
+        </div>
+        <div className="composer-toolbar__actions">
+          {!isFull && (
+            <button
+              aria-label="全屏编辑"
+              className="composer__fullscreen-btn"
+              onClick={onRequestFullscreen}
+              title="全屏编辑"
+              type="button"
+            >
+              <Maximize2 size={16} />
+            </button>
+          )}
+          <div className="visibility-dropdown">
+            <button
+              aria-expanded={visibilityOpen}
+              aria-haspopup="listbox"
+              className="visibility-dropdown__trigger"
+              onClick={() => onVisibilityOpenChange(!visibilityOpen)}
+              type="button"
+            >
+              {visibility === "PUBLIC" ? <Globe2 size={15} /> : visibility === "FOLLOWERS_ONLY" ? <Users size={15} /> : <Lock size={15} />}
+              <span>{visibility === "PUBLIC" ? "公开" : visibility === "FOLLOWERS_ONLY" ? "仅粉丝" : "仅自己"}</span>
+              <ChevronDown size={14} className={visibilityOpen ? "rotate-180" : ""} />
+            </button>
+            {visibilityOpen && (
+              <div className="visibility-dropdown__menu" role="listbox">
+                <button
+                  className={`visibility-dropdown__item ${visibility === "PUBLIC" ? "active" : ""}`}
+                  onClick={() => { onVisibilityChange("PUBLIC"); onVisibilityOpenChange(false); }}
+                  type="button"
+                >
+                  <Globe2 size={16} />
+                  <span>
+                    <strong>公开</strong>
+                    <small>所有人可见</small>
+                  </span>
+                  {visibility === "PUBLIC" && <Check size={14} />}
+                </button>
+                <button
+                  className={`visibility-dropdown__item ${visibility === "FOLLOWERS_ONLY" ? "active" : ""}`}
+                  onClick={() => { onVisibilityChange("FOLLOWERS_ONLY"); onVisibilityOpenChange(false); }}
+                  type="button"
+                >
+                  <Users size={16} />
+                  <span>
+                    <strong>仅粉丝</strong>
+                    <small>只有粉丝可看</small>
+                  </span>
+                  {visibility === "FOLLOWERS_ONLY" && <Check size={14} />}
+                </button>
+                <button
+                  className={`visibility-dropdown__item ${visibility === "PRIVATE" ? "active" : ""}`}
+                  onClick={() => { onVisibilityChange("PRIVATE"); onVisibilityOpenChange(false); }}
+                  type="button"
+                >
+                  <Lock size={16} />
+                  <span>
+                    <strong>仅自己</strong>
+                    <small>私密，仅自己可见</small>
+                  </span>
+                  {visibility === "PRIVATE" && <Check size={14} />}
+                </button>
+              </div>
+            )}
+          </div>
+          {isFull && onRequestClose && (
+            <button className="ghost-button composer__collapse-btn" onClick={onRequestClose} type="button">
+              <Minimize2 size={16} /> 收起
+            </button>
+          )}
+          <button className="primary-button composer__publish-btn" disabled={publishing} type="submit">
+            {publishing ? <LoaderCircle className="spin" size={16} /> : <Send size={16} />}
+            {publishing ? "发布中" : "发布"}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+/* ─── 紧凑型评论行（右侧详情预览用） ─── */
+function CommentRowCompact({ thread }: { thread: CommentThread }) {
+  const comment = thread.root;
+  const authorName = comment.author?.displayName || comment.author?.username || "用户";
+  return (
+    <div className="comment-row-compact">
+      <Avatar label={authorName.slice(0, 1)} size="sm" />
+      <div>
+        <strong>{authorName}</strong>
+        <p>{comment.renderedHtml?.replace(/<[^>]*>/g, "").slice(0, 80) || "发表了评论…"}</p>
+        <small>{relativeTime(comment.createdAt)}</small>
+      </div>
+    </div>
+  );
+}
+
+/** 动态卡片 */
 function MomentCard({
   moment,
   active,
@@ -347,151 +811,20 @@ function MomentCard({
 }) {
   return (
     <article className={`surface moment-card ${active ? "moment-card--active" : ""}`}>
-      <button className="moment-card__select" onClick={onChoose} type="button">
-        <MomentBody moment={moment} />
-      </button>
-      <MomentActions
-        busyAction={busyAction}
-        moment={moment}
-        onFavorite={onFavorite}
-        onLike={onLike}
-        onShare={onShare}
-      />
+      <div className="moment-card__inner">
+        <button className="moment-card__select" onClick={onChoose} type="button">
+          <MomentBody moment={moment} />
+        </button>
+        <MomentActions
+          busyAction={busyAction}
+          moment={moment}
+          onFavorite={onFavorite}
+          onLike={onLike}
+          onShare={onShare}
+        />
+      </div>
     </article>
   );
 }
 
-function MomentBody({ moment }: { moment: Moment }) {
-  const avatar = publicFileUrl(moment.author.avatarFileId);
-  const authorName = moment.author.displayName || moment.author.username;
-  return (
-    <>
-      <div className="moment-author-row">
-        {avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img alt="" className="avatar avatar-md avatar-image" src={avatar} />
-        ) : (
-          <Avatar label={authorName.slice(0, 1)} size="md" />
-        )}
-        <span>
-          <strong>{authorName}</strong>
-          <small>来自 {moment.blog.name} · {relativeTime(moment.createdAt)}</small>
-        </span>
-      </div>
-      {moment.renderedHtml ? (
-        <div className="moment-copy" dangerouslySetInnerHTML={{ __html: moment.renderedHtml }} />
-      ) : (
-        <p className="moment-copy">{moment.textContent}</p>
-      )}
-      {moment.linkUrl && (
-        <a className="moment-link" href={moment.linkUrl} rel="noreferrer" target="_blank">
-          {moment.linkUrl}
-        </a>
-      )}
-      {moment.article && (
-        moment.article.available && moment.article.canonicalPath ? (
-          <Link className="link-preview" href={moment.article.canonicalPath}>
-            <ArticleThumb variant={1} />
-            <span>
-              <strong>{moment.article.title}</strong>
-              <small>{moment.article.summary || "查看关联文章"}</small>
-            </span>
-          </Link>
-        ) : (
-          <div className="link-preview compact muted">关联文章暂不可见</div>
-        )
-      )}
-      {moment.repostSource && (
-        <div className="repost-preview">
-          {moment.repostSource.available ? (
-            <>
-              <strong>
-                @{moment.repostSource.author?.displayName || moment.repostSource.author?.username}
-              </strong>
-              <p>{moment.repostSource.textContent}</p>
-            </>
-          ) : (
-            <span className="muted">原动态已不可见</span>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
 
-function MomentActions({
-  moment,
-  busyAction,
-  onLike,
-  onFavorite,
-  onShare,
-}: {
-  moment: Moment;
-  busyAction: string;
-  onLike: () => void;
-  onFavorite: () => void;
-  onShare: () => void;
-}) {
-  return (
-    <footer className="moment-actions">
-      <button
-        aria-pressed={moment.liked}
-        className={moment.liked ? "active" : ""}
-        disabled={busyAction === `like-${moment.momentId}`}
-        onClick={onLike}
-        type="button"
-      >
-        <Heart fill={moment.liked ? "currentColor" : "none"} size={16} /> {moment.likeCount}
-      </button>
-      <button type="button"><MessageCircle size={16} /> {moment.commentCount}</button>
-      <button onClick={onShare} type="button"><Share2 size={16} /> 分享</button>
-      <button
-        aria-pressed={moment.favorited}
-        className={moment.favorited ? "active" : ""}
-        disabled={busyAction === `favorite-${moment.momentId}`}
-        onClick={onFavorite}
-        type="button"
-      >
-        <Bookmark fill={moment.favorited ? "currentColor" : "none"} size={16} />
-        {moment.favoriteCount || "收藏"}
-      </button>
-    </footer>
-  );
-}
-
-function CommentRow({ thread }: { thread: CommentThread }) {
-  const comment = thread.root;
-  const authorName = comment.author?.displayName || comment.author?.username || "用户";
-  return (
-    <div className="comment-row">
-      <Avatar label={authorName.slice(0, 1)} size="sm" />
-      <span>
-        <strong>{authorName}</strong>
-        <div dangerouslySetInnerHTML={{ __html: comment.renderedHtml }} />
-        <small>
-          {relativeTime(comment.createdAt)}
-          {thread.replyCount > 0 ? ` · ${thread.replyCount} 条回复` : ""}
-        </small>
-      </span>
-    </div>
-  );
-}
-
-function relativeTime(value: string) {
-  const timestamp = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`).getTime();
-  if (!Number.isFinite(timestamp)) return value;
-  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (seconds < 60) return "刚刚";
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} 分钟前`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} 小时前`;
-  if (seconds < 86400 * 7) return `${Math.floor(seconds / 86400)} 天前`;
-  return new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit" })
-    .format(new Date(timestamp));
-}
-
-function messageOf(error: unknown, fallback: string) {
-  if (error instanceof CommunityApiError && error.code === 401) {
-    return "请先登录星语社区，再完成这项操作。";
-  }
-  return error instanceof Error ? error.message : fallback;
-}

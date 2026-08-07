@@ -41,6 +41,15 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [errorTimer, setErrorTimer] = useState<number | null>(null);
+
+  /** 显示操作类错误（自动 4 秒后消失） */
+  const showActionError = useCallback((msg: string) => {
+    if (errorTimer !== null) window.clearTimeout(errorTimer);
+    setError(msg);
+    const timer = window.setTimeout(() => setError(""), 4000) as unknown as number;
+    setErrorTimer(timer);
+  }, [errorTimer]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,9 +60,12 @@ export function NotificationsPage() {
         communityApi.unreadNotifications(),
       ]);
       setRecords(page.records);
-      setCounts(unread);
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "通知加载失败");
+      // 列表为空时强制清零计数，避免"没通知却显示未读"的矛盾
+      setCounts(page.records.length > 0 ? unread : { total: 0, categories: {} });
+    } catch {
+      // 通知列表非关键路径，加载失败时静默展示空状态，不弹错误
+      setRecords([]);
+      setCounts({ total: 0, categories: {} });
     } finally {
       setLoading(false);
     }
@@ -63,6 +75,10 @@ export function NotificationsPage() {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    return () => { if (errorTimer !== null) window.clearTimeout(errorTimer); };
+  }, [errorTimer]);
 
   async function markRead(notification: CommunityNotification) {
     if (notification.status === "READ") return;
@@ -86,8 +102,8 @@ export function NotificationsPage() {
         },
       }));
       window.dispatchEvent(new CustomEvent(NOTIFICATION_EVENT));
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "通知状态更新失败");
+    } catch {
+      showActionError("标记已读失败，请稍后重试");
     } finally {
       setBusy("");
     }
@@ -108,8 +124,8 @@ export function NotificationsPage() {
           : { ...current.categories, [category]: 0 },
       }));
       window.dispatchEvent(new CustomEvent(NOTIFICATION_EVENT));
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "全部已读操作失败");
+    } catch {
+      showActionError("全部已读操作失败，请稍后重试");
     } finally {
       setBusy("");
     }

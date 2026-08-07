@@ -836,6 +836,8 @@ export async function communityRequest<T>(
       ...init,
       headers,
       credentials: "include",
+      // 禁用 HTTP 缓存，避免 GET 接口（如未读计数）返回 304 导致角标展示脏数据
+      cache: "no-store",
     });
   } catch {
     throw new CommunityApiError(
@@ -895,7 +897,7 @@ export const communityApi = {
       body: JSON.stringify(input),
     }, false);
   },
-  login(input: { email: string; password: string }) {
+  login(input: { email: string; password: string; rememberMe?: boolean }) {
     return communityRequest<CommunitySession>("/api/v1/auth/login", {
       method: "POST",
       body: JSON.stringify(input),

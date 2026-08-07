@@ -67,13 +67,40 @@
         @update:page-size="changePageSize"
       />
     </n-card>
+
+    <n-modal
+      v-model:show="showUserDetail"
+      preset="card"
+      title="用户资料"
+      style="width: min(560px, calc(100vw - 32px))"
+    >
+      <n-spin v-if="userDetailLoading">正在加载用户资料</n-spin>
+      <n-descriptions
+        v-else-if="userDetail"
+        bordered
+        label-placement="left"
+        :column="2"
+      >
+        <n-descriptions-item label="用户 ID">{{ userDetail.id }}</n-descriptions-item>
+        <n-descriptions-item label="昵称">{{ userDetail.displayName || '-' }}</n-descriptions-item>
+        <n-descriptions-item label="用户名">{{ userDetail.username }}</n-descriptions-item>
+        <n-descriptions-item label="状态">{{ statusLabel(userDetail.status) }}</n-descriptions-item>
+        <n-descriptions-item label="邮箱">{{ userDetail.email || '-' }}</n-descriptions-item>
+        <n-descriptions-item label="认证">{{ statusLabel(userDetail.verificationStatus) }}</n-descriptions-item>
+        <n-descriptions-item label="个人博客 ID">{{ userDetail.personalBlogId || '-' }}</n-descriptions-item>
+        <n-descriptions-item label="个人博客">{{ userDetail.personalBlogName || '-' }}</n-descriptions-item>
+        <n-descriptions-item label="最近登录">{{ formatDateTime(userDetail.lastLoginAt) }}</n-descriptions-item>
+        <n-descriptions-item label="注册时间">{{ formatDateTime(userDetail.createdAt) }}</n-descriptions-item>
+      </n-descriptions>
+      <n-empty v-else description="未找到用户资料" />
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NTag, type DataTableColumns } from 'naive-ui'
+import { NButton, NTag, useMessage, type DataTableColumns } from 'naive-ui'
 import { RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityUser } from '@/api/community'
 import { formatDateTime, statusLabel, statusTone } from '@/utils/community'
@@ -82,6 +109,7 @@ const rows = ref<CommunityUser[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
 const router = useRouter()
+const message = useMessage()
 const filters = reactive({
   keyword: '',
   status: null as string | null,
@@ -94,6 +122,24 @@ const pagination = reactive({
   showSizePicker: true,
   pageSizes: [10, 20, 50]
 })
+
+const showUserDetail = ref(false)
+const userDetail = ref<CommunityUser | null>(null)
+const userDetailLoading = ref(false)
+
+async function openUserDetail(row: CommunityUser) {
+  if (userDetailLoading.value) return
+  showUserDetail.value = true
+  userDetailLoading.value = true
+  userDetail.value = null
+  try {
+    userDetail.value = await communityApi.user(row.id)
+  } catch (cause) {
+    message.error(cause instanceof Error ? cause.message : '用户资料加载失败')
+  } finally {
+    userDetailLoading.value = false
+  }
+}
 
 const statusOptions = [
   { label: '正常', value: 'NORMAL' },
@@ -164,7 +210,13 @@ const columns: DataTableColumns<CommunityUser> = [
     title: '关联博客',
     key: 'personalBlogName',
     minWidth: 150,
-    render: row => row.personalBlogName || '—'
+    render: row => h(NButton, {
+      text: true,
+      type: 'primary',
+      onClick: () => openUserDetail(row)
+    }, {
+      default: () => row.personalBlogName || '查看资料'
+    })
   },
   {
     title: '最近登录',

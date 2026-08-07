@@ -75,7 +75,7 @@ public class MiniProgramLoginStrategy implements LoginStrategy {
         }
 
         // 4. 执行登录
-        return loginHelper.doLogin(user);
+        return loginHelper.doLogin(user, request.getRememberMe());
     }
 
     /**

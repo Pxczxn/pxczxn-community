@@ -30,9 +30,24 @@ public class LoginHelper {
     private final SystemConfigHelper configHelper;
 
     /**
-     * 执行登录并构建结果（通用流程）
+     * 勾选"记住我"时 token 的有效期（30 天，单位：秒）
+     */
+    private static final long REMEMBER_ME_TIMEOUT_SECONDS = 30L * 24 * 60 * 60;
+
+    /**
+     * 执行登录并构建结果（通用流程，默认不记住登录状态）
      */
     public LoginResult doLogin(SysUser user) {
+        return doLogin(user, null);
+    }
+
+    /**
+     * 执行登录并构建结果（通用流程）
+     *
+     * @param rememberMe 为 true 时 token 有效期延长至 {@link #REMEMBER_ME_TIMEOUT_SECONDS}（30 天），
+     *                    否则使用系统配置的默认超时
+     */
+    public LoginResult doLogin(SysUser user, Boolean rememberMe) {
         RequestInfo info = getRequestInfo();
 
         // 单点登录：踢掉其他设备
@@ -41,7 +56,11 @@ public class LoginHelper {
         }
 
         // Sa-Token 登录
-        StpUtil.login(user.getId());
+        if (Boolean.TRUE.equals(rememberMe)) {
+            StpUtil.login(user.getId(), REMEMBER_ME_TIMEOUT_SECONDS);
+        } else {
+            StpUtil.login(user.getId());
+        }
 
         // 写入Session
         SaSession session = StpUtil.getSession();

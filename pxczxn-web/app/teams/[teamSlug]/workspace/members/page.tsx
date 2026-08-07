@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Crown, Loader2, LogOut, Search, UserMinus, UserPlus, X } from "lucide-react";
+import { AlertCircle, Crown, Loader2, Search, UserMinus, UserPlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "../../../../components/prototype-ui";
 import {
@@ -46,14 +46,12 @@ export default function WorkspaceMembersPage() {
   const [inviteRole, setInviteRole] = useState("AUTHOR");
 
   const [transferTarget, setTransferTarget] = useState<TeamMemberView | null>(null);
-  const [disbandConfirm, setDisbandConfirm] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState<"transfer" | "disband" | "leave" | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState<"transfer" | null>(null);
 
   const viewerRole = workspace?.viewerRole ?? "";
   const permissions = workspace?.permissions;
   const canManageMembers = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_MEMBERS);
   const canTransfer = hasTeamPermission(permissions, TEAM_PERMISSIONS.TRANSFER_OWNERSHIP);
-  const canDisband = hasTeamPermission(permissions, TEAM_PERMISSIONS.DISBAND_TEAM);
   const isOwner = viewerRole === "OWNER";
   const assignableRoles = ASSIGNABLE_ROLES.filter((role) => isOwner || role !== "ADMIN");
 
@@ -191,18 +189,6 @@ export default function WorkspaceMembersPage() {
   function transfer() {
     if (!teamId || !transferTarget) return;
     void run(() => communityApi.transferTeamOwnership(teamId, transferTarget.userId), "transfer");
-    setConfirmOpen(null);
-  }
-
-  function leave() {
-    if (!teamId) return;
-    void run(() => communityApi.leaveTeam(teamId), "leave");
-    setConfirmOpen(null);
-  }
-
-  function disband() {
-    if (!teamId) return;
-    void run(() => communityApi.disbandTeam(teamId), "disband");
     setConfirmOpen(null);
   }
 
@@ -435,27 +421,6 @@ export default function WorkspaceMembersPage() {
         )}
       </section>
 
-      <section className="surface workspace-members-page__danger">
-        <h2>退出 / 解散团队</h2>
-        <p className="secondary">
-          {isOwner
-            ? "所有者不能直接退出：需要先转让所有权，或解散团队（已发布文章不会被物理删除，作者归属保留）。"
-            : "退出后你将无法访问团队工作台，已发布内容保留。可以随时通过新邀请重新加入。"}
-        </p>
-        <div className="workspace-members-page__danger-actions">
-          {!isOwner && (
-            <button type="button" className="danger-button" disabled={busy === "leave"} onClick={() => setConfirmOpen("leave")}>
-              <LogOut size={14} /> 退出团队
-            </button>
-          )}
-          {canDisband && (
-            <button type="button" className="danger-button" disabled={busy === "disband"} onClick={() => setConfirmOpen("disband")}>
-              解散团队
-            </button>
-          )}
-        </div>
-      </section>
-
       {confirmOpen === "transfer" && (
         <ConfirmDialog
           title="转让团队所有权"
@@ -468,32 +433,6 @@ export default function WorkspaceMembersPage() {
           onConfirm={() => void transfer()}
         />
       )}
-      {confirmOpen === "leave" && (
-        <ConfirmDialog
-          title="退出团队"
-          body="退出后你将无法访问团队工作台。确定要退出当前团队吗？"
-          confirmText="确认退出"
-          busy={busy === "leave"}
-          onCancel={() => setConfirmOpen(null)}
-          onConfirm={() => void leave()}
-        />
-      )}
-      {confirmOpen === "disband" && (
-        <ConfirmDialog
-          title="解散团队"
-          body={`解散后团队公开主页将停止展示，已发布文章不会被物理删除，作者归属保留。请输入团队名称「${workspace?.team.team.name}」以确认。`}
-          confirmText="确认解散"
-          busy={busy === "disband"}
-          requireName={workspace?.team.team.name ?? ""}
-          nameValue={disbandConfirm}
-          onNameChange={setDisbandConfirm}
-          onCancel={() => {
-            setConfirmOpen(null);
-            setDisbandConfirm("");
-          }}
-          onConfirm={() => void disband()}
-        />
-      )}
     </div>
   );
 }
@@ -503,9 +442,6 @@ function ConfirmDialog({
   body,
   confirmText,
   busy,
-  requireName,
-  nameValue,
-  onNameChange,
   onCancel,
   onConfirm,
 }: {
@@ -513,29 +449,17 @@ function ConfirmDialog({
   body: string;
   confirmText: string;
   busy: boolean;
-  requireName?: string;
-  nameValue?: string;
-  onNameChange?: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const nameConfirmed = !requireName || nameValue === requireName;
   return (
     <div className="confirm-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onCancel(); }}>
       <section className="confirm-dialog surface-lg" role="dialog" aria-modal="true" aria-label={title}>
         <h2>{title}</h2>
         <p>{body}</p>
-        {requireName && (
-          <input
-            value={nameValue ?? ""}
-            onChange={(event) => onNameChange?.(event.target.value)}
-            placeholder={`输入团队名称：${requireName}`}
-            aria-label="确认团队名称"
-          />
-        )}
         <div className="confirm-dialog__actions">
           <button type="button" className="ghost-button" onClick={onCancel}>取消</button>
-          <button type="button" className="danger-button" disabled={busy || !nameConfirmed} onClick={onConfirm}>
+          <button type="button" className="danger-button" disabled={busy} onClick={onConfirm}>
             {busy ? <Loader2 className="animate-spin" size={14} /> : null} {confirmText}
           </button>
         </div>

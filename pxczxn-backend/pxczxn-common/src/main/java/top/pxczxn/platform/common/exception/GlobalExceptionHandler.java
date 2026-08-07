@@ -96,8 +96,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RuntimeException.class)
     public Result<Void> handleRuntimeException(RuntimeException e) {
-        log.warn("运行时异常: {}", e.getMessage());
-        return Result.fail(e.getMessage());
+        log.warn("运行时异常: {}", e.getMessage(), e);
+        String message = e.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "系统繁忙，请稍后再试";
+        }
+        return Result.fail(message);
     }
 
     /**
@@ -105,8 +109,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("非法参数异常: {}", e.getMessage());
-        return Result.fail(400, e.getMessage());
+        log.warn("非法参数异常: {}", e.getMessage(), e);
+        String message = e.getMessage();
+        if (message == null || message.isBlank()) {
+            message = "参数错误";
+        }
+        return Result.fail(400, message);
     }
 
     /**

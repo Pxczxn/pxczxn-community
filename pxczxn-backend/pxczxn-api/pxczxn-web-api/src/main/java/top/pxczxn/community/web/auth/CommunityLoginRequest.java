@@ -12,6 +12,8 @@ public record CommunityLoginRequest(
 
         @NotBlank(message = "密码不能为空")
         @Size(max = 72, message = "密码长度不能超过 72 个字符")
-        String password
+        String password,
+
+        Boolean rememberMe
 ) {
 }

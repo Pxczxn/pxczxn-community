@@ -33,6 +33,7 @@ export function AuthPanel() {
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState<{
     tone: "error" | "success";
     text: string;
@@ -99,7 +100,7 @@ export function AuthPanel() {
         registeredBlogSlug = registered.blogSlug;
       }
 
-      const session = await communityApi.login({ email, password });
+      const session = await communityApi.login({ email, password, rememberMe });
       saveSession({ ...session, blogSlug: registeredBlogSlug });
       const me = await communityApi.me();
       saveSession({
@@ -230,7 +231,11 @@ export function AuthPanel() {
           {mode === "login" ? (
             <div className="auth-options">
               <label className="checkbox-row">
-                <input type="checkbox" />
+                <input
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  type="checkbox"
+                />
                 <span>记住我</span>
               </label>
               <button

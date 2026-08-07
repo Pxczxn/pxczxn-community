@@ -88,7 +88,7 @@ public class CommunityAuthController {
     ) {
         abuseGuard.check(clientActor(servletRequest), "LOGIN", 30, 900);
         CommunityLoginSession session = sessionService.login(
-                new CommunityLoginCommand(request.email(), request.password())
+                new CommunityLoginCommand(request.email(), request.password(), request.rememberMe())
         );
         return Result.ok(new CommunityLoginView(
                 session.tokenName(),

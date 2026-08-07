@@ -1,4 +1,4 @@
 package top.pxczxn.community.user.application;
 
-public record CommunityLoginCommand(String email, String password) {
+public record CommunityLoginCommand(String email, String password, Boolean rememberMe) {
 }

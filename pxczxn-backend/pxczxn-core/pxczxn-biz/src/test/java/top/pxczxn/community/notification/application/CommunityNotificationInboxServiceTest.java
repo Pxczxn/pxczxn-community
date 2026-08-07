@@ -144,6 +144,30 @@ class CommunityNotificationInboxServiceTest {
     }
 
     @Test
+    void unknownTargetTypeDegradesToUnavailableInsteadOfThrowing() {
+        CommunityNotificationRecipient recipient = recipient("UNREAD");
+        CommunityNotification notification = notification();
+        notification.setTargetType("WHATEVER");
+        when(recipientMapper.selectInbox(
+                10L, "INTERACTION", "UNREAD", 0, 20
+        )).thenReturn(List.of(recipient));
+        when(recipientMapper.countInbox(
+                10L, "INTERACTION", "UNREAD"
+        )).thenReturn(1L);
+        when(notificationMapper.selectBatchIds(any()))
+                .thenReturn(List.of(notification));
+        when(userMapper.selectBatchIds(any()))
+                .thenReturn(List.of());
+
+        NotificationView view = service.page(
+                "interaction", "unread", 1, 20
+        ).records().getFirst();
+
+        assertThat(view.targetAvailable()).isFalse();
+        assertThat(view.title()).isEqualTo("通知内容已不可用");
+    }
+
+    @Test
     void unreadCountIncludesStableZeroValuedCategories() {
         when(recipientMapper.countUnreadByCategory(10L))
                 .thenReturn(List.of(
