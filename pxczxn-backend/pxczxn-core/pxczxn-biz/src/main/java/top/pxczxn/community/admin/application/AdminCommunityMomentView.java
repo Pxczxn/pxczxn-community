@@ -24,6 +24,7 @@ public record AdminCommunityMomentView(
         long repostCount,
         int lockVersion,
         long eventCount,
+        long reportCount,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt

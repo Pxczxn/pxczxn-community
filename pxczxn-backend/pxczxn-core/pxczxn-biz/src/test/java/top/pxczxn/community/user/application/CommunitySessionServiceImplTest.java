@@ -68,7 +68,7 @@ class CommunitySessionServiceImplTest {
         when(communityAuth.getTokenTimeout()).thenReturn(604800L);
 
         CommunityLoginSession result = service.login(
-                new CommunityLoginCommand(" Alice@Example.COM ", "correct-password")
+                new CommunityLoginCommand(" Alice@Example.COM ", "correct-password", false)
         );
 
         assertThat(result.tokenName()).isEqualTo(CommunityAuth.TOKEN_NAME);
@@ -88,7 +88,7 @@ class CommunitySessionServiceImplTest {
         when(userMapper.recordLoginSuccess(anyLong(), any())).thenReturn(1);
 
         CommunityLoginSession result = service.login(
-                new CommunityLoginCommand("alice@example.com", "correct-password")
+                new CommunityLoginCommand("alice@example.com", "correct-password", false)
         );
 
         assertThat(result.userId()).isEqualTo(200L);
@@ -104,7 +104,7 @@ class CommunitySessionServiceImplTest {
                 .thenReturn(1);
 
         assertThatThrownBy(() -> service.login(
-                new CommunityLoginCommand("alice@example.com", "wrong-password")
+                new CommunityLoginCommand("alice@example.com", "wrong-password", false)
         ))
                 .isInstanceOf(InvalidCommunityCredentialsException.class)
                 .hasMessage("邮箱或密码错误");
@@ -126,7 +126,7 @@ class CommunitySessionServiceImplTest {
                 .thenReturn(1);
 
         assertThatThrownBy(() -> service.login(
-                new CommunityLoginCommand("alice@example.com", "wrong-password")
+                new CommunityLoginCommand("alice@example.com", "wrong-password", false)
         ))
                 .isInstanceOf(CommunityLoginLockedException.class)
                 .hasMessageContaining("15 分钟");
@@ -143,7 +143,7 @@ class CommunitySessionServiceImplTest {
         when(loginAccountMapper.selectOne(any())).thenReturn(locked);
 
         assertThatThrownBy(() -> service.login(
-                new CommunityLoginCommand("alice@example.com", "correct-password")
+                new CommunityLoginCommand("alice@example.com", "correct-password", false)
         )).isInstanceOf(CommunityLoginLockedException.class);
         verify(userMapper, never()).selectById(anyLong());
 
@@ -152,7 +152,7 @@ class CommunitySessionServiceImplTest {
         when(userMapper.selectById(201L)).thenReturn(user(201L, "BANNED"));
 
         assertThatThrownBy(() -> service.login(
-                new CommunityLoginCommand("other@example.com", "correct-password")
+                new CommunityLoginCommand("other@example.com", "correct-password", false)
         ))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("账号已封禁");

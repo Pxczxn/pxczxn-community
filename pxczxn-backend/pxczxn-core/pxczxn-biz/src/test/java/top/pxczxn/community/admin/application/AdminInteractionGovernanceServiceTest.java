@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.blog.persistence.BlogMapper;
+import top.pxczxn.community.report.persistence.CommunityReportMapper;
 import top.pxczxn.community.social.model.CommunityComment;
 import top.pxczxn.community.social.model.CommunityCommentModerationEvent;
 import top.pxczxn.community.social.model.CommunityContentLike;
@@ -46,6 +47,7 @@ class AdminInteractionGovernanceServiceTest {
     private CommunityUserMapper userMapper;
     private BlogMapper blogMapper;
     private ArticleMapper articleMapper;
+    private CommunityReportMapper reportMapper;
     private AdminInteractionGovernanceService service;
 
     @BeforeEach
@@ -62,6 +64,7 @@ class AdminInteractionGovernanceServiceTest {
         userMapper = mock(CommunityUserMapper.class);
         blogMapper = mock(BlogMapper.class);
         articleMapper = mock(ArticleMapper.class);
+        reportMapper = mock(CommunityReportMapper.class);
         service = new AdminInteractionGovernanceService(
                 commentMapper,
                 commentEventMapper,
@@ -72,7 +75,8 @@ class AdminInteractionGovernanceServiceTest {
                 followMapper,
                 userMapper,
                 blogMapper,
-                articleMapper
+                articleMapper,
+                reportMapper
         );
     }
 
@@ -182,6 +186,31 @@ class AdminInteractionGovernanceServiceTest {
 
         verify(momentMapper, never()).update(any(), any());
         verify(momentEventMapper, never()).insert(any());
+    }
+
+    @Test
+    void overviewAggregatesMomentCountsAndTodayInteractions() {
+        when(momentMapper.selectCount(any())).thenReturn(10L, 2L, 3L, 1L);
+        when(likeMapper.selectCount(any())).thenReturn(5L);
+        when(favoriteItemMapper.selectCount(any())).thenReturn(3L);
+        when(commentMapper.selectCount(any())).thenReturn(7L);
+
+        AdminMomentOverviewView result = service.overview();
+
+        assertThat(result.totalMoments()).isEqualTo(10L);
+        assertThat(result.todayNew()).isEqualTo(2L);
+        assertThat(result.pendingReview()).isEqualTo(3L);
+        assertThat(result.takenDown()).isEqualTo(1L);
+        assertThat(result.todayInteractions()).isEqualTo(15L);
+    }
+
+    @Test
+    void momentsRejectsUnsupportedMomentType() {
+        assertThatThrownBy(() -> service.moments(
+                null, null, null, "IMAGE", null, null, 1, 20
+        ))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("动态类型");
     }
 
     @Test

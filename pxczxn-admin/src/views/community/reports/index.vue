@@ -1,16 +1,208 @@
 <template>
-  <div class="community-page"><header class="page-heading"><div><div class="page-eyebrow">REPORT OPERATIONS</div><h1>举报中心</h1><p>认领并处理社区用户提交的举报。</p></div><n-space><n-select v-model:value="status" :options="statusOptions" clearable class="filter-select" @update:value="load"/><n-button :loading="loading" @click="load">刷新</n-button></n-space></header><n-card><n-alert v-if="error" type="error" style="margin-bottom:16px">{{ error }}</n-alert><n-empty v-if="!loading && rows.length === 0" description="暂无待处理举报"/><n-data-table v-else :columns="columns" :data="rows" :loading="loading" :row-key="(row: CommunityReport) => row.id" :scroll-x="1080"/></n-card></div>
+  <div class="community-page">
+    <header class="page-heading">
+      <div>
+        <div class="page-eyebrow">REPORT OPERATIONS</div>
+        <h1>举报中心</h1>
+        <p>认领并处理社区用户提交的举报，支持按举报目标筛选与回溯。</p>
+      </div>
+      <n-button :loading="loading" @click="load">
+        <template #icon><n-icon><RefreshOutline /></n-icon></template>
+        刷新
+      </n-button>
+    </header>
+
+    <n-card>
+      <n-form inline :model="filters" class="filter-form" label-placement="left">
+        <n-form-item label="状态">
+          <n-select
+            v-model:value="filters.status"
+            :options="statusOptions"
+            clearable
+            placeholder="全部状态"
+            class="filter-select"
+            @update:value="load"
+          />
+        </n-form-item>
+        <n-form-item label="目标类型">
+          <n-select
+            v-model:value="filters.targetType"
+            :options="targetTypeOptions"
+            clearable
+            placeholder="全部目标"
+            class="filter-select"
+            @update:value="load"
+          />
+        </n-form-item>
+        <n-form-item label="目标 ID">
+          <n-input
+            v-model:value="filters.targetId"
+            clearable
+            placeholder="Snowflake ID"
+            @keyup.enter="load"
+          />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="load">
+              <template #icon><n-icon><SearchOutline /></n-icon></template>
+              查询
+            </n-button>
+            <n-button @click="reset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </n-form>
+
+      <n-alert v-if="error" type="error" class="table-alert">{{ error }}</n-alert>
+      <n-empty v-if="!loading && rows.length === 0" description="暂无匹配举报" />
+      <n-data-table
+        v-else
+        :columns="columns"
+        :data="rows"
+        :loading="loading"
+        :row-key="(row: CommunityReport) => row.id"
+        :scroll-x="1080"
+      />
+    </n-card>
+  </div>
 </template>
+
 <script setup lang="ts">
-import { h, onMounted, ref } from 'vue'
+import { h, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { NButton, NTag, NSpace, useDialog, useMessage } from 'naive-ui'
+import { RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityReport } from '@/api/community'
-const message = useMessage(); const dialog = useDialog(); const loading = ref(false); const error = ref(''); const rows = ref<CommunityReport[]>([]); const status = ref<'PENDING' | 'ASSIGNED' | null>(null)
-const statusOptions = [{ label: '待处理', value: 'PENDING' }, { label: '已认领', value: 'ASSIGNED' }]
-const columns = [{ title: '目标', key: 'target', width: 180, render: (row: CommunityReport) => `${row.targetType} #${row.targetId}` }, { title: '原因', key: 'reasonCode', width: 150 }, { title: '说明', key: 'description', ellipsis: { tooltip: true } }, { title: '状态', key: 'status', width: 100, render: (row: CommunityReport) => h(NTag, { type: row.status === 'PENDING' ? 'warning' : 'info' }, { default: () => row.status }) }, { title: '操作', key: 'actions', width: 250, render: (row: CommunityReport) => h(NSpace, {}, { default: () => [row.status === 'PENDING' ? h(NButton, { size: 'small', type: 'primary', onClick: () => claim(row) }, { default: () => '认领' }) : null, row.status === 'ASSIGNED' ? h(NButton, { size: 'small', type: 'success', onClick: () => decide(row, false) }, { default: () => '结案' }) : null, row.status === 'ASSIGNED' ? h(NButton, { size: 'small', onClick: () => decide(row, true) }, { default: () => '驳回' }) : null] }) }]
-async function load() { loading.value = true; error.value = ''; try { rows.value = await communityApi.reports(status.value || undefined) } catch (e) { error.value = e instanceof Error ? e.message : '加载失败' } finally { loading.value = false } }
-async function claim(row: CommunityReport) { try { await communityApi.claimReport(row.id, row.lockVersion); message.success('已认领'); load() } catch (e) { message.error(e instanceof Error ? e.message : '认领失败') } }
-function decide(row: CommunityReport, dismiss: boolean) { dialog.warning({ title: dismiss ? '驳回举报' : '结案', content: dismiss ? '确认驳回该举报？' : '确认将该举报标记为已解决？', positiveText: '确认', negativeText: '取消', onPositiveClick: async () => { try { await communityApi.resolveReport(row.id, row.lockVersion, dismiss ? 'NO_ACTION' : 'RESOLVED', undefined, dismiss); message.success('处理完成'); load() } catch (e) { message.error(e instanceof Error ? e.message : '处理失败') } } }) }
-onMounted(load)
+import { statusLabel } from '@/utils/community'
+
+const route = useRoute()
+const message = useMessage()
+const dialog = useDialog()
+const loading = ref(false)
+const error = ref('')
+const rows = ref<CommunityReport[]>([])
+
+const filters = reactive({
+  status: null as string | null,
+  targetType: null as string | null,
+  targetId: ''
+})
+
+const statusOptions = [
+  { label: '待处理', value: 'PENDING' },
+  { label: '已认领', value: 'ASSIGNED' }
+]
+const targetTypeOptions = [
+  { label: '文章', value: 'ARTICLE' },
+  { label: '动态', value: 'MOMENT' },
+  { label: '评论', value: 'COMMENT' },
+  { label: '博客', value: 'BLOG' },
+  { label: '用户', value: 'USER' },
+  { label: '团队', value: 'TEAM' }
+]
+
+const columns = [
+  {
+    title: '目标',
+    key: 'target',
+    width: 180,
+    render: (row: CommunityReport) => `${statusLabel(row.targetType)} #${row.targetId}`
+  },
+  { title: '原因', key: 'reasonCode', width: 150 },
+  { title: '说明', key: 'description', ellipsis: { tooltip: true } },
+  {
+    title: '状态',
+    key: 'status',
+    width: 110,
+    render: (row: CommunityReport) => h(NTag, {
+      type: row.status === 'PENDING' ? 'warning' : 'info',
+      bordered: false
+    }, { default: () => statusLabel(row.status) })
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 250,
+    render: (row: CommunityReport) => h(NSpace, {}, {
+      default: () => [
+        row.status === 'PENDING'
+          ? h(NButton, { size: 'small', type: 'primary', onClick: () => claim(row) }, { default: () => '认领' })
+          : null,
+        row.status === 'ASSIGNED'
+          ? h(NButton, { size: 'small', type: 'success', onClick: () => decide(row, false) }, { default: () => '结案' })
+          : null,
+        row.status === 'ASSIGNED'
+          ? h(NButton, { size: 'small', onClick: () => decide(row, true) }, { default: () => '驳回' })
+          : null
+      ]
+    })
+  }
+]
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    rows.value = await communityApi.reports({
+      status: filters.status || undefined,
+      targetType: filters.targetType || undefined,
+      targetId: filters.targetId || undefined
+    })
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '加载失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+function reset() {
+  filters.status = null
+  filters.targetType = null
+  filters.targetId = ''
+  load()
+}
+
+async function claim(row: CommunityReport) {
+  try {
+    await communityApi.claimReport(row.id, row.lockVersion)
+    message.success('已认领')
+    load()
+  } catch (e) {
+    message.error(e instanceof Error ? e.message : '认领失败')
+  }
+}
+
+function decide(row: CommunityReport, dismiss: boolean) {
+  dialog.warning({
+    title: dismiss ? '驳回举报' : '结案',
+    content: dismiss ? '确认驳回该举报？' : '确认将该举报标记为已解决？',
+    positiveText: '确认',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await communityApi.resolveReport(row.id, row.lockVersion, dismiss ? 'NO_ACTION' : 'RESOLVED', undefined, dismiss)
+        message.success('处理完成')
+        load()
+      } catch (e) {
+        message.error(e instanceof Error ? e.message : '处理失败')
+      }
+    }
+  })
+}
+
+onMounted(() => {
+  const q = route.query
+  if (q.targetType) filters.targetType = String(q.targetType)
+  if (q.targetId) filters.targetId = String(q.targetId)
+  load()
+})
 </script>
-<style scoped>.community-page{padding:24px}.page-heading{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}.page-eyebrow{font-size:12px;font-weight:600;letter-spacing:.5px;color:var(--community-muted);margin-bottom:8px}.page-heading h1{font-size:24px;margin:0 0 8px}.page-heading p{margin:0;color:var(--community-muted)}</style>
+
+<style scoped>
+.community-page { padding: 24px }
+.page-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px }
+.page-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .5px; color: var(--community-muted); margin-bottom: 8px }
+.page-heading h1 { font-size: 24px; margin: 0 0 8px }
+.page-heading p { margin: 0; color: var(--community-muted) }
+.filter-select { width: 160px }
+</style>

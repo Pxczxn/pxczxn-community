@@ -12,7 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.social.application.MomentService;
+import top.pxczxn.community.social.application.MomentType;
 import top.pxczxn.community.social.application.PublishMomentCommand;
+
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,10 +57,11 @@ public class MomentController {
     @GetMapping("/moments")
     public Result<MomentPageResponse> publicFeed(
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "20") int pageSize
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Set<String> momentTypes
     ) {
         return Result.ok(MomentPageResponse.from(
-                service.publicPage(null, pageNum, pageSize)
+                service.publicPage(null, pageNum, pageSize, parseMomentTypes(momentTypes))
         ));
     }
 
@@ -62,10 +69,11 @@ public class MomentController {
     public Result<MomentPageResponse> blogMoments(
             @PathVariable Long blogId,
             @RequestParam(defaultValue = "1") int pageNum,
-            @RequestParam(defaultValue = "20") int pageSize
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Set<String> momentTypes
     ) {
         return Result.ok(MomentPageResponse.from(
-                service.publicPage(blogId, pageNum, pageSize)
+                service.publicPage(blogId, pageNum, pageSize, parseMomentTypes(momentTypes))
         ));
     }
 
@@ -111,5 +119,32 @@ public class MomentController {
         } catch (NumberFormatException exception) {
             throw new BusinessException(400, label + " ID 无效");
         }
+    }
+
+    /**
+     * 解析查询参数中的 momentTypes：支持 ?momentTypes=TEXT&momentTypes=LINK
+     * （重复键）以及 ?momentTypes=TEXT,LINK（逗号分隔）两种形式。保留顺序、
+     * 去重、空值忽略；调用 MomentType.parse 处理非法值（统一抛 400）。
+     */
+    private static Set<MomentType> parseMomentTypes(Set<String> raw) {
+        if (raw == null || raw.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String part : raw) {
+            if (part == null) continue;
+            for (String token : part.split(",")) {
+                String stripped = token.strip();
+                if (!stripped.isEmpty()) {
+                    normalized.add(stripped.toUpperCase(Locale.ROOT));
+                }
+            }
+        }
+        if (normalized.isEmpty()) {
+            return Set.of();
+        }
+        return normalized.stream()
+                .map(MomentType::parse)
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -315,6 +315,7 @@ export interface CommunityMoment {
   repostCount: number
   lockVersion: number
   eventCount: number
+  reportCount: number
   createdAt: string
   updatedAt?: string
   deletedAt?: string
@@ -323,6 +324,14 @@ export interface CommunityMoment {
 export interface CommunityMomentDetail {
   moment: CommunityMoment
   events: GovernanceEvent[]
+}
+
+export interface CommunityMomentOverview {
+  totalMoments: number
+  todayNew: number
+  pendingReview: number
+  takenDown: number
+  todayInteractions: number
 }
 
 export interface CommunityInteraction {
@@ -468,6 +477,11 @@ export const communityApi = {
     method: 'get',
     params
   }),
+  momentOverview: () => request<CommunityMomentOverview>({
+    ...adminConfig,
+    url: '/admin-api/community/moments/overview',
+    method: 'get'
+  }),
   moment: (momentId: string) => request<CommunityMomentDetail>({
     ...adminConfig,
     url: `/admin-api/community/moments/${momentId}`,
@@ -593,7 +607,7 @@ export const communityApi = {
   teams: (params: Record<string, unknown>) => requestCommunityPage<CommunityTeam>({ ...adminConfig, url: '/admin-api/community/teams', method: 'get', params }),
   team: (teamId: string) => request<CommunityTeam>({ ...adminConfig, url: `/admin-api/community/teams/${teamId}`, method: 'get' }),
   collaborations: (params: Record<string, unknown>) => requestCommunityPage<CommunityCollaboration>({ ...adminConfig, url: '/admin-api/community/collaborations', method: 'get', params })
-  ,reports: (status?: 'PENDING' | 'ASSIGNED') => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports', method: 'get', params: status ? { status } : undefined })
+  ,reports: (params?: { status?: string; targetType?: string; targetId?: string }) => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports', method: 'get', params: params || undefined })
   ,reportSearch: (keyword: string) => request<CommunityReport[]>({ ...adminConfig, url: '/admin-api/community/reports/search', method: 'get', params: { keyword, limit: 10 } })
   ,claimReport: (reportId: string, expectedLockVersion: number) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/claim`, method: 'post', data: { expectedLockVersion } })
   ,resolveReport: (reportId: string, expectedLockVersion: number, resolutionCode: string, resolutionNote?: string, dismiss = false) => request<CommunityReport>({ ...adminConfig, url: `/admin-api/community/reports/${reportId}/${dismiss ? 'dismiss' : 'resolve'}`, method: 'post', data: { expectedLockVersion, resolutionCode, resolutionNote } })

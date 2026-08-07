@@ -13,8 +13,8 @@ import java.util.List;
 public interface CommunityReportMapper extends BaseMapper<CommunityReport> {
     @Select("SELECT * FROM community_report WHERE reporter_user_id=#{userId} ORDER BY created_at DESC")
     List<CommunityReport> findByReporter(@Param("userId") Long userId);
-    @Select("SELECT * FROM community_report WHERE status IN ('PENDING','ASSIGNED') AND (#{status} IS NULL OR status=#{status}) ORDER BY created_at ASC")
-    List<CommunityReport> findQueue(@Param("status") String status);
+    @Select("SELECT * FROM community_report WHERE status IN ('PENDING','ASSIGNED') AND (#{status} IS NULL OR status=#{status}) AND (#{targetType} IS NULL OR target_type=#{targetType}) AND (#{targetId} IS NULL OR target_id=#{targetId}) ORDER BY created_at ASC")
+    List<CommunityReport> findQueue(@Param("status") String status, @Param("targetType") String targetType, @Param("targetId") Long targetId);
     @Update("UPDATE community_report SET status='ASSIGNED',assignee_admin_id=#{adminId},updated_at=#{now},lock_version=lock_version+1 WHERE id=#{id} AND status='PENDING' AND lock_version=#{lock}")
     int claim(@Param("id") Long id, @Param("adminId") Long adminId, @Param("lock") Integer lock, @Param("now") LocalDateTime now);
     @Update("UPDATE community_report SET status=#{status},resolution_code=#{code},resolution_note=#{note},resolved_at=#{now},updated_at=#{now},lock_version=lock_version+1 WHERE id=#{id} AND status='ASSIGNED' AND assignee_admin_id=#{adminId} AND lock_version=#{lock}")

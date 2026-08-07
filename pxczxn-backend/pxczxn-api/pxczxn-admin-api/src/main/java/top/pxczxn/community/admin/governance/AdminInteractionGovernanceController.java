@@ -97,6 +97,14 @@ public class AdminInteractionGovernanceController {
         ));
     }
 
+    @GetMapping("/moments/overview")
+    @SaCheckPermission("community:moment:list")
+    public Result<AdminMomentOverviewResponse> momentOverview() {
+        return Result.ok(AdminMomentOverviewResponse.from(
+                service.overview()
+        ));
+    }
+
     @GetMapping("/moments/{momentId}")
     @SaCheckPermission("community:moment:query")
     public Result<AdminCommunityMomentDetailResponse> moment(

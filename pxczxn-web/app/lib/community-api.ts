@@ -462,6 +462,10 @@ export interface MomentPage {
   pageSize: number;
 }
 
+export interface MomentFeedFilter {
+  momentTypes?: string[];
+}
+
 export interface CommentAuthor {
   userId: string;
   username: string;
@@ -1068,9 +1072,13 @@ export const communityApi = {
       body: JSON.stringify({ expectedLockVersion }),
     });
   },
-  moments(pageNum = 1, pageSize = 20) {
+  moments(pageNum = 1, pageSize = 20, filters?: MomentFeedFilter) {
+    const params: string[] = [`pageNum=${pageNum}`, `pageSize=${pageSize}`];
+    if (filters?.momentTypes?.length) {
+      params.push(`momentTypes=${filters.momentTypes.join(",")}`);
+    }
     return communityRequest<MomentPage>(
-      `/api/v1/moments?pageNum=${pageNum}&pageSize=${pageSize}`,
+      `/api/v1/moments?${params.join("&")}`,
       {},
       "optional",
     );

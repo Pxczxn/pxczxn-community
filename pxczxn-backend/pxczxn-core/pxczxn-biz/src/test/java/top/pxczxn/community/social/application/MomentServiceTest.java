@@ -1,5 +1,6 @@
 package top.pxczxn.community.social.application;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,14 @@ import top.pxczxn.community.user.persistence.CommunityUserMapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -234,11 +237,30 @@ class MomentServiceTest {
         )).thenThrow(new BusinessException(404, "内容不存在"));
 
         MomentPageView result =
-                service.publicPage(null, 1, 20);
+                service.publicPage(null, 1, 20, null);
 
         assertThat(result.total()).isEqualTo(1);
         assertThat(result.records()).extracting(MomentView::momentId)
                 .containsExactly(10L);
+    }
+
+    @Test
+    void publicPageAcceptsMomentTypeFilter() {
+        CommunityMoment text = moment(
+                10L, 100L, 300L, "TEXT", "PUBLISHED"
+        );
+        when(momentMapper.selectList(any())).thenReturn(List.of(text));
+        when(accessService.findAccessible(
+                LikeTargetType.MOMENT, 10L
+        )).thenReturn(target(10L));
+
+        MomentPageView result =
+                service.publicPage(null, 1, 20, Set.of(MomentType.TEXT));
+
+        assertThat(result.total()).isEqualTo(1);
+        assertThat(result.records()).extracting(MomentView::momentId)
+                .containsExactly(10L);
+        verify(momentMapper).selectList(any());
     }
 
     @Test

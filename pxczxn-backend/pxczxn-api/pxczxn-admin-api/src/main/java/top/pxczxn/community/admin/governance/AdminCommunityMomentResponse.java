@@ -26,6 +26,7 @@ public record AdminCommunityMomentResponse(
         long repostCount,
         int lockVersion,
         long eventCount,
+        long reportCount,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt
@@ -56,6 +57,7 @@ public record AdminCommunityMomentResponse(
                 view.repostCount(),
                 view.lockVersion(),
                 view.eventCount(),
+                view.reportCount(),
                 view.createdAt(),
                 view.updatedAt(),
                 view.deletedAt()

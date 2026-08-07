@@ -69,7 +69,7 @@ const routes: RouteRecordRaw[] = [
         path: 'community/moments',
         name: 'CommunityMoments',
         component: () => import('@/views/community/moments/index.vue'),
-        meta: { title: '动态治理', icon: 'PlanetOutline', permission: 'community:moment:list' }
+        meta: { title: '动态管理', icon: 'PlanetOutline', permission: 'community:moment:list' }
       },
       {
         path: 'community/interactions',

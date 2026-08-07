@@ -228,19 +228,36 @@ public class MomentService {
     public MomentPageView publicPage(
             Long blogId,
             int pageNum,
-            int pageSize
+            int pageSize,
+            Set<MomentType> momentTypes
     ) {
         if (blogId != null) {
             requirePublicBlog(blogId);
         }
-        List<CommunityMoment> candidates = momentMapper.selectList(
-                Wrappers.<CommunityMoment>lambdaQuery()
-                        .eq(CommunityMoment::getStatus, "PUBLISHED")
-                        .isNull(CommunityMoment::getDeletedAt)
-                        .eq(blogId != null, CommunityMoment::getBlogId, blogId)
-                        .orderByDesc(CommunityMoment::getCreatedAt)
-                        .orderByDesc(CommunityMoment::getId)
-        );
+        List<String> typeNames = momentTypes == null || momentTypes.isEmpty()
+                ? List.of()
+                : momentTypes.stream().map(Enum::name).toList();
+        List<CommunityMoment> candidates;
+        if (typeNames.isEmpty()) {
+            candidates = momentMapper.selectList(
+                    Wrappers.<CommunityMoment>lambdaQuery()
+                            .eq(CommunityMoment::getStatus, "PUBLISHED")
+                            .isNull(CommunityMoment::getDeletedAt)
+                            .eq(blogId != null, CommunityMoment::getBlogId, blogId)
+                            .orderByDesc(CommunityMoment::getCreatedAt)
+                            .orderByDesc(CommunityMoment::getId)
+            );
+        } else {
+            candidates = momentMapper.selectList(
+                    Wrappers.<CommunityMoment>lambdaQuery()
+                            .eq(CommunityMoment::getStatus, "PUBLISHED")
+                            .isNull(CommunityMoment::getDeletedAt)
+                            .eq(blogId != null, CommunityMoment::getBlogId, blogId)
+                            .in(CommunityMoment::getMomentType, typeNames)
+                            .orderByDesc(CommunityMoment::getCreatedAt)
+                            .orderByDesc(CommunityMoment::getId)
+            );
+        }
         List<MomentView> visible = new ArrayList<>();
         for (CommunityMoment candidate : candidates) {
             if (!canView(candidate.getId())) {

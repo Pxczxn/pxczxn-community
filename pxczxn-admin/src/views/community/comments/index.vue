@@ -253,6 +253,7 @@ import {
   statusLabel,
   statusTone
 } from '@/utils/community'
+import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 interface ActionOption {
@@ -262,6 +263,7 @@ interface ActionOption {
 
 const message = useMessage()
 const userStore = useUserStore()
+const route = useRoute()
 const rows = ref<CommunityComment[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
@@ -573,7 +575,12 @@ function changePageSize(pageSize: number) {
   loadData()
 }
 
-onMounted(loadData)
+onMounted(() => {
+  const q = route.query
+  if (q.targetType) filters.targetType = String(q.targetType)
+  if (q.targetId) filters.targetId = String(q.targetId)
+  loadData()
+})
 </script>
 
 <style scoped lang="scss">

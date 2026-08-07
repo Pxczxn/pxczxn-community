@@ -11,11 +11,13 @@ import top.pxczxn.community.social.application.MomentPublishView;
 import top.pxczxn.community.social.application.MomentService;
 import top.pxczxn.community.social.application.MomentShareLinkView;
 import top.pxczxn.community.social.application.MomentSourceView;
+import top.pxczxn.community.social.application.MomentType;
 import top.pxczxn.community.social.application.MomentView;
 import top.pxczxn.community.social.application.PublishMomentCommand;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -74,14 +76,53 @@ class MomentControllerTest {
         MomentPageView page = new MomentPageView(
                 List.of(moment()), 1, 1, 20
         );
-        when(service.publicPage(null, 1, 20)).thenReturn(page);
+        when(service.publicPage(null, 1, 20, Set.of())).thenReturn(page);
         when(service.mine(1, 20)).thenReturn(page);
 
-        var publicResult = controller.publicFeed(1, 20);
+        var publicResult = controller.publicFeed(1, 20, null);
         var mineResult = controller.mine(1, 20);
 
         assertThat(publicResult.getData().records()).hasSize(1);
         assertThat(mineResult.getData().total()).isEqualTo(1);
+    }
+
+    @Test
+    void publicFeedParsesMomentTypes() {
+        MomentPageView page = new MomentPageView(
+                List.of(moment()), 1, 1, 20
+        );
+        when(service.publicPage(
+                null, 1, 20,
+                Set.of(MomentType.TEXT, MomentType.LINK)
+        )).thenReturn(page);
+
+        var result = controller.publicFeed(
+                1, 20, Set.of("TEXT", "LINK", "TEXT")
+        );
+
+        assertThat(result.getData().records()).hasSize(1);
+        verify(service).publicPage(
+                null, 1, 20,
+                Set.of(MomentType.TEXT, MomentType.LINK)
+        );
+    }
+
+    @Test
+    void publicFeedParsesMomentTypesFromCommaJoinedValue() {
+        MomentPageView page = new MomentPageView(
+                List.of(), 0, 1, 20
+        );
+        when(service.publicPage(
+                null, 1, 20,
+                Set.of(MomentType.REPOST, MomentType.QUOTE)
+        )).thenReturn(page);
+
+        controller.publicFeed(1, 20, Set.of("REPOST,QUOTE"));
+
+        verify(service).publicPage(
+                null, 1, 20,
+                Set.of(MomentType.REPOST, MomentType.QUOTE)
+        );
     }
 
     @Test

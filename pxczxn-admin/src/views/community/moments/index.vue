@@ -2,9 +2,9 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">MOMENT GOVERNANCE</div>
-        <h1>动态治理</h1>
-        <p>检索所有公开与受限动态，处理待审、下架和恢复，并核对传播与互动计数。</p>
+        <div class="page-eyebrow">MOMENT MANAGEMENT</div>
+        <h1>动态管理</h1>
+        <p>查看社区动态、检索内容、理解传播和互动状态、处理待审核内容、核查举报关联，并在必要时执行平台治理。</p>
       </div>
       <n-button :loading="loading" @click="loadData">
         <template #icon><n-icon><RefreshOutline /></n-icon></template>
@@ -12,7 +12,39 @@
       </n-button>
     </header>
 
+    <div class="overview-stats">
+      <div class="stat-card">
+        <span class="stat-label">动态总数</span>
+        <strong class="stat-value">{{ compactNumber(overview.totalMoments) }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">今日新增</span>
+        <strong class="stat-value">{{ compactNumber(overview.todayNew) }}</strong>
+      </div>
+      <div class="stat-card stat-pending">
+        <span class="stat-label">待审核</span>
+        <strong class="stat-value">{{ compactNumber(overview.pendingReview) }}</strong>
+      </div>
+      <div class="stat-card stat-takedown">
+        <span class="stat-label">平台下架</span>
+        <strong class="stat-value">{{ compactNumber(overview.takenDown) }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">今日互动</span>
+        <strong class="stat-value">{{ compactNumber(overview.todayInteractions) }}</strong>
+      </div>
+    </div>
+
     <n-card>
+      <n-tabs v-model:value="activeTab" type="line" animated @update:value="onTabChange">
+        <n-tab-pane name="all" tab="全部动态" />
+        <n-tab-pane name="PENDING_REVIEW" tab="待审核" />
+        <n-tab-pane name="PUBLISHED" tab="已发布" />
+        <n-tab-pane name="HIDDEN" tab="已隐藏" />
+        <n-tab-pane name="TAKEN_DOWN" tab="已下架" />
+        <n-tab-pane name="DELETED" tab="已删除" />
+      </n-tabs>
+
       <n-form inline :model="filters" class="filter-form" label-placement="left">
         <n-form-item label="关键词">
           <n-input
@@ -20,15 +52,6 @@
             clearable
             placeholder="正文或链接"
             @keyup.enter="search"
-          />
-        </n-form-item>
-        <n-form-item label="状态">
-          <n-select
-            v-model:value="filters.status"
-            :options="statusOptions"
-            clearable
-            placeholder="全部状态"
-            class="filter-select"
           />
         </n-form-item>
         <n-form-item label="可见性">
@@ -102,13 +125,13 @@
         :loading="loading"
         :pagination="pagination"
         :row-key="rowKey"
-        :scroll-x="1780"
+        :scroll-x="1960"
         @update:page="changePage"
         @update:page-size="changePageSize"
       />
     </n-card>
 
-    <n-drawer v-model:show="detailVisible" :width="820" placement="right">
+    <n-drawer v-model:show="detailVisible" :width="880" placement="right">
       <n-drawer-content
         :title="detail?.moment.blogName || '动态详情'"
         closable
@@ -116,7 +139,7 @@
       >
         <n-spin :show="detailLoading">
           <template v-if="detail">
-            <section class="governance-summary">
+            <section class="detail-section governance-summary">
               <div class="detail-tags">
                 <n-tag :type="statusTone(detail.moment.status)" :bordered="false">
                   {{ statusLabel(detail.moment.status) }}
@@ -141,32 +164,90 @@
               >
                 {{ detail.moment.linkUrl }}
               </a>
-              <div class="summary-meta">
-                <span>{{ actorLabel(detail.moment) }}</span>
-                <span>{{ formatDateTime(detail.moment.createdAt) }}</span>
-                <span>赞 {{ compactNumber(detail.moment.likeCount) }}</span>
-                <span>藏 {{ compactNumber(detail.moment.favoriteCount) }}</span>
-                <span>评 {{ compactNumber(detail.moment.commentCount) }}</span>
-                <span>转 {{ compactNumber(detail.moment.repostCount) }}</span>
+            </section>
+
+            <section class="detail-section">
+              <h3 class="section-title">发布信息</h3>
+              <n-descriptions :column="2" bordered size="small">
+                <n-descriptions-item label="发布者">
+                  <n-button text type="primary" @click="goUser(detail.moment.actorUserId)">
+                    {{ actorLabel(detail.moment) }}
+                  </n-button>
+                </n-descriptions-item>
+                <n-descriptions-item label="来源博客">
+                  <n-button text type="primary" @click="goBlog(detail.moment.blogId)">
+                    {{ detail.moment.blogName || `博客 #${detail.moment.blogId}` }}
+                  </n-button>
+                </n-descriptions-item>
+                <n-descriptions-item label="动态类型">{{ statusLabel(detail.moment.momentType) }}</n-descriptions-item>
+                <n-descriptions-item label="可见范围">{{ statusLabel(detail.moment.visibility) }}</n-descriptions-item>
+                <n-descriptions-item label="当前状态">
+                  <n-tag size="small" :type="statusTone(detail.moment.status)" :bordered="false">
+                    {{ statusLabel(detail.moment.status) }}
+                  </n-tag>
+                </n-descriptions-item>
+                <n-descriptions-item label="发布时间">{{ formatDateTime(detail.moment.createdAt) }}</n-descriptions-item>
+                <n-descriptions-item label="动态 ID">{{ detail.moment.id }}</n-descriptions-item>
+                <n-descriptions-item label="发布者 ID">{{ detail.moment.actorUserId }}</n-descriptions-item>
+                <n-descriptions-item label="博客 ID">{{ detail.moment.blogId }}</n-descriptions-item>
+                <n-descriptions-item label="锁版本">v{{ detail.moment.lockVersion }}</n-descriptions-item>
+                <n-descriptions-item label="更新时间">{{ formatDateTime(detail.moment.updatedAt) }}</n-descriptions-item>
+                <n-descriptions-item label="删除时间">{{ formatDateTime(detail.moment.deletedAt) }}</n-descriptions-item>
+              </n-descriptions>
+            </section>
+
+            <section v-if="relatedContentVisible" class="detail-section">
+              <h3 class="section-title">关联内容</h3>
+              <div v-if="detail.moment.momentType === 'ARTICLE_SHARE' && detail.moment.articleId" class="related-item">
+                <span>文章 ID：{{ detail.moment.articleId }}</span>
+                <n-button text type="primary" @click="goArticle(detail.moment.articleId)">查看文章</n-button>
+              </div>
+              <div v-else-if="(detail.moment.momentType === 'REPOST' || detail.moment.momentType === 'QUOTE') && detail.moment.repostMomentId" class="related-item">
+                <span>原动态 ID：{{ detail.moment.repostMomentId }}</span>
+                <n-button text type="primary" @click="openDetail(detail.moment.repostMomentId!)">查看原动态</n-button>
+              </div>
+              <div v-else-if="(detail.moment.momentType === 'LINK' || detail.moment.momentType === 'VIDEO_LINK') && detail.moment.linkUrl" class="related-item">
+                <span>域名：{{ linkDomain(detail.moment.linkUrl) }}</span>
+                <n-button text type="primary" @click="openLink(detail.moment.linkUrl)">打开链接</n-button>
               </div>
             </section>
 
-            <n-descriptions :column="2" bordered size="small" class="detail-descriptions">
-              <n-descriptions-item label="动态 ID">{{ detail.moment.id }}</n-descriptions-item>
-              <n-descriptions-item label="发布者 ID">{{ detail.moment.actorUserId }}</n-descriptions-item>
-              <n-descriptions-item label="博客 ID">{{ detail.moment.blogId }}</n-descriptions-item>
-              <n-descriptions-item label="锁版本">{{ detail.moment.lockVersion }}</n-descriptions-item>
-              <n-descriptions-item label="关联文章">{{ detail.moment.articleId || '—' }}</n-descriptions-item>
-              <n-descriptions-item label="转发源">{{ detail.moment.repostMomentId || '—' }}</n-descriptions-item>
-              <n-descriptions-item label="更新时间">{{ formatDateTime(detail.moment.updatedAt) }}</n-descriptions-item>
-              <n-descriptions-item label="删除时间">{{ formatDateTime(detail.moment.deletedAt) }}</n-descriptions-item>
-            </n-descriptions>
+            <section class="detail-section">
+              <h3 class="section-title">互动情况</h3>
+              <div class="interaction-grid">
+                <div class="interaction-item">
+                  <span>点赞 {{ compactNumber(detail.moment.likeCount) }}</span>
+                  <n-button text size="small" type="primary" @click="goInteractions(detail.moment.id, 'LIKE')">查看点赞记录</n-button>
+                </div>
+                <div class="interaction-item">
+                  <span>收藏 {{ compactNumber(detail.moment.favoriteCount) }}</span>
+                  <n-button text size="small" type="primary" @click="goInteractions(detail.moment.id, 'FAVORITE')">查看收藏记录</n-button>
+                </div>
+                <div class="interaction-item">
+                  <span>评论 {{ compactNumber(detail.moment.commentCount) }}</span>
+                  <n-button text size="small" type="primary" @click="goComments(detail.moment.id)">查看评论</n-button>
+                </div>
+                <div class="interaction-item">
+                  <span>转发 {{ compactNumber(detail.moment.repostCount) }}</span>
+                  <n-button text size="small" type="primary" @click="goInteractions(detail.moment.id, 'FOLLOW')">查看转发关系</n-button>
+                </div>
+              </div>
+            </section>
 
-            <section class="governance-events">
+            <section class="detail-section">
+              <h3 class="section-title">举报关联</h3>
+              <div class="related-item">
+                <span>相关举报 {{ detail.moment.reportCount }} 条</span>
+                <n-button text type="primary" @click="goReports(detail.moment.id)">查看全部举报</n-button>
+              </div>
+              <p v-if="detail.moment.reportCount === 0" class="muted-note">该动态暂无举报记录。</p>
+            </section>
+
+            <section class="detail-section governance-events">
               <div class="section-heading">
                 <div>
-                  <h3>不可变治理事件</h3>
-                  <p>仅平台管理员可产生事件，事件不提供修改和删除入口。</p>
+                  <h3 class="section-title">治理记录</h3>
+                  <p class="muted-note">仅平台管理员可产生事件，事件不提供修改和删除入口。</p>
                 </div>
                 <n-tag size="small">{{ detail.events.length }} 条</n-tag>
               </div>
@@ -254,6 +335,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   NButton,
   NSpace,
@@ -267,6 +349,7 @@ import {
   communityApi,
   type CommunityMoment,
   type CommunityMomentDetail,
+  type CommunityMomentOverview,
   type GovernanceAction
 } from '@/api/community'
 import {
@@ -284,6 +367,7 @@ interface ActionOption {
 
 const message = useMessage()
 const userStore = useUserStore()
+const router = useRouter()
 const rows = ref<CommunityMoment[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
@@ -300,6 +384,14 @@ const actionTarget = ref<CommunityMoment | null>(null)
 const actionMode = ref<'single' | 'batch'>('single')
 const selectedAction = ref<GovernanceAction>('approve')
 const batchAction = ref<GovernanceAction | null>(null)
+const activeTab = ref('all')
+const overview = ref<CommunityMomentOverview>({
+  totalMoments: 0,
+  todayNew: 0,
+  pendingReview: 0,
+  takenDown: 0,
+  todayInteractions: 0
+})
 
 const filters = reactive({
   keyword: '',
@@ -317,13 +409,6 @@ const pagination = reactive({
   pageSizes: [10, 20, 50]
 })
 
-const statusOptions = [
-  { label: '待审核', value: 'PENDING_REVIEW' },
-  { label: '已发布', value: 'PUBLISHED' },
-  { label: '已隐藏', value: 'HIDDEN' },
-  { label: '平台下架', value: 'TAKEN_DOWN' },
-  { label: '已删除', value: 'DELETED' }
-]
 const visibilityOptions = [
   { label: '公开', value: 'PUBLIC' },
   { label: '仅关注者', value: 'FOLLOWERS_ONLY' },
@@ -331,8 +416,8 @@ const visibilityOptions = [
   { label: '不列出', value: 'UNLISTED' }
 ]
 const momentTypeOptions = [
-  'TEXT', 'IMAGE', 'LINK', 'ARTICLE_SHARE', 'PROJECT_UPDATE',
-  'CODE', 'POLL', 'TEAM_NOTICE', 'REPOST', 'QUOTE', 'VIDEO_LINK'
+  'TEXT', 'LINK', 'ARTICLE_SHARE', 'PROJECT_UPDATE',
+  'CODE', 'REPOST', 'QUOTE', 'VIDEO_LINK'
 ].map(value => ({ label: statusLabel(value), value }))
 const allActionOptions: ActionOption[] = [
   { label: '审核通过', value: 'approve' },
@@ -366,6 +451,14 @@ const actionScopeText = computed(() =>
     ? `将对选中的 ${checkedRowKeys.value.length} 条动态执行批量治理`
     : '将对当前动态执行治理'
 )
+const relatedContentVisible = computed(() => {
+  if (!detail.value) return false
+  const m = detail.value.moment
+  if (m.momentType === 'ARTICLE_SHARE' && m.articleId) return true
+  if ((m.momentType === 'REPOST' || m.momentType === 'QUOTE') && m.repostMomentId) return true
+  if ((m.momentType === 'LINK' || m.momentType === 'VIDEO_LINK') && m.linkUrl) return true
+  return false
+})
 
 const columns: DataTableColumns<CommunityMoment> = [
   { type: 'selection', fixed: 'left', width: 44 },
@@ -379,6 +472,33 @@ const columns: DataTableColumns<CommunityMoment> = [
       h('strong', row.textContent || row.linkUrl || statusLabel(row.momentType)),
       h('span', `${row.blogName || `博客 #${row.blogId}`} · ${statusLabel(row.momentType)}`)
     ])
+  },
+  {
+    title: '发布者',
+    key: 'actorUsername',
+    width: 180,
+    render: row => h(NButton, {
+      text: true,
+      type: 'primary',
+      onClick: () => goUser(row.actorUserId)
+    }, { default: () => actorLabel(row) })
+  },
+  {
+    title: '来源博客',
+    key: 'blogName',
+    width: 160,
+    ellipsis: { tooltip: true },
+    render: row => h(NButton, {
+      text: true,
+      type: 'primary',
+      onClick: () => goBlog(row.blogId)
+    }, { default: () => row.blogName || `博客 #${row.blogId}` })
+  },
+  {
+    title: '类型',
+    key: 'momentType',
+    width: 110,
+    render: row => h(NTag, { size: 'small', bordered: false }, { default: () => statusLabel(row.momentType) })
   },
   {
     title: '状态',
@@ -397,22 +517,22 @@ const columns: DataTableColumns<CommunityMoment> = [
     render: row => statusLabel(row.visibility)
   },
   {
-    title: '发布者',
-    key: 'actorUsername',
-    width: 180,
-    render: row => actorLabel(row)
-  },
-  {
-    title: '互动数据',
+    title: '互动',
     key: 'likeCount',
     width: 245,
-    render: row => `赞 ${compactNumber(row.likeCount)} · 藏 ${compactNumber(row.favoriteCount)} · 评 ${compactNumber(row.commentCount)} · 转 ${compactNumber(row.repostCount)}`
+    render: row => `赞 ${compactNumber(row.likeCount)} · 评 ${compactNumber(row.commentCount)} · 藏 ${compactNumber(row.favoriteCount)} · 转 ${compactNumber(row.repostCount)}`
   },
   {
-    title: '锁 / 事件',
-    key: 'lockVersion',
-    width: 120,
-    render: row => `v${row.lockVersion} · ${row.eventCount} 条`
+    title: '举报',
+    key: 'reportCount',
+    width: 110,
+    render: row => row.reportCount > 0
+      ? h(NButton, {
+          text: true,
+          type: 'warning',
+          onClick: () => goReports(row.id)
+        }, { default: () => `${row.reportCount} 条举报` })
+      : '—'
   },
   {
     title: '发布时间',
@@ -462,6 +582,55 @@ function availableActions(row: CommunityMoment): ActionOption[] {
   return allActionOptions.filter(option =>
     allowed.includes(option.value) && userStore.hasPermission(permissionMap[option.value])
   )
+}
+
+function linkDomain(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
+}
+
+function goUser(userId: string) {
+  router.push({ path: '/community/users', query: { keyword: userId } })
+}
+
+function goBlog(blogId: string) {
+  router.push({ path: '/community/blogs', query: { keyword: blogId } })
+}
+
+function goArticle(articleId: string) {
+  router.push({ path: '/community/articles', query: { keyword: articleId } })
+}
+
+function goReports(momentId: string) {
+  router.push({ path: '/community/reports', query: { targetType: 'MOMENT', targetId: momentId } })
+}
+
+function goComments(momentId: string) {
+  router.push({ path: '/community/comments', query: { targetType: 'MOMENT', targetId: momentId } })
+}
+
+function goInteractions(momentId: string, interactionType: string) {
+  router.push({ path: '/community/interactions', query: { targetType: 'MOMENT', targetId: momentId, interactionType } })
+}
+
+function openLink(url: string) {
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+function onTabChange(name: string) {
+  filters.status = name === 'all' ? null : name
+  search()
+}
+
+async function loadOverview() {
+  try {
+    overview.value = await communityApi.momentOverview()
+  } catch {
+    // 概览失败不阻塞列表
+  }
 }
 
 async function loadData() {
@@ -551,6 +720,7 @@ async function submitAction() {
       message.success(result.replay ? '该治理动作已执行，无需重复处理' : `${actionTitle.value}成功`)
       actionVisible.value = false
       await loadData()
+      await loadOverview()
       if (detailVisible.value) await openDetail(result.id)
     } else {
       const selected = rows.value.filter(row => checkedRowKeys.value.includes(row.id))
@@ -562,6 +732,7 @@ async function submitAction() {
       message.success(`已完成 ${result.length} 条动态治理`)
       actionVisible.value = false
       await loadData()
+      await loadOverview()
     }
   } catch (error) {
     message.error(error instanceof Error ? error.message : '治理操作失败')
@@ -582,6 +753,7 @@ function reset() {
   filters.momentType = null
   filters.blogId = ''
   filters.actorUserId = ''
+  activeTab.value = 'all'
   search()
 }
 
@@ -596,10 +768,49 @@ function changePageSize(pageSize: number) {
   loadData()
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadOverview()
+  loadData()
+})
 </script>
 
 <style scoped lang="scss">
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--community-border);
+  border-radius: 10px;
+  background: var(--community-primary-soft);
+}
+
+.stat-label {
+  color: var(--community-muted);
+  font-size: 12px;
+}
+
+.stat-value {
+  color: var(--community-text);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.stat-pending .stat-value {
+  color: #f0a020;
+}
+
+.stat-takedown .stat-value {
+  color: #d03050;
+}
+
 .governance-toolbar {
   display: flex;
   align-items: center;
@@ -627,20 +838,28 @@ onMounted(loadData)
   }
 }
 
-.governance-summary {
-  padding: 22px 24px;
+.detail-section {
+  padding: 20px 24px;
   border-bottom: 1px solid var(--community-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.detail-tags,
-.summary-meta {
+.governance-summary {
+  padding-top: 24px;
+}
+
+.detail-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 4px;
 }
 
 .governance-content {
-  margin: 18px 0;
+  margin: 14px 0;
   color: var(--community-text);
   font-size: 15px;
   line-height: 1.8;
@@ -649,46 +868,63 @@ onMounted(loadData)
 .moment-link {
   display: block;
   overflow: hidden;
-  margin: -6px 0 16px;
+  margin: -6px 0 0;
   color: var(--primary-color);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.summary-meta {
+.section-title {
+  margin: 0 0 14px;
+  color: var(--community-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.muted-note {
+  margin: 6px 0 0;
   color: var(--community-muted);
   font-size: 12px;
 }
 
-.detail-descriptions {
-  padding: 22px 24px 0;
+.related-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--community-text);
+  font-size: 13px;
+}
+
+.interaction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.interaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--community-border);
+  border-radius: 8px;
+  color: var(--community-text);
+  font-size: 13px;
 }
 
 .governance-events {
-  padding: 24px;
-}
+  .section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
 
-.section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 20px;
-
-  h3,
-  p {
-    margin: 0;
-  }
-
-  h3 {
-    color: var(--community-text);
-    font-size: 16px;
-  }
-
-  p {
-    margin-top: 4px;
-    color: var(--community-muted);
-    font-size: 12px;
+    .section-title {
+      margin: 0;
+    }
   }
 }
 
@@ -708,10 +944,24 @@ onMounted(loadData)
   margin-top: 18px;
 }
 
+@media (max-width: 1200px) {
+  .overview-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
+  .overview-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .governance-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .interaction-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

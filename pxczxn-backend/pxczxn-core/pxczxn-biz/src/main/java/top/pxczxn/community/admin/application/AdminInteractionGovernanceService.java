@@ -16,6 +16,8 @@ import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
 import top.pxczxn.community.notification.application.CommunityNotificationEvent;
 import top.pxczxn.community.notification.application.MomentPublishedNotificationEvent;
+import top.pxczxn.community.report.model.CommunityReport;
+import top.pxczxn.community.report.persistence.CommunityReportMapper;
 import top.pxczxn.community.social.model.CommunityComment;
 import top.pxczxn.community.social.model.CommunityCommentModerationEvent;
 import top.pxczxn.community.social.model.CommunityContentLike;
@@ -34,6 +36,7 @@ import top.pxczxn.community.user.model.CommunityUser;
 import top.pxczxn.community.user.persistence.CommunityUserMapper;
 
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -56,9 +59,11 @@ public class AdminInteractionGovernanceService {
     private static final Set<String> MOMENT_STATUSES = Set.of(
             "PENDING_REVIEW", "PUBLISHED", "HIDDEN", "TAKEN_DOWN", "DELETED"
     );
+    // 与 MomentType 枚举对齐：当前用户端仅支持这 8 种动态类型，
+    // IMAGE / POLL / TEAM_NOTICE 暂未实现，待用户端真实支持后再同步扩展。
     private static final Set<String> MOMENT_TYPES = Set.of(
-            "TEXT", "IMAGE", "LINK", "ARTICLE_SHARE", "PROJECT_UPDATE",
-            "CODE", "POLL", "TEAM_NOTICE", "REPOST", "QUOTE", "VIDEO_LINK"
+            "TEXT", "LINK", "ARTICLE_SHARE", "PROJECT_UPDATE",
+            "CODE", "REPOST", "QUOTE", "VIDEO_LINK"
     );
     private static final Set<String> VISIBILITIES = Set.of(
             "PUBLIC", "FOLLOWERS_ONLY", "PRIVATE", "UNLISTED"
@@ -76,6 +81,7 @@ public class AdminInteractionGovernanceService {
     private final CommunityUserMapper userMapper;
     private final BlogMapper blogMapper;
     private final ArticleMapper articleMapper;
+    private final CommunityReportMapper reportMapper;
 
     @Autowired(required = false)
     private ApplicationEventPublisher eventPublisher;
@@ -262,6 +268,53 @@ public class AdminInteractionGovernanceService {
                 ).stream().map(this::momentEventView).toList();
         return new AdminCommunityMomentDetailView(
                 momentView(moment, events.size()), events
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AdminMomentOverviewView overview() {
+        LocalDateTime startOfDay = LocalDate.now(ZoneOffset.UTC)
+                .atStartOfDay();
+        long totalMoments = safeLong(momentMapper.selectCount(
+                Wrappers.<CommunityMoment>lambdaQuery()
+                        .isNull(CommunityMoment::getDeletedAt)
+        ));
+        long todayNew = safeLong(momentMapper.selectCount(
+                Wrappers.<CommunityMoment>lambdaQuery()
+                        .ge(CommunityMoment::getCreatedAt, startOfDay)
+                        .isNull(CommunityMoment::getDeletedAt)
+        ));
+        long pendingReview = safeLong(momentMapper.selectCount(
+                Wrappers.<CommunityMoment>lambdaQuery()
+                        .eq(CommunityMoment::getStatus, "PENDING_REVIEW")
+                        .isNull(CommunityMoment::getDeletedAt)
+        ));
+        long takenDown = safeLong(momentMapper.selectCount(
+                Wrappers.<CommunityMoment>lambdaQuery()
+                        .eq(CommunityMoment::getStatus, "TAKEN_DOWN")
+                        .isNull(CommunityMoment::getDeletedAt)
+        ));
+        long todayLikes = safeLong(likeMapper.selectCount(
+                Wrappers.<CommunityContentLike>lambdaQuery()
+                        .eq(CommunityContentLike::getTargetType, "MOMENT")
+                        .ge(CommunityContentLike::getCreatedAt, startOfDay)
+        ));
+        long todayFavorites = safeLong(favoriteItemMapper.selectCount(
+                Wrappers.<FavoriteItem>lambdaQuery()
+                        .eq(FavoriteItem::getTargetType, "MOMENT")
+                        .ge(FavoriteItem::getCreatedAt, startOfDay)
+        ));
+        long todayComments = safeLong(commentMapper.selectCount(
+                Wrappers.<CommunityComment>lambdaQuery()
+                        .eq(CommunityComment::getTargetType, "MOMENT")
+                        .ge(CommunityComment::getCreatedAt, startOfDay)
+        ));
+        return new AdminMomentOverviewView(
+                totalMoments,
+                todayNew,
+                pendingReview,
+                takenDown,
+                todayLikes + todayFavorites + todayComments
         );
     }
 
@@ -763,6 +816,11 @@ public class AdminInteractionGovernanceService {
                 moment.getActorUserId()
         );
         Blog blog = blogMapper.selectById(moment.getBlogId());
+        long reportCount = safeLong(reportMapper.selectCount(
+                Wrappers.<CommunityReport>lambdaQuery()
+                        .eq(CommunityReport::getTargetType, "MOMENT")
+                        .eq(CommunityReport::getTargetId, moment.getId())
+        ));
         return new AdminCommunityMomentView(
                 moment.getId(),
                 moment.getActorUserId(),
@@ -785,6 +843,7 @@ public class AdminInteractionGovernanceService {
                 safeLong(moment.getRepostCount()),
                 safeInt(moment.getLockVersion()),
                 eventCount,
+                reportCount,
                 moment.getCreatedAt(),
                 moment.getUpdatedAt(),
                 moment.getDeletedAt()

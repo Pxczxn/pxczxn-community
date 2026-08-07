@@ -5,6 +5,9 @@ import {
   Bookmark,
   Check,
   ChevronDown,
+  Code2,
+  FileText,
+  Filter,
   Globe2,
   Hash,
   Image as ImageIcon,
@@ -14,8 +17,10 @@ import {
   Maximize2,
   MessageCircle,
   Minimize2,
-  MoreHorizontal,
+  Quote,
   RefreshCw,
+  Repeat2,
+  Rocket,
   Send,
   Share2,
   Smile,
@@ -23,12 +28,23 @@ import {
   TrendingUp,
   Users,
   UserPlus,
+  Video,
+  X,
 } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
 import {
   CommentThread,
   Moment,
+  MomentFeedFilter,
   PlatformTag,
   communityApi,
   publicFileUrl,
@@ -107,7 +123,14 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
   const [composerFullscreen, setComposerFullscreen] = useState(false);
   const [hotTopics, setHotTopics] = useState<PlatformTag[]>([]);
   const [followingBlogIds, setFollowingBlogIds] = useState<Set<string>>(new Set());
+  // 公共流筛选态（仅 recommended / latest 生效；following / mine 不应用）
+  const [momentTypeFilter, setMomentTypeFilter] = useState<string[]>([]);
+  const [filterDraft, setFilterDraft] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const publicTab = activeTab === "recommended" || activeTab === "latest";
 
   const loadComments = useCallback(async (momentId: string) => {
     try {
@@ -128,6 +151,12 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     }
   }, []);
 
+  /** 公共流筛选项：仅在 recommended / latest 时下发到后端 */
+  const publicFeedFilter = useMemo<MomentFeedFilter | undefined>(() => {
+    if (!publicTab || momentTypeFilter.length === 0) return undefined;
+    return { momentTypes: momentTypeFilter };
+  }, [publicTab, momentTypeFilter]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -138,15 +167,18 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
           page = await communityApi.myMoments(1, 20);
           break;
         case "recommended": {
-          // 推荐模式：拉更多条，按热度公式本地排序
-          const raw = await communityApi.moments(1, 40);
-          const scored = raw.records
-            .map((m) => ({
-              moment: m,
-              score: m.likeCount + m.favoriteCount * 2 + m.commentCount * 3,
-            }))
-            .sort((a, b) => b.score - a.score);
-          page = { records: scored.slice(0, 20).map((s) => s.moment), total: raw.total };
+          // 推荐模式：拉更多条，按热度公式本地排序（受 momentTypeFilter 约束）
+          const raw = await communityApi.moments(1, 40, publicFeedFilter);
+          const records = publicFeedFilter
+            ? raw.records
+            : raw.records
+                .map((m) => ({
+                  moment: m,
+                  score: m.likeCount + m.favoriteCount * 2 + m.commentCount * 3,
+                }))
+                .sort((a, b) => b.score - a.score)
+                .map((s) => s.moment);
+          page = { records: records.slice(0, 20), total: raw.total };
           break;
         }
         case "following": {
@@ -169,7 +201,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
           break;
         }
         default:
-          page = await communityApi.moments(1, 20);
+          page = await communityApi.moments(1, 20, publicFeedFilter);
           break;
       }
       let nextSelected = page.records[0] ?? null;
@@ -186,7 +218,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     } finally {
       setLoading(false);
     }
-  }, [initialMomentId, loadComments, activeTab]);
+  }, [initialMomentId, loadComments, activeTab, publicFeedFilter]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -207,6 +239,25 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [visibilityOpen]);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (event: MouseEvent) => {
+      const container = filterContainerRef.current;
+      if (container && !container.contains(event.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [filterOpen]);
 
   useEffect(() => {
     if (!composerFullscreen) return;
@@ -434,10 +485,49 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                 </button>
               ))}
             </div>
-            <button aria-label="筛选" className="icon-button moments-feed__filter" type="button">
-              <MoreHorizontal size={16} />
-              筛选
-            </button>
+            <div ref={filterContainerRef} className="moments-feed__filter-wrapper">
+              <button
+                aria-controls="moments-filter-popover"
+                aria-expanded={filterOpen}
+                aria-haspopup="dialog"
+                aria-label="筛选动态"
+                className="moments-feed__filter"
+                disabled={!publicTab}
+                onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                  event.stopPropagation();
+                  if (!publicTab) {
+                    setNotice("");
+                    setError("仅在「推荐」或「最新」页面可应用动态筛选。");
+                    return;
+                  }
+                  setFilterDraft(momentTypeFilter);
+                  setFilterOpen((open) => !open);
+                }}
+                title={publicTab ? "筛选动态" : "当前页面不支持筛选"}
+                type="button"
+              >
+                <Filter size={14} />
+                <span>筛选</span>
+                {momentTypeFilter.length > 0 && (
+                  <span className="moments-feed__filter-badge">{momentTypeFilter.length}</span>
+                )}
+              </button>
+              {filterOpen && publicTab && (
+                <FilterPopover
+                  draft={filterDraft}
+                  onApply={() => {
+                    setMomentTypeFilter(filterDraft);
+                    setFilterOpen(false);
+                  }}
+                  onClear={() => {
+                    setFilterDraft([]);
+                    setMomentTypeFilter([]);
+                    setFilterOpen(false);
+                  }}
+                  onDraftChange={setFilterDraft}
+                />
+              )}
+            </div>
           </div>
 
           <h1 className="moments-feed__title">动态广场</h1>
@@ -827,4 +917,88 @@ function MomentCard({
   );
 }
 
+
+/* ─── 筛选弹层 ─── */
+interface MomentTypeOption {
+  value: string;
+  label: string;
+  Icon: React.ComponentType<{ size?: number }>;
+}
+
+const MOMENT_TYPE_OPTIONS: MomentTypeOption[] = [
+  { value: "TEXT", label: "图文", Icon: FileText },
+  { value: "LINK", label: "链接", Icon: Link2 },
+  { value: "ARTICLE_SHARE", label: "文章", Icon: Bookmark },
+  { value: "PROJECT_UPDATE", label: "项目更新", Icon: Rocket },
+  { value: "CODE", label: "代码片段", Icon: Code2 },
+  { value: "REPOST", label: "转发", Icon: Repeat2 },
+  { value: "QUOTE", label: "引用", Icon: Quote },
+  { value: "VIDEO_LINK", label: "视频", Icon: Video },
+];
+
+interface FilterPopoverProps {
+  draft: string[];
+  onDraftChange: (next: string[]) => void;
+  onApply: () => void;
+  onClear: () => void;
+}
+
+function FilterPopover({
+  draft,
+  onDraftChange,
+  onApply,
+  onClear,
+}: FilterPopoverProps) {
+  const toggle = (value: string, checked: boolean) => {
+    const set = new Set(draft);
+    if (checked) set.add(value); else set.delete(value);
+    onDraftChange(Array.from(set));
+  };
+  return (
+    <div
+      aria-label="动态筛选"
+      className="moments-filter-popover"
+      id="moments-filter-popover"
+      role="dialog"
+    >
+      <h4 className="moments-filter-popover__title">动态类型</h4>
+      <ul className="moments-filter-popover__list">
+        {MOMENT_TYPE_OPTIONS.map(({ value, label, Icon }) => {
+          const checked = draft.includes(value);
+          return (
+            <li key={value}>
+              <label
+                className={`moments-filter-popover__item ${checked ? "moments-filter-popover__item--checked" : ""}`}
+              >
+                <input
+                  checked={checked}
+                  onChange={(event) => toggle(value, event.target.checked)}
+                  type="checkbox"
+                />
+                <Icon size={14} />
+                <span>{label}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="moments-filter-popover__actions">
+        <button
+          className="moments-filter-popover__clear"
+          onClick={onClear}
+          type="button"
+        >
+          <X size={12} /> 清空
+        </button>
+        <button
+          className="moments-filter-popover__apply"
+          onClick={onApply}
+          type="button"
+        >
+          <Check size={12} /> 应用
+        </button>
+      </div>
+    </div>
+  );
+}
 

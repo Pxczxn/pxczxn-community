@@ -46,7 +46,7 @@ public class CommunityReportServiceImpl implements CommunityReportService {
         event(report.getId(), "USER", reporter, "CREATED", null, "PENDING", now); return CommunityReportView.from(report);
     }
     @Override @Transactional(readOnly = true) public List<CommunityReportView> mine(Long reporter) { return reportMapper.findByReporter(reporter).stream().map(CommunityReportView::from).toList(); }
-    @Override @Transactional(readOnly = true) public List<CommunityReportView> queue(String status) { String value = status == null || status.isBlank() ? null : queueStatus(status); return reportMapper.findQueue(value).stream().map(CommunityReportView::from).toList(); }
+    @Override @Transactional(readOnly = true) public List<CommunityReportView> queue(String status, String targetType, Long targetId) { String value = status == null || status.isBlank() ? null : queueStatus(status); String type = StringUtils.hasText(targetType) ? targetType.trim().toUpperCase(Locale.ROOT) : null; return reportMapper.findQueue(value, type, targetId).stream().map(CommunityReportView::from).toList(); }
 
     @Override @Transactional(readOnly = true)
     public List<CommunityReportView> search(String keyword, int limit) {
