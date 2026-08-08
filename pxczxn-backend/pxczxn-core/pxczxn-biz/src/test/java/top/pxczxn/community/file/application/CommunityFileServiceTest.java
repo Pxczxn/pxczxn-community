@@ -25,6 +25,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -280,5 +281,21 @@ class CommunityFileServiceTest {
         reference.setTargetId(targetId);
         reference.setUsageType(usageType);
         return reference;
+    }
+
+    @Test
+    void uploadRejectsWhenAbuseGuardTriggers429() {
+        arrangeUser(100L);
+        doThrow(new BusinessException(429, "Too many FILE_UPLOAD actions; retry after the policy window"))
+                .when(abuseGuard).check("USER:100", "FILE_UPLOAD", 10, 60);
+
+        assertThatThrownBy(() -> service.upload(new UploadCommunityFileCommand(
+                "photo.png", "image/png", new byte[]{0x01}
+        )))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode()).isEqualTo(429));
+
+        verify(storage, never()).upload(any(), any());
+        verify(fileMapper, never()).insert(any());
     }
 }

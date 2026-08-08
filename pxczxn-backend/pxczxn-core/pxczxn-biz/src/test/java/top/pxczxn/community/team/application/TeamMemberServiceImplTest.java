@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -336,5 +337,18 @@ class TeamMemberServiceImplTest {
         member.setRoleCode(role);
         member.setLockVersion(0);
         return member;
+    }
+
+    @Test
+    void inviteRejectsWhenAbuseGuardTriggers429() {
+        when(teamMapper.selectById(10L)).thenReturn(activeTeam(10L, 1L));
+        doThrow(new BusinessException(429, "Too many TEAM_INVITE actions; retry after the policy window"))
+                .when(abuseGuard).check("USER:1", "TEAM_INVITE", 5, 300);
+
+        assertThatThrownBy(() -> service.invite(1L, new InviteTeamMemberCommand(10L, 20L, "EDITOR", null)))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode()).isEqualTo(429));
+
+        verify(invitationMapper, never()).insert(any());
     }
 }

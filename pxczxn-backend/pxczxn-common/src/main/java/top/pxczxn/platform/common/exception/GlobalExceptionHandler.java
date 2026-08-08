@@ -101,16 +101,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 非法参数异常 — 业务校验场景，message 可安全返回
+     * 非法参数异常 — 不向客户端暴露内部信息
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("非法参数异常: {}", e.getMessage());
-        String message = e.getMessage();
-        if (message == null || message.isBlank()) {
-            message = "参数错误";
-        }
-        return Result.fail(400, message);
+        return Result.fail(400, "参数错误");
     }
 
     /**
