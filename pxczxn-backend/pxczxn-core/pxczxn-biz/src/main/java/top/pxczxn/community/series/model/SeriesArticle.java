@@ -10,11 +10,12 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@TableName("team_series_article")
-public class TeamSeriesArticle {
+@TableName("series_article")
+public class SeriesArticle {
     @TableId(type = IdType.INPUT)
     private Long id;
     private Long seriesId;
+    private Long blogId;
     private Long articleId;
     private Integer chapterOrder;
     private Long addedByUserId;

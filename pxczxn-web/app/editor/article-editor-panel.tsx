@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Bold,
@@ -77,6 +78,7 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
   } | null>(null);
   const formRef = useRef(form);
   const editorRef = useRef(editor);
+  const router = useRouter();
 
   useEffect(() => {
     formRef.current = form;
@@ -84,6 +86,15 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
   useEffect(() => {
     editorRef.current = editor;
   }, [editor]);
+
+  // 返回按钮：优先回"上次进来的地方"，仅在首次直接打开编辑器（history.length ≤ 1）时兜底跳个人后台。
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/me/blog");
+  }, [router]);
 
   const hydrate = useCallback((next: ArticleEditor) => {
     setEditor(next);
@@ -365,9 +376,9 @@ export function ArticleEditorPanel({ articleId: initialId }: { articleId?: strin
       <main className="editor-page">
         <header className="editor-toolbar">
           <div>
-            <Link className="icon-button" aria-label="返回博客" href="/settings">
+            <button type="button" className="icon-button" aria-label="返回" onClick={goBack}>
               <ChevronLeft size={18} />
-            </Link>
+            </button>
             <span>
               <strong>{articleId ? "编辑文章" : "新建文章"}</strong>
               <small>

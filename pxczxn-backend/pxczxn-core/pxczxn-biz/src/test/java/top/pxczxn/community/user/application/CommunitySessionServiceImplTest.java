@@ -74,7 +74,7 @@ class CommunitySessionServiceImplTest {
         assertThat(result.tokenName()).isEqualTo(CommunityAuth.TOKEN_NAME);
         assertThat(result.tokenValue()).isEqualTo("community-token");
         assertThat(result.userId()).isEqualTo(200L);
-        verify(communityAuth).login(200L);
+        verify(communityAuth).login(200L, false);
         verify(loginAccountMapper).recordLoginSuccess(anyLong(), any());
         verify(userMapper).recordLoginSuccess(anyLong(), any());
     }
@@ -92,7 +92,7 @@ class CommunitySessionServiceImplTest {
         );
 
         assertThat(result.userId()).isEqualTo(200L);
-        verify(communityAuth).login(200L);
+        verify(communityAuth).login(200L, false);
     }
 
     @Test

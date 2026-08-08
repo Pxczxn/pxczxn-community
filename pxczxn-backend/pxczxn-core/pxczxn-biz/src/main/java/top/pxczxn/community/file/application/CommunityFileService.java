@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.permission.ArticleAction;
 import top.pxczxn.community.article.permission.ArticlePermissionService;
@@ -67,6 +68,7 @@ public class CommunityFileService {
     private final BlogMapper blogMapper;
     private final ArticleMapper articleMapper;
     private final ArticlePermissionService articlePermissionService;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Transactional
     public CommunityFileInfo upload(UploadCommunityFileCommand command) {
@@ -74,6 +76,7 @@ public class CommunityFileService {
             throw new BusinessException(400, "上传文件不能为空");
         }
         Long userId = requireActiveUser();
+        abuseGuard.check("USER:" + userId, "FILE_UPLOAD", 10, 60);
         String originalName = normalizeOriginalName(command.originalName());
         byte[] source = command.content();
         if (source == null || source.length == 0) {

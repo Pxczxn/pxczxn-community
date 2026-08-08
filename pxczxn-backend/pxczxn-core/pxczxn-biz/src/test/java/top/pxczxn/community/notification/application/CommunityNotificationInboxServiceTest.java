@@ -169,17 +169,61 @@ class CommunityNotificationInboxServiceTest {
 
     @Test
     void unreadCountIncludesStableZeroValuedCategories() {
-        when(recipientMapper.countUnreadByCategory(10L))
-                .thenReturn(List.of(
-                        Map.of("category", "COMMENT", "count", 2L),
-                        Map.of("category", "REVIEW", "count", 1L)
-                ));
+        CommunityNotificationRecipient recipient1 = recipient("UNREAD");
+        recipient1.setNotificationId(1L);
+        CommunityNotificationRecipient recipient2 = recipient("UNREAD");
+        recipient2.setNotificationId(2L);
+        CommunityNotificationRecipient recipient3 = recipient("UNREAD");
+        recipient3.setNotificationId(3L);
+
+        CommunityNotification notification1 = notification();
+        notification1.setId(1L);
+        notification1.setCategory("COMMENT");
+        notification1.setTargetType("ARTICLE");
+        notification1.setTargetId(100L);
+
+        CommunityNotification notification2 = notification();
+        notification2.setId(2L);
+        notification2.setCategory("COMMENT");
+        notification2.setTargetType("ARTICLE");
+        notification2.setTargetId(101L);
+
+        CommunityNotification notification3 = notification();
+        notification3.setId(3L);
+        notification3.setCategory("INTERACTION");
+        notification3.setTargetType("ARTICLE");
+        notification3.setTargetId(200L);
+
+        when(recipientMapper.selectInbox(10L, null, "UNREAD", 0, 1000))
+                .thenReturn(List.of(recipient1, recipient2, recipient3));
+        when(notificationMapper.selectBatchIds(any()))
+                .thenReturn(List.of(notification1, notification2, notification3));
+
+        // 模拟内容可用
+        when(accessService.findAccessible(
+                LikeTargetType.ARTICLE, 100L
+        )).thenReturn(new AccessibleContentTarget(
+                LikeTargetType.ARTICLE, 100L, 10L, 50L,
+                "Article", "Summary", null, "/article/100", 1, 2, 3
+        ));
+        when(accessService.findAccessible(
+                LikeTargetType.ARTICLE, 101L
+        )).thenReturn(new AccessibleContentTarget(
+                LikeTargetType.ARTICLE, 101L, 10L, 51L,
+                "Article", "Summary", null, "/article/101", 1, 2, 3
+        ));
+        when(accessService.findAccessible(
+                LikeTargetType.ARTICLE, 200L
+        )).thenReturn(new AccessibleContentTarget(
+                LikeTargetType.ARTICLE, 200L, 10L, 60L,
+                "Article", "Summary", null, "/article/200", 1, 2, 3
+        ));
 
         UnreadNotificationCountView count = service.unreadCount();
 
         assertThat(count.total()).isEqualTo(3);
         assertThat(count.categories().get("COMMENT")).isEqualTo(2);
-        assertThat(count.categories().get("REVIEW")).isEqualTo(1);
+        assertThat(count.categories().get("INTERACTION")).isEqualTo(1);
         assertThat(count.categories().get("SYSTEM")).isZero();
     }
 
@@ -189,6 +233,8 @@ class CommunityNotificationInboxServiceTest {
         recipient.setReadAt(LocalDateTime.of(2026, 7, 26, 1, 0));
         when(recipientMapper.findRelation(1L, 10L))
                 .thenReturn(recipient);
+        when(recipientMapper.countInbox(10L, null, "UNREAD"))
+                .thenReturn(0L);
         when(recipientMapper.countUnreadByCategory(10L))
                 .thenReturn(List.of());
 

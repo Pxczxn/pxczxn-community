@@ -3,11 +3,15 @@ package top.pxczxn.community.team.persistence;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import top.pxczxn.community.team.model.Team;
 
 @Mapper
 public interface TeamMapper extends BaseMapper<Team> {
+
+    @Select("SELECT * FROM team WHERE blog_id = #{blogId} AND deleted_at IS NULL LIMIT 1")
+    Team findByBlogId(@Param("blogId") Long blogId);
 
     /**
      * Update team owner with optimistic lock (id + lock_version + current owner).

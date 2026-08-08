@@ -5,6 +5,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.article.persistence.ArticleAuthorCountRow;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.blog.model.Blog;
@@ -56,6 +57,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private final ArticleMapper articleMapper;
     private final TeamAuthorityService authorityService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityAbuseGuard abuseGuard;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -64,6 +66,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         Long inviteeUserId = requirePositive(command.inviteeUserId(), "Invalid invitee user ID");
         String role = role(command.roleCode());
         requireActiveTeam(teamId);
+        abuseGuard.check("USER:" + actorUserId, "TEAM_INVITE", 5, 300);
         if (!authorityService.canManageMember(actorUserId, teamId, role)) {
             throw new BusinessException(403, "Not allowed to invite this member role");
         }

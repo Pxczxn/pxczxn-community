@@ -42,12 +42,14 @@ deploy/monitoring/alertmanager.yml
 .vscode/
 *.iml
 
-# ===== 项目资料（按"只提交源码+readme"原则不提交） =====
-docs/
+# ===== 项目资料（只提交 README.md，其余 md 文件不提交） =====
+!README.md
+*.md
+.github/
 database/
 deploy/
 scripts/
-.github/
+docs/
 THIRD_PARTY_NOTICES.md
 .dockerignore
 

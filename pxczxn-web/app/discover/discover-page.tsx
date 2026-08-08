@@ -5,7 +5,11 @@ import { usePathname } from "next/navigation";
 import { ArrowRight, BookOpen, Clock, Compass, Flame, Layers, LibraryBig, LoaderCircle, MessageSquare, Orbit, PenLine, Sparkles, Tag as TagIcon, ThumbsUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
-import { type Moment, type PlatformTag, type PublicArticleSummary, type TeamSeries, communityApi, readSession } from "../lib/community-api";
+import { type Moment, type PlatformTag, type PublicArticleSummary, type Series, communityApi, readSession } from "../lib/community-api";
+import { blogTypeLabel, serializationLabel } from "../lib/series-labels";
+
+const session = readSession();
+const isLoggedIn = !!session;
 
 type FeedTab = "recommended" | "latest" | "popular" | "following";
 type FeedItem =
@@ -36,7 +40,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
   const [followingArticles, setFollowingArticles] = useState<PublicArticleSummary[]>([]);
   const [moments, setMoments] = useState<Moment[]>([]);
   const [tags, setTags] = useState<PlatformTag[]>([]);
-  const [seriesList, setSeriesList] = useState<TeamSeries[]>([]);
+  const [seriesList, setSeriesList] = useState<Series[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +63,7 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
       articlesOnly ? Promise.resolve({ records: [] as Moment[] }) : communityApi.moments(1, 20),
       communityApi.tags(),
       followingRequest,
-      communityApi.series().catch(() => [] as TeamSeries[]),
+      communityApi.series().catch(() => [] as Series[]),
     ])
       .then(([articlePage, momentPage, tagRecords, nextFollowingArticles, seriesRecords]) => {
         if (!active) return;
@@ -118,17 +122,35 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
           <section className="home-hero-card shadow-sm">
             <div style={{ display: "grid", gap: 12, maxWidth: 760 }}>
               <span className="eyebrow"><Sparkles size={15} /> 星语社区 Portal</span>
-              <h1 style={{ margin: 0, fontSize: "clamp(30px, 4.5vw, 48px)", fontWeight: 800, lineHeight: 1.15 }}>
-                注册即拥有个人博客
-              </h1>
-              <p style={{ margin: 0, fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                专为技术与思想创作者设计的公开社区。写作、连载、组建团队专栏，这里是你沉淀长远价值的精神家园。
-              </p>
-              <div className="discover-hero__actions" style={{ marginTop: 6 }}>
-                <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 开始创作</Link>
-                <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
-                <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
-              </div>
+              {isLoggedIn ? (
+                <>
+                  <h1 style={{ margin: 0, fontSize: "clamp(30px, 4.5vw, 48px)", fontWeight: 800, lineHeight: 1.15 }}>
+                    欢迎回来，继续创作
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    在这里沉淀你的技术见解与思想记录，持续创造长远价值。
+                  </p>
+                  <div className="discover-hero__actions" style={{ marginTop: 6 }}>
+                    <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 继续创作</Link>
+                    <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
+                    <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h1 style={{ margin: 0, fontSize: "clamp(30px, 4.5vw, 48px)", fontWeight: 800, lineHeight: 1.15 }}>
+                    注册即拥有个人博客
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                    专为技术与思想创作者设计的公开社区。写作、连载、组建团队专栏，这里是你沉淀长远价值的精神家园。
+                  </p>
+                  <div className="discover-hero__actions" style={{ marginTop: 6 }}>
+                    <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 开始创作</Link>
+                    <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
+                    <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Feature Highlights Grid */}
@@ -178,14 +200,27 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
             <aside className="discover-aside stack">
               <section className="home-guide-card">
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                  <Sparkles size={17} style={{ color: "var(--primary)" }} /> 社区创作指南
+                  <Sparkles size={17} style={{ color: "var(--primary)" }} /> {isLoggedIn ? "继续创作" : "社区创作指南"}
                 </h3>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                  所有发布的内容均公开透明，不使用智能推荐算法拦截，按公开发布时间与真实互动热度呈现。
-                </p>
-                <Link className="secondary-button" href="/editor/new" style={{ fontSize: 13, padding: "6px 12px", width: "fit-content" }}>
-                  写第一篇文章 <ArrowRight size={14} />
-                </Link>
+                {isLoggedIn ? (
+                  <>
+                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                      你的创作中心已就绪，随时可以继续写文章、发布动态或管理你的连载系列。
+                    </p>
+                    <Link className="secondary-button" href="/editor/new" style={{ fontSize: 13, padding: "6px 12px", width: "fit-content", marginTop: 12 }}>
+                      写文章 <ArrowRight size={14} />
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                      所有发布的内容均公开透明，不使用智能推荐算法拦截，按公开发布时间与真实互动热度呈现。
+                    </p>
+                    <Link className="secondary-button" href="/editor/new" style={{ fontSize: 13, padding: "6px 12px", width: "fit-content", marginTop: 12 }}>
+                      写第一篇文章 <ArrowRight size={14} />
+                    </Link>
+                  </>
+                )}
               </section>
 
               <section className="surface discover-aside-card">
@@ -295,9 +330,14 @@ export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean 
                   <Link className="discover-series-preview" href={`/series/${item.id}`} key={item.id}>
                     <span className="discover-series-preview__title">{item.title}</span>
                     <span className="discover-series-preview__meta">
-                      <span>{item.chapters.length} 篇章节</span>
-                      <span>{item.serializationStatus === "COMPLETED" ? "已完结" : item.serializationStatus === "PAUSED" ? "暂缓更新" : "连载中"}</span>
+                      <span>{item.chapterCount} 篇章节</span>
+                      <span>{serializationLabel(item.serializationStatus)}</span>
                     </span>
+                    {item.blogName && (
+                      <span className="discover-series-preview__blog">
+                        {item.blogName} · {blogTypeLabel(item.blogType)}
+                      </span>
+                    )}
                   </Link>
                 ))
               ) : (

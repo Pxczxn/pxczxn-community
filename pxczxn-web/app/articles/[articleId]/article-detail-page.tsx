@@ -9,9 +9,11 @@ import {
   Bookmark,
   Check,
   ChevronLeft,
+  ChevronRight,
   Clock3,
   Copy,
   Heart,
+  ListTree,
   LoaderCircle,
   MessageCircle,
   RefreshCw,
@@ -21,6 +23,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar, UserTopbar } from "../../components/prototype-ui";
 import {
   PublicArticleDetail,
+  SeriesChapter,
+  ArticleSeriesContext,
   communityApi,
   publicFileUrl,
   readSession,
@@ -35,6 +39,7 @@ interface TocEntry {
 
 export function ArticleDetailPage({ articleId }: { articleId: string }) {
   const [article, setArticle] = useState<PublicArticleDetail | null>(null);
+  const [context, setContext] = useState<ArticleSeriesContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [liked, setLiked] = useState(false);
@@ -47,8 +52,16 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
     setLoading(true);
     setError("");
     try {
-      const nextArticle = await communityApi.publicArticle(articleId);
+      const [nextArticle, seriesContext] = await Promise.all([
+        communityApi.publicArticle(articleId),
+        communityApi.articleSeriesContext(articleId).catch(() => null),
+      ]);
       setArticle(nextArticle);
+      setContext(seriesContext);
+      // 在系列内阅读时同步"继续阅读"指针（#19 阅读进度的消费侧）。
+      if (readSession() && seriesContext) {
+        void communityApi.recordSeriesProgress(seriesContext.seriesId, articleId).catch(() => {});
+      }
       const sourceType = document.referrer
         ? document.referrer.includes(window.location.host) ? "INTERNAL" : "REFERRAL"
         : "DIRECT";
@@ -93,6 +106,19 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
       return [];
     }
   }, [article]);
+
+  // 文章若属于某个公开系列，按章节顺序算出上一篇 / 下一篇，供底部（与顶部）导航使用。
+  const chapterNav = useMemo<{ series: ArticleSeriesContext; prev: SeriesChapter | null; next: SeriesChapter | null } | null>(() => {
+    if (!context || context.chapterOrder == null) return null;
+    const sorted = [...context.chapters].sort((a, b) => a.chapterOrder - b.chapterOrder);
+    const index = sorted.findIndex((chapter) => chapter.articleId === articleId);
+    if (index < 0) return null;
+    return {
+      series: context,
+      prev: index > 0 ? sorted[index - 1] : null,
+      next: index < sorted.length - 1 ? sorted[index + 1] : null,
+    };
+  }, [context, articleId]);
 
   async function copyLink() {
     await navigator.clipboard.writeText(window.location.href);
@@ -179,6 +205,8 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
         <Link className="article-back link" href={`/${article.blog.slug}`}>
           <ChevronLeft size={17} /> 返回博客
         </Link>
+
+        <ChapterNav nav={chapterNav} />
 
         <div className="article-layout">
           <aside className="article-toc surface">
@@ -304,8 +332,44 @@ export function ArticleDetailPage({ articleId }: { articleId: string }) {
             </button>
           </aside>
         </div>
+
+        <ChapterNav nav={chapterNav} />
       </main>
     </>
+  );
+}
+
+function ChapterNav({ nav }: { nav: { series: ArticleSeriesContext; prev: SeriesChapter | null; next: SeriesChapter | null } | null }) {
+  if (!nav) return null;
+  const { series, prev, next } = nav;
+  return (
+    <nav className="article-chapter-nav surface" aria-label="系列章节导航">
+      {prev ? (
+        <Link className="article-chapter-nav__side" href={`/articles/${prev.articleId}`}>
+          <ChevronLeft size={16} />
+          <span>
+            <small>上一篇</small>
+            {prev.title}
+          </span>
+        </Link>
+      ) : (
+        <span className="article-chapter-nav__side article-chapter-nav__side--empty" aria-hidden="true" />
+      )}
+      <Link className="article-chapter-nav__center" href={`/series/${series.seriesId}`}>
+        <ListTree size={15} /> {series.seriesTitle} · 目录
+      </Link>
+      {next ? (
+        <Link className="article-chapter-nav__side article-chapter-nav__side--next" href={`/articles/${next.articleId}`}>
+          <span>
+            <small>下一篇</small>
+            {next.title}
+          </span>
+          <ChevronRight size={16} />
+        </Link>
+      ) : (
+        <span className="article-chapter-nav__side article-chapter-nav__side--empty" aria-hidden="true" />
+      )}
+    </nav>
   );
 }
 

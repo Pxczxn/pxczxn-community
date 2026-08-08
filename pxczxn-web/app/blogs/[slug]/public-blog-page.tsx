@@ -3,9 +3,11 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  ArrowUpRight,
   Bookmark,
   Eye,
   Heart,
+  Layers,
   LoaderCircle,
   MoreHorizontal,
   PenLine,
@@ -18,10 +20,20 @@ import { ArticleThumb, EmptyState } from "../../components/prototype-ui";
 import {
   PublicArticlePage,
   PublicBlog,
+  Series,
   communityApi,
   publicFileUrl,
   readSession,
 } from "../../lib/community-api";
+import { readingPercent, serializationLabel } from "../../lib/series-labels";
+
+type BlogTab = "articles" | "series" | "about";
+
+const BLOG_TABS: Array<{ key: BlogTab; label: string }> = [
+  { key: "articles", label: "文章" },
+  { key: "series", label: "系列" },
+  { key: "about", label: "关于" },
+];
 
 export function PublicBlogPage({ slug }: { slug: string }) {
   const [blog, setBlog] = useState<PublicBlog | null>(null);
@@ -32,6 +44,9 @@ export function PublicBlogPage({ slug }: { slug: string }) {
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
   const [followError, setFollowError] = useState("");
+  const [tab, setTab] = useState<BlogTab>("articles");
+  const [series, setSeries] = useState<Series[] | null>(null);
+  const [seriesError, setSeriesError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -90,6 +105,25 @@ export function PublicBlogPage({ slug }: { slug: string }) {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  // 系列按需加载：大多数访客只看文章，没必要为了一个可能不会点开的页签多发一次请求。
+  useEffect(() => {
+    if (tab !== "series" || !blog || series !== null) return;
+    let active = true;
+    void communityApi
+      .blogPublicSeries(blog.blogId)
+      .then((value) => {
+        if (active) setSeries(value);
+      })
+      .catch((cause: unknown) => {
+        if (!active) return;
+        setSeries([]);
+        setSeriesError(cause instanceof Error ? cause.message : "系列加载失败");
+      });
+    return () => {
+      active = false;
+    };
+  }, [tab, blog, series]);
 
   const records = useMemo(() => {
     const source = articles?.records ?? [];
@@ -203,25 +237,48 @@ export function PublicBlogPage({ slug }: { slug: string }) {
 
         <div className="team-tabs-row">
           <nav className="tabs" aria-label="博客内容">
-            <a className="tab active">文章</a>
-            <a className="tab">动态</a>
-            <a className="tab">系列</a>
-            <a className="tab">关于</a>
+            {BLOG_TABS.map((item) => (
+              <button
+                aria-current={tab === item.key ? "page" : undefined}
+                className={`tab ${tab === item.key ? "active" : ""}`}
+                key={item.key}
+                onClick={() => setTab(item.key)}
+                type="button"
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
-          <label className="team-search">
-            <input
-              aria-label="搜索博客文章"
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="搜索博客文章"
-              value={keyword}
-            />
-            <Search size={16} />
-          </label>
+          {tab === "articles" && (
+            <label className="team-search">
+              <input
+                aria-label="搜索博客文章"
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="搜索博客文章"
+                value={keyword}
+              />
+              <Search size={16} />
+            </label>
+          )}
         </div>
 
         <section className="team-content">
           <div className="article-list">
-            {records.map((article, index) => (
+            {tab === "series" && (
+              <BlogSeriesPanel error={seriesError} isMine={isMine} series={series} />
+            )}
+            {tab === "about" && (
+              <div className="surface side-card">
+                <h2 className="card-heading">关于这个博客</h2>
+                <p>{blog.summary || "博主还没有填写博客简介。"}</p>
+                <p className="muted">
+                  作者 @{blog.ownerUsername} · {blog.blogType === "TEAM" ? "团队博客" : "个人博客"} · 主题
+                  {themeLabel(blog.themeKey)}
+                </p>
+                <p>{blog.ownerBio || "作者还没有填写个人简介。"}</p>
+              </div>
+            )}
+            {tab === "articles" && records.map((article, index) => (
               <Link
                 className="team-article"
                 href={`/${blog.slug}/${article.articleId}`}
@@ -256,7 +313,7 @@ export function PublicBlogPage({ slug }: { slug: string }) {
                 </span>
               </Link>
             ))}
-            {!records.length && (
+            {tab === "articles" && !records.length && (
               <EmptyState
                 title={keyword ? "没有匹配的文章" : "还没有公开文章"}
                 description={keyword ? "换一个关键词继续搜索。" : "新文章发布后会显示在这里。"}
@@ -284,6 +341,89 @@ export function PublicBlogPage({ slug }: { slug: string }) {
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * 博客门户的"系列"页签。个人博客与团队博客共用：数据同样来自 blogId，展示口径也一致，
+ * 唯一区别是博主本人会额外看到一个去管理页的入口。
+ */
+function BlogSeriesPanel({
+  series,
+  error,
+  isMine,
+}: {
+  series: Series[] | null;
+  error: string;
+  isMine: boolean;
+}) {
+  if (series === null) {
+    return (
+      <div className="series-loading surface" aria-busy="true">
+        <LoaderCircle className="spin" size={20} /> 正在加载系列…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="inline-feedback error" role="alert">
+        <AlertTriangle size={16} /> {error}
+      </div>
+    );
+  }
+
+  if (series.length === 0) {
+    return (
+      <EmptyState
+        title="还没有公开系列"
+        description={isMine ? "把已发布的文章编排成连载，通过审核后就会展示在这里。" : "作者还没有公开连载系列。"}
+      />
+    );
+  }
+
+  return (
+    <div className="team-portal-series-grid">
+      {isMine && (
+        <Link className="ghost-button" href="/me/series">
+          管理我的系列 <ArrowUpRight size={14} />
+        </Link>
+      )}
+      {series.map((item) => {
+        const percent = readingPercent(item.viewerReadChapterCount, item.chapterCount);
+        return (
+          <div className="surface team-portal-series-card" key={item.id}>
+            <h3>{item.title}</h3>
+            <p className="secondary">{item.summary || "暂无简介"}</p>
+            <p className="muted">
+              {serializationLabel(item.serializationStatus)} · <Layers size={13} /> {item.chapterCount} 章
+              {item.followerCount > 0 && (
+                <>
+                  {" · "}
+                  <Users size={13} /> {item.followerCount} 人追更
+                </>
+              )}
+            </p>
+            {percent > 0 && (
+              <div
+                className="series-progress series-progress--slim"
+                role="progressbar"
+                aria-valuenow={percent}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span style={{ width: `${percent}%` }} />
+              </div>
+            )}
+            {item.chapterCount > 0 && (
+              <Link className="ghost-button" href={`/series/${item.id}`}>
+                查看系列 <ArrowUpRight size={14} />
+              </Link>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 package top.pxczxn.community.web.social;
 
+import jakarta.validation.Valid;
 import top.pxczxn.platform.common.exception.BusinessException;
 import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ public class MomentController {
 
     @PostMapping("/moments")
     public Result<MomentPublishResponse> publish(
-            @RequestBody PublishMomentRequest request
+            @Valid @RequestBody PublishMomentRequest request
     ) {
         return Result.ok(MomentPublishResponse.from(service.publish(
                 request == null

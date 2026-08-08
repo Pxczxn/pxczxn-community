@@ -46,6 +46,7 @@ import {
   Moment,
   MomentFeedFilter,
   PlatformTag,
+  NOTIFICATION_EVENT,
   communityApi,
   publicFileUrl,
 } from "../lib/community-api";
@@ -57,12 +58,12 @@ import {
 } from "./moment-parts";
 
 /* ─── 左侧导航数据 ─── */
-const NAV_ITEMS: { key: string; label: string; Icon: React.ComponentType<{ size?: number }>; dot?: boolean }[] = [
+const NAV_ITEMS: { key: string; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
   { key: "recommended", label: "推荐", Icon: Star },
   { key: "following", label: "关注", Icon: Users },
   { key: "latest", label: "最新", Icon: RefreshCw },
   { key: "team", label: "团队动态", Icon: Users },
-  { key: "mine", label: "我的互动", Icon: MessageCircle, dot: true },
+  { key: "mine", label: "我的互动", Icon: MessageCircle },
 ];
 
 /* ─── 热门话题与创作者从 API 动态加载 ─── */
@@ -127,6 +128,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
   const [momentTypeFilter, setMomentTypeFilter] = useState<string[]>([]);
   const [filterDraft, setFilterDraft] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -229,6 +231,17 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     const timer = window.setTimeout(() => void loadHotTags(), 0);
     return () => window.clearTimeout(timer);
   }, [loadHotTags]);
+
+  useEffect(() => {
+    const fetchUnread = () => {
+      void communityApi.unreadNotifications()
+        .then((result) => setUnreadCount(result.total))
+        .catch(() => setUnreadCount(0));
+    };
+    fetchUnread();
+    window.addEventListener(NOTIFICATION_EVENT, fetchUnread);
+    return () => window.removeEventListener(NOTIFICATION_EVENT, fetchUnread);
+  }, []);
 
   useEffect(() => {
     if (!visibilityOpen) return;
@@ -403,7 +416,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
           <nav className="moments-nav">
             <h3 className="moments-nav__title">动态导航</h3>
             <ul className="moments-nav__list">
-              {NAV_ITEMS.map(({ key, label, Icon, dot }) => (
+              {NAV_ITEMS.map(({ key, label, Icon }) => (
                 <li key={key}>
                   <button
                     className={`moments-nav__item ${activeNav === key ? "active" : ""}`}
@@ -412,7 +425,7 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                   >
                     <Icon size={17} />
                     <span>{label}</span>
-                    {dot && <span className="moments-nav__dot" />}
+                    {key === "mine" && unreadCount > 0 && <span className="moments-nav__dot" />}
                   </button>
                 </li>
               ))}

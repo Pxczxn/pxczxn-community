@@ -78,18 +78,11 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
   EXPIRED: "已过期",
 };
 
-export const SERIALIZATION_LABELS: Record<string, string> = {
-  ONGOING: "连载中",
-  COMPLETED: "已完结",
-  PAUSED: "已暂停",
-};
-
-export const SERIES_REVIEW_LABELS: Record<string, string> = {
-  DRAFT: "草稿",
-  PENDING_REVIEW: "审核中",
-  APPROVED: "已通过",
-  REJECTED: "已退回",
-};
+/**
+ * 系列相关标签已随"系列泛化为博客归属"迁到 lib/series-labels.ts。
+ * 这里保留转发，团队模块内既有 import 无需改动，同时避免出现第二份字典。
+ */
+export { SERIALIZATION_LABELS, SERIES_REVIEW_LABELS } from "../lib/series-labels";
 
 export const SUBMISSION_STATUS_LABELS: Record<string, string> = {
   TEAM_PENDING: "待团队审核",

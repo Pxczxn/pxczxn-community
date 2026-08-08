@@ -1,5 +1,6 @@
 package top.pxczxn.community.web.social;
 
+import jakarta.validation.Valid;
 import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,7 +24,7 @@ public class CommentController {
     public Result<CommentResponse> create(
             @PathVariable String targetType,
             @PathVariable Long targetId,
-            @RequestBody CreateCommentRequest request
+            @Valid @RequestBody CreateCommentRequest request
     ) {
         return Result.ok(CommentResponse.from(service.create(
                 targetType,
@@ -47,7 +48,7 @@ public class CommentController {
     @PostMapping("/comments/{commentId}/replies")
     public Result<CommentResponse> reply(
             @PathVariable Long commentId,
-            @RequestBody CreateCommentRequest request
+            @Valid @RequestBody CreateCommentRequest request
     ) {
         return Result.ok(CommentResponse.from(service.reply(
                 commentId,

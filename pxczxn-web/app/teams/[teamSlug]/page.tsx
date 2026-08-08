@@ -18,7 +18,7 @@ import {
   type MyTeam,
   type PublicArticlePage,
   type TeamPortal,
-  type TeamSeries,
+  type Series,
 } from "../../lib/community-api";
 import { formatCount, ROLE_LABELS, SERIALIZATION_LABELS } from "../team-labels";
 
@@ -44,7 +44,7 @@ export default function TeamDetailPage() {
   const [tab, setTab] = useState<PortalTab>("home");
   const [articles, setArticles] = useState<PublicArticlePage | null>(null);
   const [pageNum, setPageNum] = useState(1);
-  const [series, setSeries] = useState<TeamSeries[]>([]);
+  const [series, setSeries] = useState<Series[]>([]);
   const [mine, setMine] = useState<MyTeam[] | null>(null);
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
@@ -289,9 +289,9 @@ export default function TeamDetailPage() {
                     <h3>{item.title}</h3>
                     <p className="secondary">{item.summary || "暂无简介"}</p>
                     <p className="muted">
-                      {SERIALIZATION_LABELS[item.serializationStatus] || item.serializationStatus} · {item.chapters.length} 章
+                      {SERIALIZATION_LABELS[item.serializationStatus] || item.serializationStatus} · {item.chapterCount} 章
                     </p>
-                    {item.chapters.length > 0 && (
+                    {item.chapterCount > 0 && (
                       <Link className="ghost-button" href={`/series/${item.id}`}>
                         查看系列 <ArrowUpRight size={14} />
                       </Link>

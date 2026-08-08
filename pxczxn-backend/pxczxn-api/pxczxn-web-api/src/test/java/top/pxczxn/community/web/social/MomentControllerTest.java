@@ -16,6 +16,7 @@ import top.pxczxn.community.social.application.MomentView;
 import top.pxczxn.community.social.application.PublishMomentCommand;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -97,7 +98,7 @@ class MomentControllerTest {
         )).thenReturn(page);
 
         var result = controller.publicFeed(
-                1, 20, Set.of("TEXT", "LINK", "TEXT")
+                1, 20, new LinkedHashSet<>(List.of("TEXT", "LINK", "text"))
         );
 
         assertThat(result.getData().records()).hasSize(1);

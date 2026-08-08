@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.article.persistence.ArticleAuthorCountRow;
 import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.blog.model.Blog;
@@ -44,6 +45,7 @@ class TeamMemberServiceImplTest {
     private ArticleMapper articleMapper;
     private TeamAuthorityService authorityService;
     private ApplicationEventPublisher eventPublisher;
+    private CommunityAbuseGuard abuseGuard;
     private TeamMemberServiceImpl service;
 
     @BeforeEach
@@ -56,8 +58,9 @@ class TeamMemberServiceImplTest {
         articleMapper = mock(ArticleMapper.class);
         authorityService = mock(TeamAuthorityService.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        abuseGuard = mock(CommunityAbuseGuard.class);
         service = new TeamMemberServiceImpl(invitationMapper, memberMapper, teamMapper, userMapper,
-                blogMapper, articleMapper, authorityService, eventPublisher);
+                blogMapper, articleMapper, authorityService, eventPublisher, abuseGuard);
     }
 
     @Test

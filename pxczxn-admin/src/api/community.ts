@@ -137,7 +137,10 @@ export interface TeamSubmission {
 
 export interface CommunitySeries {
   id: string
-  teamId: string
+  blogId: string
+  blogName: string | null
+  blogSlug: string | null
+  blogType: string
   title: string
   slug: string
   summary?: string

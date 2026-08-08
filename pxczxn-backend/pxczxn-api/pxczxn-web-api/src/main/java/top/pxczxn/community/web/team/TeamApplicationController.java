@@ -1,5 +1,6 @@
 package top.pxczxn.community.web.team;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import top.pxczxn.community.shared.auth.CommunityAuth;
@@ -24,7 +25,7 @@ public class TeamApplicationController {
      */
     @PostMapping
     public Result<TeamApplicationResponse> submitApplication(
-            @RequestBody SubmitTeamApplicationRequest request
+            @Valid @RequestBody SubmitTeamApplicationRequest request
     ) {
         Long currentUserId = communityAuth.getLoginUserId();
 

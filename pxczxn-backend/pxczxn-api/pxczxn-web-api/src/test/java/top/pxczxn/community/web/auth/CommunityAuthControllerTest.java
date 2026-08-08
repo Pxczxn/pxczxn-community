@@ -90,7 +90,7 @@ class CommunityAuthControllerTest {
 
         Result<CommunityLoginView> result = controller.login(
                 requestFrom("127.0.0.1"),
-                new CommunityLoginRequest("alice@example.com", "password-123")
+                new CommunityLoginRequest("alice@example.com", "password-123", false)
         );
 
         assertThat(result.getData().tokenName()).isEqualTo("pxczxn-community-token");

@@ -1,5 +1,6 @@
 package top.pxczxn.community.web.article;
 
+import jakarta.validation.Valid;
 import top.pxczxn.platform.common.exception.BusinessException;
 import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class ArticleDraftController {
 
     @PostMapping
     public Result<ArticleEditorResponse> create(
-            @RequestBody CreateArticleRequest request
+            @Valid @RequestBody CreateArticleRequest request
     ) {
         if (request == null) {
             throw new BusinessException(400, "文章信息不能为空");
@@ -63,7 +64,7 @@ public class ArticleDraftController {
     @PutMapping("/{articleId}")
     public Result<ArticleEditorResponse> save(
             @PathVariable Long articleId,
-            @RequestBody SaveArticleRequest request
+            @Valid @RequestBody SaveArticleRequest request
     ) {
         return Result.ok(ArticleEditorResponse.from(
                 articleService.save(articleId, command(request), false)
@@ -73,7 +74,7 @@ public class ArticleDraftController {
     @PutMapping("/{articleId}/autosave")
     public Result<ArticleEditorResponse> autosave(
             @PathVariable Long articleId,
-            @RequestBody SaveArticleRequest request
+            @Valid @RequestBody SaveArticleRequest request
     ) {
         return Result.ok(ArticleEditorResponse.from(
                 articleService.save(articleId, command(request), true)

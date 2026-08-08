@@ -3,6 +3,7 @@ package top.pxczxn.community.file.application;
 import top.pxczxn.platform.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import top.pxczxn.community.abuse.application.CommunityAbuseGuard;
 import top.pxczxn.community.article.model.Article;
 import top.pxczxn.community.article.permission.ArticleAction;
 import top.pxczxn.community.article.permission.ArticlePermissionService;
@@ -40,6 +41,7 @@ class CommunityFileServiceTest {
     private BlogMapper blogMapper;
     private ArticleMapper articleMapper;
     private ArticlePermissionService articlePermissionService;
+    private CommunityAbuseGuard abuseGuard;
     private CommunityFileService service;
 
     @BeforeEach
@@ -52,6 +54,7 @@ class CommunityFileServiceTest {
         blogMapper = mock(BlogMapper.class);
         articleMapper = mock(ArticleMapper.class);
         articlePermissionService = mock(ArticlePermissionService.class);
+        abuseGuard = mock(CommunityAbuseGuard.class);
         service = new CommunityFileService(
                 fileMapper,
                 referenceMapper,
@@ -60,7 +63,8 @@ class CommunityFileServiceTest {
                 storage,
                 blogMapper,
                 articleMapper,
-                articlePermissionService
+                articlePermissionService,
+                abuseGuard
         );
     }
 

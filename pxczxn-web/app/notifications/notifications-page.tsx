@@ -60,8 +60,7 @@ export function NotificationsPage() {
         communityApi.unreadNotifications(),
       ]);
       setRecords(page.records);
-      // 列表为空时强制清零计数，避免"没通知却显示未读"的矛盾
-      setCounts(page.records.length > 0 ? unread : { total: 0, categories: {} });
+      setCounts(unread);
     } catch {
       // 通知列表非关键路径，加载失败时静默展示空状态，不弹错误
       setRecords([]);
@@ -79,6 +78,11 @@ export function NotificationsPage() {
   useEffect(() => {
     return () => { if (errorTimer !== null) window.clearTimeout(errorTimer); };
   }, [errorTimer]);
+
+  // counts 变化后同步顶部铃铛等全局未读提示
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(NOTIFICATION_EVENT));
+  }, [counts.total]);
 
   async function markRead(notification: CommunityNotification) {
     if (notification.status === "READ") return;

@@ -1,5 +1,6 @@
 package top.pxczxn.community.web.category;
 
+import jakarta.validation.Valid;
 import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,7 +34,7 @@ public class BlogCategoryController {
 
     @PostMapping
     public Result<BlogCategoryResponse> create(
-            @RequestBody CreateBlogCategoryRequest request
+            @Valid @RequestBody CreateBlogCategoryRequest request
     ) {
         return Result.ok(BlogCategoryResponse.from(categoryService.create(
                 new CreateBlogCategoryCommand(
@@ -48,7 +49,7 @@ public class BlogCategoryController {
     @PatchMapping("/{categoryId}")
     public Result<BlogCategoryResponse> update(
             @PathVariable Long categoryId,
-            @RequestBody UpdateBlogCategoryRequest request
+            @Valid @RequestBody UpdateBlogCategoryRequest request
     ) {
         return Result.ok(BlogCategoryResponse.from(categoryService.update(
                 categoryId,

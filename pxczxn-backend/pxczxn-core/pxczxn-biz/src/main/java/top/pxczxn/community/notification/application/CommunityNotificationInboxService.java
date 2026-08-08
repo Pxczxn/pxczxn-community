@@ -135,18 +135,52 @@ public class CommunityNotificationInboxService {
                 "INTERACTION", "FOLLOW", "COMMENT", "COAUTHOR",
                 "SUBMISSION", "TEAM", "REVIEW", "SYSTEM"
         ).forEach(value -> categories.put(value, 0L));
+
+        // 获取所有未读通知
+        List<CommunityNotificationRecipient> unreadRecipients =
+                recipientMapper.selectInbox(userId, null, "UNREAD", 0, 1000);
+
+        // 过滤掉内容不可用的未读通知
         long total = 0;
-        for (Map<String, Object> row
-                : recipientMapper.countUnreadByCategory(userId)) {
-            String category = String.valueOf(row.get("category"));
-            long count = number(row.get("count"));
-            if (categories.containsKey(category)) {
-                categories.put(category, count);
-                total += count;
+        LinkedHashMap<String, Long> filteredCategories = new LinkedHashMap<>();
+        List.of(
+                "INTERACTION", "FOLLOW", "COMMENT", "COAUTHOR",
+                "SUBMISSION", "TEAM", "REVIEW", "SYSTEM"
+        ).forEach(value -> filteredCategories.put(value, 0L));
+
+        if (!unreadRecipients.isEmpty()) {
+            Map<Long, CommunityNotification> notifications = byId(
+                    notificationMapper.selectBatchIds(
+                            unreadRecipients.stream()
+                                    .map(CommunityNotificationRecipient::getNotificationId)
+                                    .toList()
+                    ),
+                    CommunityNotification::getId
+            );
+
+            for (CommunityNotificationRecipient recipient : unreadRecipients) {
+                CommunityNotification notification = notifications.get(
+                        recipient.getNotificationId()
+                );
+                if (notification == null) continue;
+
+                // 检查内容是否可用
+                TargetResolution target = resolveTarget(notification, userId);
+                if (target.available()) {
+                    total++;
+                    String category = notification.getCategory();
+                    if (filteredCategories.containsKey(category)) {
+                        filteredCategories.put(
+                                category,
+                                filteredCategories.get(category) + 1
+                        );
+                    }
+                }
             }
         }
+
         return new UnreadNotificationCountView(
-                total, Map.copyOf(categories)
+                total, Map.copyOf(filteredCategories)
         );
     }
 

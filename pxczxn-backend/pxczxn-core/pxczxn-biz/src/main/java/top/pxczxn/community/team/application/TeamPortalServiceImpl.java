@@ -9,10 +9,10 @@ import top.pxczxn.community.article.persistence.ArticleMapper;
 import top.pxczxn.community.article.persistence.ArticleStatusCountRow;
 import top.pxczxn.community.blog.model.Blog;
 import top.pxczxn.community.blog.persistence.BlogMapper;
-import top.pxczxn.community.series.model.TeamSeries;
-import top.pxczxn.community.series.model.TeamSeriesArticle;
-import top.pxczxn.community.series.persistence.TeamSeriesArticleMapper;
-import top.pxczxn.community.series.persistence.TeamSeriesMapper;
+import top.pxczxn.community.series.model.Series;
+import top.pxczxn.community.series.model.SeriesArticle;
+import top.pxczxn.community.series.persistence.SeriesArticleMapper;
+import top.pxczxn.community.series.persistence.SeriesMapper;
 import top.pxczxn.community.team.model.Team;
 import top.pxczxn.community.team.model.TeamAuditEvent;
 import top.pxczxn.community.team.model.TeamMember;
@@ -51,8 +51,8 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private final BlogMapper blogMapper;
     private final CommunityUserMapper userMapper;
     private final TeamSubmissionMapper submissionMapper;
-    private final TeamSeriesMapper seriesMapper;
-    private final TeamSeriesArticleMapper seriesArticleMapper;
+    private final SeriesMapper seriesMapper;
+    private final SeriesArticleMapper seriesArticleMapper;
     private final TeamInvitationMapper invitationMapper;
     private final TeamAuditEventMapper auditEventMapper;
     private final ArticleMapper articleMapper;
@@ -111,9 +111,10 @@ public class TeamPortalServiceImpl implements TeamPortalService {
         List<Long> activeTeamIds = teams.values().stream()
                 .filter(team -> blogs.containsKey(team.getBlogId())).map(Team::getId).toList();
         if (activeTeamIds.isEmpty()) return List.of();
+        List<Long> activeBlogIds = activeTeamIds.stream().map(tid -> teams.get(tid).getBlogId()).toList();
 
         Map<Long, Integer> memberCounts = toCountMap(memberMapper.countActiveMembersByTeams(activeTeamIds));
-        Map<Long, Integer> seriesCounts = toCountMap(seriesMapper.countByTeams(activeTeamIds));
+        Map<Long, Integer> seriesCounts = toCountMap(seriesMapper.countByBlogs(activeBlogIds));
         Map<Long, Integer> pendingSubmissions = toCountMap(submissionMapper.countPendingByTeams(activeTeamIds));
 
         return memberships.stream()
@@ -128,7 +129,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
                             role, CAPABILITIES.getOrDefault(role, List.of()), authorityService.getPermissions(viewerUserId, membership.getTeamId()),
                             memberCounts.getOrDefault(team.getId(), 0),
                             blog.getArticleCount() == null ? 0 : blog.getArticleCount().intValue(),
-                            seriesCounts.getOrDefault(team.getId(), 0),
+                            seriesCounts.getOrDefault(team.getBlogId(), 0),
                             blog.getFollowerCount() == null ? 0 : blog.getFollowerCount().intValue(),
                             pendingSubmissions.getOrDefault(team.getId(), 0),
                             submissionMapper.countRevisionRequiredForAuthor(team.getId(), viewerUserId),
@@ -173,7 +174,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
                 submissionMapper.countByTeamAndStatus(teamId, "TEAM_PENDING"),
                 submissionMapper.countRevisionRequiredForAuthor(teamId, viewerUserId),
                 invitationMapper.countPendingByTeam(teamId),
-                seriesMapper.countByTeamAndReviewStatus(teamId, "PENDING_REVIEW"),
+                seriesMapper.countByBlogAndReviewStatus(blog.getId(), "PENDING_REVIEW"),
                 articleMapper.countRiskByBlog(blog.getId()));
 
         List<TeamAuditEvent> events = auditEventMapper.findRecentByTeam(teamId, DEFAULT_ACTIVITY_LIMIT);
@@ -330,13 +331,13 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private Map<Long, SeriesRef> resolveSeriesForArticles(List<Article> articles) {
         if (articles.isEmpty()) return Map.of();
         List<Long> articleIds = articles.stream().map(Article::getId).toList();
-        List<TeamSeriesArticle> memberships = seriesArticleMapper.findByArticles(articleIds);
+        List<SeriesArticle> memberships = seriesArticleMapper.findByArticles(articleIds);
         if (memberships.isEmpty()) return Map.of();
-        List<Long> seriesIds = memberships.stream().map(TeamSeriesArticle::getSeriesId).distinct().toList();
+        List<Long> seriesIds = memberships.stream().map(SeriesArticle::getSeriesId).distinct().toList();
         Map<Long, String> titles = seriesMapper.selectBatchIds(seriesIds).stream()
-                .collect(Collectors.toMap(TeamSeries::getId, TeamSeries::getTitle));
+                .collect(Collectors.toMap(Series::getId, Series::getTitle));
         Map<Long, SeriesRef> result = new java.util.HashMap<>();
-        for (TeamSeriesArticle membership : memberships) {
+        for (SeriesArticle membership : memberships) {
             result.putIfAbsent(membership.getArticleId(),
                     new SeriesRef(membership.getSeriesId(), titles.get(membership.getSeriesId())));
         }
@@ -364,7 +365,9 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     }
 
     private int seriesCount(Long teamId) {
-        List<TeamCountRow> rows = seriesMapper.countByTeams(List.of(teamId));
+        Team team = teamMapper.selectById(teamId);
+        if (team == null) return 0;
+        List<TeamCountRow> rows = seriesMapper.countByBlogs(List.of(team.getBlogId()));
         return rows.isEmpty() ? 0 : rows.get(0).getTotal();
     }
 

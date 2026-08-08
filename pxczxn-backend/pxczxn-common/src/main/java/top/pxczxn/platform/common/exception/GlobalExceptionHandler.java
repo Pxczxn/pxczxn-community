@@ -92,24 +92,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 运行时异常（业务逻辑抛出的异常）
+     * 运行时异常 — 不向客户端暴露内部信息
      */
     @ExceptionHandler(RuntimeException.class)
     public Result<Void> handleRuntimeException(RuntimeException e) {
-        log.warn("运行时异常: {}", e.getMessage(), e);
-        String message = e.getMessage();
-        if (message == null || message.isBlank()) {
-            message = "系统繁忙，请稍后再试";
-        }
-        return Result.fail(message);
+        log.error("未处理运行时异常", e);
+        return Result.fail(500, "系统繁忙，请稍后再试");
     }
 
     /**
-     * 非法参数异常
+     * 非法参数异常 — 业务校验场景，message 可安全返回
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("非法参数异常: {}", e.getMessage(), e);
+        log.warn("非法参数异常: {}", e.getMessage());
         String message = e.getMessage();
         if (message == null || message.isBlank()) {
             message = "参数错误";
