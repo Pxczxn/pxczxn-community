@@ -18,7 +18,6 @@ import {
   ShieldBan,
   Sparkles,
   Sun,
-  Tags,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -41,7 +40,6 @@ const primaryNavItems = [
   { href: "/moments", label: "动态", Icon: Orbit },
   { href: "/series", label: "系列", Icon: Sparkles },
   { href: "/teams", label: "团队", Icon: UsersRound },
-  { href: "/tags", label: "标签", Icon: Tags },
 ] as const;
 
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -300,7 +298,7 @@ export function SideNavigation({
         <span className="brand-mark">星</span>
         <span>
           <strong>星语社区</strong>
-          <small>团队工作台（M3）</small>
+          <small>团队工作台</small>
         </span>
       </Link>
       <nav aria-label="团队工作台导航">

@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">MOMENT MANAGEMENT</div>
         <h1>动态管理</h1>
         <p>查看社区动态、检索内容、理解传播和互动状态、处理待审核内容、核查举报关联，并在必要时执行平台治理。</p>
       </div>
@@ -92,7 +91,7 @@
 
       <div v-if="userStore.hasPermission('community:moment:batch')" class="governance-toolbar">
         <div>
-          <strong>批量治理</strong>
+          <strong>批量处理</strong>
           <span>已选择 {{ checkedRowKeys.length }} 条；批次内任一锁冲突会整体回滚。</span>
         </div>
         <n-space>
@@ -107,7 +106,7 @@
             :disabled="!batchAction || checkedRowKeys.length === 0"
             @click="openBatchAction"
           >
-            执行批量治理
+            执行批量处理
           </n-button>
         </n-space>
       </div>
@@ -229,7 +228,7 @@
                 </div>
                 <div class="interaction-item">
                   <span>转发 {{ compactNumber(detail.moment.repostCount) }}</span>
-                  <n-button text size="small" type="primary" @click="goInteractions(detail.moment.id, 'FOLLOW')">查看转发关系</n-button>
+                  <n-button text size="small" type="primary" @click="goInteractions(detail.moment.id, 'FOLLOW')">查看关注关系</n-button>
                 </div>
               </div>
             </section>
@@ -306,13 +305,13 @@
         {{ actionScopeText }}；恢复转发动态时会重新校验转发源，计数与状态同事务提交。
       </n-alert>
       <n-form label-placement="top" class="decision-form">
-        <n-form-item label="治理原因" :required="isDestructiveAction">
+        <n-form-item :label="actionReasonLabel" :required="isDestructiveAction">
           <n-input
             v-model:value="actionReason"
             type="textarea"
             :maxlength="500"
             show-count
-            :placeholder="isDestructiveAction ? '请填写明确、可审计的治理原因' : '可选：填写审核说明'"
+            :placeholder="actionReasonPlaceholder"
             :autosize="{ minRows: 4, maxRows: 7 }"
           />
         </n-form-item>
@@ -443,6 +442,24 @@ const availableActionOptions = computed(() =>
 const actionTitle = computed(() =>
   allActionOptions.find(option => option.value === selectedAction.value)?.label || '治理'
 )
+const actionReasonPlaceholder = computed(() => {
+  const map: Record<GovernanceAction, string> = {
+    approve: '可选：填写审核说明',
+    reject: '请填写明确、可审计的驳回原因',
+    'take-down': '请填写明确、可审计的下架原因',
+    restore: '请填写恢复说明'
+  }
+  return map[selectedAction.value] || '请填写处理原因'
+})
+const actionReasonLabel = computed(() => {
+  const map: Record<GovernanceAction, string> = {
+    approve: '审核说明',
+    reject: '驳回原因',
+    'take-down': '下架原因',
+    restore: '恢复说明'
+  }
+  return map[selectedAction.value] || '处理原因'
+})
 const isDestructiveAction = computed(() =>
   selectedAction.value === 'reject' || selectedAction.value === 'take-down'
 )

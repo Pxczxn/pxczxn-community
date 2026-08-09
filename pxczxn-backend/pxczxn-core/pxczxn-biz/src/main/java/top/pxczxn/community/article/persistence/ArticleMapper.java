@@ -64,9 +64,22 @@ public interface ArticleMapper extends BaseMapper<Article> {
               AND a.published_version_id IS NOT NULL
               AND a.visibility = 'PUBLIC'
               AND a.publish_status NOT IN ('HIDDEN', 'TAKEN_DOWN', 'DELETED')
+              AND (#{keyword} IS NULL OR #{keyword} = '' OR a.title LIKE CONCAT('%', #{keyword}, '%'))
+              AND (#{tagSlug} IS NULL OR #{tagSlug} = '' OR EXISTS (
+                SELECT 1 FROM article_tag at2
+                JOIN platform_tag pt ON at2.tag_id = pt.id
+                WHERE at2.article_id = a.id
+                  AND pt.slug = #{tagSlug}
+                  AND pt.status = 'ACTIVE'
+                  AND pt.merged_into_tag_id IS NULL
+              ))
             ORDER BY a.published_at DESC, a.id DESC
             """)
-    IPage<Article> selectDiscoverPublicPage(IPage<Article> page);
+    IPage<Article> selectDiscoverPublicPage(
+            IPage<Article> page,
+            @Param("keyword") String keyword,
+            @Param("tagSlug") String tagSlug
+    );
 
     @Select("""
             <script>
@@ -74,20 +87,31 @@ public interface ArticleMapper extends BaseMapper<Article> {
             FROM article a
             INNER JOIN community_user author ON author.id = a.author_user_id AND author.status IN ('NORMAL', 'LIMITED')
             INNER JOIN blog b ON b.id = a.blog_id AND b.status = 'ACTIVE' AND b.deleted_at IS NULL
+            LEFT JOIN article_version av ON av.id = a.published_version_id AND av.article_id = a.id
             WHERE a.deleted_at IS NULL AND a.published_version_id IS NOT NULL
               AND a.visibility = 'PUBLIC' AND a.publish_status = 'PUBLISHED'
+              AND (#{keyword} IS NULL OR #{keyword} = '' OR a.title LIKE CONCAT('%', #{keyword}, '%'))
+              AND (#{tagSlug} IS NULL OR #{tagSlug} = '' OR EXISTS (
+                SELECT 1 FROM article_tag at2
+                JOIN platform_tag pt ON at2.tag_id = pt.id
+                WHERE at2.article_id = a.id
+                  AND pt.slug = #{tagSlug}
+                  AND pt.status = 'ACTIVE'
+                  AND pt.merged_into_tag_id IS NULL
+              ))
             <choose>
+              <when test="sort == 'HOT'">ORDER BY ((1.0 * COALESCE(a.like_count, 0) + 2.5 * COALESCE(a.comment_count, 0) + 4.0 * COALESCE(a.favorite_count, 0) + 1) / POW(GREATEST(TIMESTAMPDIFF(MINUTE, a.published_at, NOW()) / 60.0, 0) + 2, 1.2)) DESC, a.published_at DESC, a.id DESC</when>
               <when test="sort == 'VIEWS'">ORDER BY a.view_count DESC, a.published_at DESC, a.id DESC</when>
               <when test="sort == 'LIKES'">ORDER BY a.like_count DESC, a.published_at DESC, a.id DESC</when>
               <when test="sort == 'FAVORITES'">ORDER BY a.favorite_count DESC, a.published_at DESC, a.id DESC</when>
               <when test="sort == 'COMMENTS'">ORDER BY a.comment_count DESC, a.published_at DESC, a.id DESC</when>
-              <when test="sort == 'QUALITY'">ORDER BY (CASE WHEN a.summary IS NOT NULL AND CHAR_LENGTH(TRIM(a.summary)) >= 40 THEN 2 ELSE 0 END + CASE WHEN a.cover_file_id IS NOT NULL THEN 1 ELSE 0 END + CASE WHEN a.review_status = 'APPROVED' THEN 1 ELSE 0 END) DESC, a.published_at DESC, a.id DESC</when>
+              <when test="sort == 'QUALITY'">ORDER BY (3.0 * (COALESCE(a.favorite_count, 0) + 100 * 0.02) / (COALESCE(a.view_count, 0) + 100) + 2.0 * (COALESCE(a.like_count, 0) + 100 * 0.02) / (COALESCE(a.view_count, 0) + 100) + 1.0 * (COALESCE(a.comment_count, 0) + 100 * 0.02) / (COALESCE(a.view_count, 0) + 100) + (CASE WHEN av.word_count &gt;= 500 THEN 1 ELSE 0 END) + (CASE WHEN av.reading_time_minutes &gt;= 3 THEN 0.5 ELSE 0 END) + (CASE WHEN a.summary IS NOT NULL AND CHAR_LENGTH(TRIM(a.summary)) &gt;= 40 THEN 1 ELSE 0 END) + (CASE WHEN a.cover_file_id IS NOT NULL THEN 0.5 ELSE 0 END) + (CASE WHEN a.review_status = 'APPROVED' THEN 1 ELSE 0 END) + (CASE WHEN TIMESTAMPDIFF(DAY, a.published_at, NOW()) &lt;= 30 THEN 1 ELSE 0 END)) DESC, a.published_at DESC, a.id DESC</when>
               <when test="sort == 'RISK'">ORDER BY CASE WHEN a.review_status = 'APPROVED' THEN 0 ELSE 1 END ASC, a.published_at DESC, a.id DESC</when>
               <otherwise>ORDER BY a.published_at DESC, a.id DESC</otherwise>
             </choose>
             </script>
             """)
-    IPage<Article> selectDiscoverRankedPage(IPage<Article> page, @Param("sort") String sort);
+    IPage<Article> selectDiscoverRankedPage(IPage<Article> page, @Param("sort") String sort, @Param("keyword") String keyword, @Param("tagSlug") String tagSlug);
 
     @Select("""
             SELECT DATE(created_at) AS day, COUNT(*) AS count

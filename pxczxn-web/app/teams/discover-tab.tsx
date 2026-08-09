@@ -125,7 +125,7 @@ export function DiscoverTeamsTab({
             <p>
               {keyword
                 ? `没有找到与「${keyword}」匹配的团队，换个关键词试试。`
-                : "团队获批后会自动展示在这里。你可以发起团队建立申请。"}
+                : "创建并发布后会展示在这里。你可以发起团队建立申请。"}
             </p>
           </div>
           <Link href="/team-applications" className="secondary-button" onClick={onRequireLogin}>

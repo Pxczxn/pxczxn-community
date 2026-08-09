@@ -1,27 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ArrowRight, BookOpen, Clock, Compass, Flame, Layers, LibraryBig, LoaderCircle, MessageSquare, Orbit, PenLine, Sparkles, Tag as TagIcon, ThumbsUp, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Avatar, EmptyState, UserTopbar } from "../components/prototype-ui";
-import { type Moment, type PlatformTag, type PublicArticleSummary, type Series, communityApi, readSession } from "../lib/community-api";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Compass,
+  Flame,
+  Hash,
+  Layers,
+  Loader2,
+  MessageCircle,
+  Search,
+  Sparkles,
+  Users,
+  Clock,
+  ThumbsUp,
+  BookOpen,
+  Orbit,
+  ArrowRight,
+} from "lucide-react";
+import { UserTopbar, Avatar, EmptyState } from "../components/prototype-ui";
+import {
+  communityApi,
+  type PublicArticleSummary,
+  type PlatformTag,
+  type Series,
+  type Moment,
+  type TeamSummary,
+} from "../lib/community-api";
 import { blogTypeLabel, serializationLabel } from "../lib/series-labels";
 
-const session = readSession();
-const isLoggedIn = !!session;
-
-type FeedTab = "recommended" | "latest" | "popular" | "following";
-type FeedItem =
-  | { kind: "article"; value: PublicArticleSummary; occurredAt: string; heat: number }
-  | { kind: "moment"; value: Moment; occurredAt: string; heat: number };
-
-const tabs: Array<{ key: FeedTab; label: string; Icon: typeof Sparkles; description: string }> = [
-  { key: "recommended", label: "推荐", Icon: Sparkles, description: "编辑精选与近期公开内容，不使用智能推荐算法" },
-  { key: "latest", label: "最新", Icon: Clock, description: "按公开发布时间排序" },
-  { key: "popular", label: "热门", Icon: Flame, description: "按公开互动热度排序" },
-  { key: "following", label: "关注", Icon: Users, description: "已关注博客的最新公开文章" },
-];
+/* ─────────────────────────── helpers ─────────────────────────── */
 
 function timeLabel(value: string) {
   const distance = Date.now() - new Date(value).getTime();
@@ -31,396 +40,523 @@ function timeLabel(value: string) {
   return `${Math.floor(distance / 86_400_000)} 天前`;
 }
 
-export function DiscoverPage({ articlesOnly = false }: { articlesOnly?: boolean }) {
-  const pathname = usePathname();
-  const isHomePage = pathname === "/" && !articlesOnly;
+/* ─────────────────────── 1. DiscoverArticleCard ─────────────────────── */
 
-  const [tab, setTab] = useState<FeedTab>(articlesOnly ? "latest" : "recommended");
-  const [articles, setArticles] = useState<PublicArticleSummary[]>([]);
-  const [followingArticles, setFollowingArticles] = useState<PublicArticleSummary[]>([]);
-  const [moments, setMoments] = useState<Moment[]>([]);
-  const [tags, setTags] = useState<PlatformTag[]>([]);
-  const [seriesList, setSeriesList] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const followingRequest = readSession()
-      ? communityApi.myFollowing(1, 20)
-        .then((following) => Promise.all(
-          following.records.slice(0, 20).map((profile) => communityApi.publicArticles(profile.blogSlug, 1, 10)),
-        ))
-        .then((pages) => pages.flatMap((page) => page.records))
-        .catch(() => [] as PublicArticleSummary[])
-      : Promise.resolve([] as PublicArticleSummary[]);
-    Promise.all([
-      communityApi.discoverRankedArticles(
-        tab === "recommended" ? "QUALITY" : tab === "popular" ? "LIKES" : "LATEST",
-        1,
-        20,
-      ),
-      articlesOnly ? Promise.resolve({ records: [] as Moment[] }) : communityApi.moments(1, 20),
-      communityApi.tags(),
-      followingRequest,
-      communityApi.series().catch(() => [] as Series[]),
-    ])
-      .then(([articlePage, momentPage, tagRecords, nextFollowingArticles, seriesRecords]) => {
-        if (!active) return;
-        setArticles(articlePage.records);
-        setMoments(momentPage.records);
-        setTags(tagRecords);
-        setFollowingArticles(nextFollowingArticles);
-        setSeriesList(seriesRecords);
-      })
-      .catch((requestError: unknown) => {
-        if (active) setError(requestError instanceof Error ? requestError.message : "内容加载失败");
-      })
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
-  }, [articlesOnly, tab]);
-
-  const feed = useMemo(() => {
-    const values: FeedItem[] = [
-      ...(tab === "following" ? followingArticles : articles).map((value) => ({
-        kind: "article" as const,
-        value,
-        occurredAt: value.publishedAt,
-        heat: value.likeCount + value.favoriteCount * 2 + value.commentCount * 3,
-      })),
-      ...(tab === "latest" ? moments : []).map((value) => ({
-        kind: "moment" as const,
-        value,
-        occurredAt: value.createdAt,
-        heat: value.likeCount + value.favoriteCount * 2 + value.commentCount * 3 + value.repostCount * 2,
-      })),
-    ];
-    if (tab === "following") return values.sort((left, right) => +new Date(right.occurredAt) - +new Date(left.occurredAt));
-    return values;
-  }, [articles, followingArticles, moments, tab]);
-
-  const creators = useMemo(() => {
-    const seen = new Map<string, { name: string; username: string; articleCount: number }>();
-    articles.forEach((article) => {
-      const key = article.author.userId;
-      const previous = seen.get(key);
-      seen.set(key, {
-        name: article.author.displayName || article.author.username,
-        username: article.author.username,
-        articleCount: (previous?.articleCount || 0) + 1,
-      });
-    });
-    return [...seen.values()].sort((left, right) => right.articleCount - left.articleCount).slice(0, 5);
-  }, [articles]);
-
-  if (isHomePage) {
-    return (
-      <>
-        <UserTopbar title="首页" />
-        <main className="discover-page page-shell">
-          {/* Home Portal Hero */}
-          <section className="home-hero-card shadow-sm">
-            <div style={{ display: "grid", gap: 12, maxWidth: 760 }}>
-              <span className="eyebrow"><Sparkles size={15} /> 星语社区 Portal</span>
-              {isLoggedIn ? (
-                <>
-                  <h1 style={{ margin: 0, fontSize: "clamp(30px, 4.5vw, 48px)", fontWeight: 800, lineHeight: 1.15 }}>
-                    欢迎回来，继续创作
-                  </h1>
-                  <p style={{ margin: 0, fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    在这里沉淀你的技术见解与思想记录，持续创造长远价值。
-                  </p>
-                  <div className="discover-hero__actions" style={{ marginTop: 6 }}>
-                    <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 继续创作</Link>
-                    <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
-                    <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h1 style={{ margin: 0, fontSize: "clamp(30px, 4.5vw, 48px)", fontWeight: 800, lineHeight: 1.15 }}>
-                    注册即拥有个人博客
-                  </h1>
-                  <p style={{ margin: 0, fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                    专为技术与思想创作者设计的公开社区。写作、连载、组建团队专栏，这里是你沉淀长远价值的精神家园。
-                  </p>
-                  <div className="discover-hero__actions" style={{ marginTop: 6 }}>
-                    <Link className="primary-button" href="/editor/new"><PenLine size={17} /> 开始创作</Link>
-                    <Link className="secondary-button" href="/discover"><Compass size={17} /> 探索内容</Link>
-                    <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Feature Highlights Grid */}
-            <div className="home-features-grid">
-              <Link href="/editor/new" className="home-feature-card">
-                <span className="home-feature-icon"><BookOpen size={22} /></span>
-                <h3>个人博客与创作中心</h3>
-                <p>注册即可拥有独立博客二级域名与专栏，支持 Markdown 与沉浸式编辑。</p>
-              </Link>
-              <Link href="/series" className="home-feature-card">
-                <span className="home-feature-icon"><Layers size={22} /></span>
-                <h3>团队协作与连载专栏</h3>
-                <p>按章节顺序搭建深度专栏与技术书架，方便读者循序渐进地阅读。</p>
-              </Link>
-              <Link href="/moments" className="home-feature-card">
-                <span className="home-feature-icon"><Orbit size={22} /></span>
-                <h3>极简动态与同频互动</h3>
-                <p>随手发布想法碎片、技术链接与微动态，与全站创作者交流。</p>
-              </Link>
-            </div>
-          </section>
-
-          <section className="discover-layout">
-            <div className="stack">
-              <div className="discover-tabs surface">
-                {tabs.filter((entry) => entry.key !== "following").map((entry) => {
-                  const Icon = entry.Icon;
-                  return (
-                    <button className={tab === entry.key ? "active" : ""} key={entry.key} onClick={() => setTab(entry.key)} type="button">
-                      <Icon size={15} />
-                      <span>{entry.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="discover-sort-note">{tabs.find((entry) => entry.key === tab)?.description}</p>
-              {loading && <div className="surface feed-loading"><LoaderCircle className="spin" size={22} /> 正在加载最新内容…</div>}
-              {error && <div className="inline-feedback error">{error}</div>}
-              {!loading && !error && !feed.length && (
-                <div className="surface"><EmptyState title="还没有公开内容" description="第一篇文章或第一条动态会出现在这里。" /></div>
-              )}
-              {!loading && feed.map((item) => (
-                <DiscoverFeedCard item={item} key={`${item.kind}-${item.kind === "article" ? item.value.articleId : item.value.momentId}`} />
-              ))}
-            </div>
-
-            <aside className="discover-aside stack">
-              <section className="home-guide-card">
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                  <Sparkles size={17} style={{ color: "var(--primary)" }} /> {isLoggedIn ? "继续创作" : "社区创作指南"}
-                </h3>
-                {isLoggedIn ? (
-                  <>
-                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                      你的创作中心已就绪，随时可以继续写文章、发布动态或管理你的连载系列。
-                    </p>
-                    <Link className="secondary-button" href="/editor/new" style={{ fontSize: 13, padding: "6px 12px", width: "fit-content", marginTop: 12 }}>
-                      写文章 <ArrowRight size={14} />
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                      所有发布的内容均公开透明，不使用智能推荐算法拦截，按公开发布时间与真实互动热度呈现。
-                    </p>
-                    <Link className="secondary-button" href="/editor/new" style={{ fontSize: 13, padding: "6px 12px", width: "fit-content", marginTop: 12 }}>
-                      写第一篇文章 <ArrowRight size={14} />
-                    </Link>
-                  </>
-                )}
-              </section>
-
-              <section className="surface discover-aside-card">
-                <h2><Flame size={17} /> 热门标签</h2>
-                <div className="discover-tag-chips">
-                  {tags.slice().sort((left, right) => right.usageCount - left.usageCount).slice(0, 8).map((tag) => (
-                    <Link className="discover-tag-chip" href={`/tags?tag=${encodeURIComponent(tag.slug)}`} key={tag.tagId}>
-                      <TagIcon size={13} />
-                      <span>{tag.name}</span>
-                      <small>{tag.usageCount}</small>
-                    </Link>
-                  ))}
-                </div>
-                {!tags.length && !loading && <p className="muted">暂无可展示标签</p>}
-              </section>
-
-              <section className="surface discover-aside-card">
-                <h2><Users size={17} /> 推荐创作者</h2>
-                {creators.map((creator) => (
-                  <Link className="discover-creator" href={`/blogs/${encodeURIComponent(creator.username)}`} key={creator.username}>
-                    <Avatar label={creator.name.slice(0, 1)} size="sm" />
-                    <span>
-                      <strong>{creator.name}</strong>
-                      <small>@{creator.username} · {creator.articleCount} 篇公开文章</small>
-                    </span>
-                  </Link>
-                ))}
-                {!creators.length && !loading && <p className="muted">公开创作者会在有内容后出现</p>}
-              </section>
-            </aside>
-          </section>
-        </main>
-      </>
-    );
-  }
-
+function DiscoverArticleCard({ item }: { item: PublicArticleSummary }) {
+  const authorName = item.author.displayName || item.author.username;
   return (
-    <>
-      <UserTopbar title={articlesOnly ? "文章" : "发现"} />
-      <main className="discover-page page-shell">
-        <section className="discover-hero surface-lg shadow-sm">
-          <span className="eyebrow"><Compass size={15} /> 星语社区</span>
-          <h1>{articlesOnly ? "文章" : "发现值得阅读的内容"}</h1>
-          <p>{articlesOnly ? "按公开时间浏览社区文章。" : "文章、动态和创作者在这里汇集；所有排序来源都会明确说明。"}</p>
-          <div className="discover-hero__actions">
-            <Link className="primary-button" href="/editor/new"><BookOpen size={17} /> 写文章</Link>
-            <Link className="secondary-button" href="/moments"><Orbit size={17} /> 浏览动态</Link>
-            <Link className="ghost-button" href="/series"><LibraryBig size={17} /> 连载系列</Link>
-          </div>
-        </section>
-
-        <section className="discover-layout">
-          <div className="stack">
-            <div className="discover-tabs surface">
-              {tabs.filter((entry) => !articlesOnly || entry.key !== "following").map((entry) => {
-                const Icon = entry.Icon;
-                return (
-                  <button className={tab === entry.key ? "active" : ""} key={entry.key} onClick={() => setTab(entry.key)} type="button">
-                    <Icon size={15} />
-                    <span>{entry.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="discover-sort-note">{tabs.find((entry) => entry.key === tab)?.description}</p>
-            {loading && <div className="surface feed-loading"><LoaderCircle className="spin" size={22} /> 正在加载公开内容…</div>}
-            {error && <div className="inline-feedback error">{error}</div>}
-            {!loading && !error && !feed.length && (
-              <div className="surface"><EmptyState title={tab === "following" ? "还没有关注内容" : "还没有公开内容"} description={tab === "following" ? "登录后关注博客，它们最新公开的文章会出现在这里。" : "第一篇文章或第一条动态会出现在这里。"} /></div>
-            )}
-            {!loading && feed.map((item) => (
-              <DiscoverFeedCard item={item} key={`${item.kind}-${item.kind === "article" ? item.value.articleId : item.value.momentId}`} />
-            ))}
-          </div>
-
-          <aside className="discover-aside stack">
-            <section className="surface discover-aside-card">
-              <h2><Flame size={17} /> 热门标签</h2>
-              <div className="discover-tag-chips">
-                {tags.slice().sort((left, right) => right.usageCount - left.usageCount).slice(0, 8).map((tag) => (
-                  <Link className="discover-tag-chip" href={`/tags?tag=${encodeURIComponent(tag.slug)}`} key={tag.tagId}>
-                    <TagIcon size={13} />
-                    <span>{tag.name}</span>
-                    <small>{tag.usageCount}</small>
-                  </Link>
-                ))}
-              </div>
-              {!tags.length && !loading && <p className="muted">暂无可展示标签</p>}
-            </section>
-            <section className="surface discover-aside-card">
-              <h2><Users size={17} /> 推荐创作者</h2>
-              {creators.map((creator) => (
-                <Link className="discover-creator" href={`/blogs/${encodeURIComponent(creator.username)}`} key={creator.username}>
-                  <Avatar label={creator.name.slice(0, 1)} size="sm" />
-                  <span>
-                    <strong>{creator.name}</strong>
-                    <small>@{creator.username} · {creator.articleCount} 篇公开文章</small>
-                  </span>
-                </Link>
-              ))}
-              {!creators.length && !loading && <p className="muted">公开创作者会在有内容后出现</p>}
-            </section>
-            <section className="surface discover-aside-card">
-              <h2><LibraryBig size={17} /> 热门系列</h2>
-              {seriesList.length > 0 ? (
-                seriesList.slice(0, 3).map((item) => (
-                  <Link className="discover-series-preview" href={`/series/${item.id}`} key={item.id}>
-                    <span className="discover-series-preview__title">{item.title}</span>
-                    <span className="discover-series-preview__meta">
-                      <span>{item.chapterCount} 篇章节</span>
-                      <span>{serializationLabel(item.serializationStatus)}</span>
-                    </span>
-                    {item.blogName && (
-                      <span className="discover-series-preview__blog">
-                        {item.blogName} · {blogTypeLabel(item.blogType)}
-                      </span>
-                    )}
-                  </Link>
-                ))
-              ) : (
-                <div className="discover-planned-card">
-                  <p>浏览社区公开发布的专栏与连载系列，按章节循序渐进。</p>
-                  <Link className="secondary-button" href="/series" style={{ marginTop: 8, fontSize: 13, padding: "6px 12px" }}>去连载系列</Link>
-                </div>
-              )}
-            </section>
-            <section className="surface discover-aside-card discover-planned-card">
-              <h2><Sparkles size={17} /> 编辑精选</h2>
-              <p>编辑精选入口已预留；运营配置能力将在 M5 建立。当前内容流按公开时间或互动热度展示。</p>
-            </section>
-          </aside>
-        </section>
-      </main>
-    </>
-  );
-}
-
-function DiscoverFeedCard({ item }: { item: FeedItem }) {
-  if (item.kind === "article") {
-    const article = item.value;
-    const authorName = article.author.displayName || article.author.username;
-    return (
-      <article className="surface discover-feed-card">
-        <div className="discover-feed-card__header">
-          <div className="discover-feed-card__author">
-            <Avatar label={authorName.slice(0, 1)} size="sm" />
-            <span className="discover-feed-card__author-name">{authorName}</span>
-            <span className="discover-feed-card__time">· {timeLabel(article.publishedAt)}</span>
-          </div>
-          <span className="discover-feed-card__kind"><BookOpen size={13} /> 文章</span>
-        </div>
-        <Link href={article.canonicalPath}>
-          <h2>{article.title}</h2>
-        </Link>
-        <p>{article.summary || "作者暂未填写摘要，打开文章阅读全文。"}</p>
-        <div className="discover-feed-card__footer">
-          <div className="discover-feed-card__meta">
-            <span className="discover-feed-card__meta-item"><Clock size={13} /> {article.readingTimeMinutes} 分钟阅读</span>
-            <span className="discover-feed-card__meta-item"><ThumbsUp size={13} /> {article.likeCount} 赞</span>
-            <span className="discover-feed-card__meta-item"><MessageSquare size={13} /> {article.commentCount} 评</span>
-          </div>
-          {article.tags.length > 0 && (
-            <div className="discover-feed-card__tags">
-              {article.tags.map((tag) => (
-                <Link href={`/tags?tag=${encodeURIComponent(tag.slug)}`} key={tag.tagId}>
-                  <TagIcon size={11} />
-                  <span>{tag.name}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </article>
-    );
-  }
-  const moment = item.value;
-  const authorName = moment.author.displayName || moment.author.username;
-  return (
-    <article className="surface discover-feed-card">
-      <div className="discover-feed-card__header">
-        <div className="discover-feed-card__author">
-          <Avatar label={authorName.slice(0, 1)} size="sm" />
-          <span className="discover-feed-card__author-name">{authorName}</span>
-          <span className="discover-feed-card__time">· {timeLabel(moment.createdAt)}</span>
-        </div>
-        <span className="discover-feed-card__kind"><Orbit size={13} /> 动态</span>
+    <article
+      className="surface"
+      style={{ borderRadius: 10, padding: 16, minWidth: 300, flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 10 }}
+    >
+      {/* 作者 + 时间 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Avatar label={authorName.slice(0, 1)} size="sm" />
+        <span style={{ fontSize: 13, fontWeight: 600 }}>{authorName}</span>
+        <span className="muted" style={{ fontSize: 12 }}>· {timeLabel(item.publishedAt)}</span>
       </div>
-      <Link href={`/moments/${moment.momentId}`}>
-        <h2>{authorName} 的动态</h2>
+
+      {/* 标题 */}
+      <Link href={item.canonicalPath} style={{ textDecoration: "none", color: "var(--text-primary)" }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{item.title}</h3>
       </Link>
-      <p>{moment.textContent || "查看这条动态的内容与互动。"}</p>
-      <div className="discover-feed-card__footer">
-        <div className="discover-feed-card__meta">
-          <span>来自 {moment.blog.name}</span>
-          <span className="discover-feed-card__meta-item"><ThumbsUp size={13} /> {moment.likeCount} 赞</span>
-          <span className="discover-feed-card__meta-item"><MessageSquare size={13} /> {moment.commentCount} 评</span>
+
+      {/* 摘要 */}
+      {item.summary && (
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            lineHeight: 1.6,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {item.summary}
+        </p>
+      )}
+
+      {/* 标签 */}
+      {item.tags.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {item.tags.map((tag) => (
+            <Link
+              key={tag.tagId}
+              href={`/articles?tag=${encodeURIComponent(tag.slug)}`}
+              className="chip"
+              style={{ fontSize: 11, padding: "2px 8px", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+            >
+              <Hash size={10} /> {tag.name}
+            </Link>
+          ))}
         </div>
+      )}
+
+      {/* 元数据 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: "auto", paddingTop: 8, borderTop: "1px solid var(--border, #e5e7eb)" }}>
+        <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>
+          <Clock size={12} /> {item.readingTimeMinutes} 分钟
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>
+          <ThumbsUp size={12} /> {item.likeCount}
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>
+          <MessageCircle size={12} /> {item.commentCount}
+        </span>
       </div>
     </article>
   );
 }
 
+/* ─────────────────────── 2. SeriesExploreCard ─────────────────────── */
 
+function SeriesExploreCard({ item }: { item: Series }) {
+  const statusColor =
+    item.serializationStatus === "ONGOING"
+      ? "var(--color-success, #22c55e)"
+      : item.serializationStatus === "COMPLETED"
+        ? "var(--color-info, #3b82f6)"
+        : "var(--text-tertiary)";
+
+  const statusLabel =
+    item.serializationStatus === "ONGOING"
+      ? "连载中"
+      : item.serializationStatus === "COMPLETED"
+        ? "已完结"
+        : "暂停中";
+
+  const progress =
+    item.chapterCount > 0 && item.viewerReadChapterCount > 0
+      ? Math.round((item.viewerReadChapterCount / item.chapterCount) * 100)
+      : null;
+
+  return (
+    <article
+      className="surface"
+      style={{ borderRadius: 10, padding: 16, minWidth: 280, flex: "1 1 280px", display: "flex", flexDirection: "column", gap: 8 }}
+    >
+      {/* 状态标签 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "2px 8px",
+            borderRadius: 4,
+            color: statusColor,
+            border: `1px solid ${statusColor}`,
+          }}
+        >
+          {statusLabel}
+        </span>
+      </div>
+
+      {/* 标题 */}
+      <Link href={`/series/${item.id}`} style={{ textDecoration: "none", color: "var(--text-primary)" }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{item.title}</h3>
+      </Link>
+
+      {/* 摘要 */}
+      {item.summary && (
+        <p
+          style={{
+            margin: 0,
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            lineHeight: 1.6,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {item.summary}
+        </p>
+      )}
+
+      {/* 章节数 + 来源 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <BookOpen size={12} /> {item.chapterCount} 章
+        </span>
+        {item.blogName && (
+          <span className="muted">{item.blogName} · {blogTypeLabel(item.blogType)}</span>
+        )}
+      </div>
+
+      {/* 进度条 */}
+      {progress !== null && (
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 4 }}>
+            阅读进度 {progress}%
+          </div>
+          <div style={{ height: 4, borderRadius: 2, background: "var(--border, #e5e7eb)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${progress}%`, borderRadius: 2, background: "var(--primary, #6366f1)" }} />
+          </div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+/* ─────────────────────── 3. CreatorCard ─────────────────────── */
+
+function CreatorCard({ creator }: { creator: { name: string; username: string; articleCount: number } }) {
+  return (
+    <Link
+      href={`/blogs/${encodeURIComponent(creator.username)}`}
+      className="surface"
+      style={{
+        borderRadius: 10,
+        padding: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      <Avatar label={creator.name.slice(0, 1)} size="md" />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {creator.name}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+          @{creator.username} · {creator.articleCount} 篇公开文章
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────── 4. ActiveTeamCard ─────────────────────── */
+
+function ActiveTeamCard({ team }: { team: TeamSummary }) {
+  return (
+    <Link
+      href={`/teams/${encodeURIComponent(team.slug)}`}
+      className="surface"
+      style={{
+        borderRadius: 10,
+        padding: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      <Avatar label={team.name.slice(0, 1)} size="md" />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {team.name}
+        </div>
+        {team.summary && (
+          <div
+            style={{
+              fontSize: 12,
+              color: "var(--text-secondary)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {team.summary}
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 2 }}>
+          {team.articleCount} 篇文章 · {team.followerCount} 关注
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─────────────────────── 5. MomentPreviewCard ─────────────────────── */
+
+function MomentPreviewCard({ item }: { item: Moment }) {
+  const authorName = item.author.displayName || item.author.username;
+  const preview = item.textContent
+    ? item.textContent.length > 120
+      ? item.textContent.slice(0, 120) + "…"
+      : item.textContent
+    : "查看这条动态的内容与互动。";
+
+  return (
+    <Link
+      href={item.canonicalPath}
+      className="surface"
+      style={{
+        borderRadius: 10,
+        padding: 16,
+        minWidth: 280,
+        flex: "1 1 280px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        textDecoration: "none",
+        color: "inherit",
+      }}
+    >
+      {/* 作者 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Avatar label={authorName.slice(0, 1)} size="sm" />
+        <span style={{ fontSize: 13, fontWeight: 600 }}>{authorName}</span>
+        <span className="muted" style={{ fontSize: 12 }}>· {timeLabel(item.createdAt)}</span>
+      </div>
+
+      {/* 正文摘要 */}
+      <p
+        style={{
+          margin: 0,
+          fontSize: 13,
+          color: "var(--text-secondary)",
+          lineHeight: 1.6,
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {preview}
+      </p>
+
+      {/* 互动数据 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: "auto", paddingTop: 8, borderTop: "1px solid var(--border, #e5e7eb)" }}>
+        <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>
+          <ThumbsUp size={12} /> {item.likeCount}
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}>
+          <MessageCircle size={12} /> {item.commentCount}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════ */
+/*                          DiscoverPage (Explore Hub)                     */
+/* ════════════════════════════════════════════════════════════════════════ */
+
+export default function DiscoverPage() {
+  const router = useRouter();
+  const [searchInput, setSearchInput] = useState("");
+  const [articles, setArticles] = useState<PublicArticleSummary[]>([]);
+  const [tags, setTags] = useState<PlatformTag[]>([]);
+  const [seriesList, setSeriesList] = useState<Series[]>([]);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const [teams, setTeams] = useState<TeamSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      communityApi.discoverRankedArticles("QUALITY", 1, 5),
+      communityApi.tags(),
+      communityApi.series().catch(() => [] as Series[]),
+      communityApi.moments(1, 5),
+      communityApi.teams(),
+    ])
+      .then(([articlePage, tagRecords, seriesRecords, momentPage, teamRecords]) => {
+        if (!active) return;
+        setArticles(articlePage.records);
+        setTags(tagRecords);
+        setSeriesList(seriesRecords);
+        setMoments(momentPage.records);
+        setTeams(teamRecords);
+      })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof Error ? err.message : "加载失败");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const creators = useMemo(() => {
+    const seen = new Map<string, { name: string; username: string; articleCount: number }>();
+    articles.forEach((article) => {
+      const key = article.author.userId;
+      const prev = seen.get(key);
+      seen.set(key, {
+        name: article.author.displayName || article.author.username,
+        username: article.author.username,
+        articleCount: (prev?.articleCount || 0) + 1,
+      });
+    });
+    return [...seen.values()].slice(0, 5);
+  }, [articles]);
+
+  const handleSearch = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (searchInput.trim()) router.push(`/articles?q=${encodeURIComponent(searchInput.trim())}`);
+    },
+    [searchInput, router],
+  );
+
+  return (
+    <>
+      <UserTopbar title="发现" />
+      <main className="page-shell" style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
+        {/* 紧凑标题 + 搜索 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>发现</h1>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
+              探索社区中的优质内容与创作者
+            </p>
+          </div>
+          <form
+            onSubmit={handleSearch}
+            className="surface"
+            style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 8, width: 280 }}
+          >
+            <Search size={15} style={{ color: "var(--text-tertiary)" }} />
+            <input
+              type="text"
+              placeholder="搜索文章..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, flex: 1, color: "var(--text-primary)" }}
+            />
+          </form>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="surface" style={{ padding: 40, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Loader2 className="spin" size={22} /> 加载中...
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="surface" style={{ padding: 16, color: "var(--color-error, #ef4444)" }}>{error}</div>
+        )}
+
+        {/* 主体内容 */}
+        {!loading && !error && (
+          <>
+            {/* ── 热门主题 ── */}
+            {tags.length > 0 && (
+              <section style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Flame size={18} style={{ color: "var(--primary)" }} /> 热门主题
+                  </h2>
+                  <Link href="/tags" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                </div>
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                  {tags
+                    .slice()
+                    .sort((a, b) => b.usageCount - a.usageCount)
+                    .slice(0, 10)
+                    .map((tag) => (
+                      <Link
+                        key={tag.tagId}
+                        href={`/articles?tag=${encodeURIComponent(tag.slug)}`}
+                        className="chip"
+                        style={{ fontSize: 12, padding: "5px 12px", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", flexShrink: 0 }}
+                      >
+                        <Hash size={12} /> {tag.name} <span className="muted" style={{ fontSize: 11 }}>{tag.usageCount}</span>
+                      </Link>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── 值得阅读 ── */}
+            {articles.length > 0 && (
+              <section style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Sparkles size={18} style={{ color: "var(--primary)" }} /> 值得阅读
+                  </h2>
+                  <Link href="/articles" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                </div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                  {articles.map((item) => (
+                    <DiscoverArticleCard item={item} key={item.articleId} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── 正在连载 ── */}
+            {seriesList.length > 0 && (
+              <section style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Layers size={18} style={{ color: "var(--primary)" }} /> 正在连载
+                  </h2>
+                  <Link href="/series" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                </div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                  {seriesList.slice(0, 5).map((item) => (
+                    <SeriesExploreCard item={item} key={item.id} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── 创作者 + 团队 并排 ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
+              {/* 值得关注的创作者 */}
+              {creators.length > 0 && (
+                <section>
+                  <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Users size={18} style={{ color: "var(--primary)" }} /> 值得关注的创作者
+                  </h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {creators.map((creator) => (
+                      <CreatorCard creator={creator} key={creator.username} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* 公开团队 */}
+              {teams.length > 0 && (
+                <section>
+                  <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Users size={18} style={{ color: "var(--primary)" }} /> 公开团队
+                  </h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {teams.slice(0, 5).map((team) => (
+                      <ActiveTeamCard team={team} key={team.teamId} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            {/* ── 正在发生的动态 ── */}
+            {moments.length > 0 && (
+              <section style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Orbit size={18} style={{ color: "var(--primary)" }} /> 正在发生的动态
+                  </h2>
+                  <Link href="/moments" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                </div>
+                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                  {moments.map((item) => (
+                    <MomentPreviewCard item={item} key={item.momentId} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+      </main>
+    </>
+  );
+}

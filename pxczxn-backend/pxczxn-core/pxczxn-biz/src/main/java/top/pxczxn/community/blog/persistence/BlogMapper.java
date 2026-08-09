@@ -3,8 +3,11 @@ package top.pxczxn.community.blog.persistence;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import top.pxczxn.community.blog.model.Blog;
+
+import java.util.List;
 
 @Mapper
 public interface BlogMapper extends BaseMapper<Blog> {
@@ -34,4 +37,24 @@ public interface BlogMapper extends BaseMapper<Blog> {
                                         @Param("avatarFileId") Long avatarFileId,
                                         @Param("backgroundFileId") Long backgroundFileId,
                                         @Param("lockVersion") Integer lockVersion);
+
+    /**
+     * Popular blogs for the Discover Hub. Filtered by blogType (PERSONAL or TEAM),
+     * active status, and owner user status. Ranked by follower count, then article count.
+     */
+    @Select("""
+            SELECT b.id, b.blog_type, b.name, b.slug, b.summary,
+                   b.avatar_file_id, b.background_file_id,
+                   b.follower_count, b.article_count,
+                   COALESCE(owner.display_name, owner.username) AS owner_name,
+                   owner.id AS owner_user_id
+            FROM blog b
+            LEFT JOIN community_user owner ON owner.id = b.owner_user_id
+            WHERE b.status = 'ACTIVE' AND b.deleted_at IS NULL
+              AND b.blog_type = #{blogType}
+              AND owner.status IN ('NORMAL', 'LIMITED')
+            ORDER BY b.follower_count DESC, b.article_count DESC, b.id DESC
+            LIMIT #{limit}
+            """)
+    List<BlogPopularRow> selectPopular(@Param("blogType") String blogType, @Param("limit") int limit);
 }

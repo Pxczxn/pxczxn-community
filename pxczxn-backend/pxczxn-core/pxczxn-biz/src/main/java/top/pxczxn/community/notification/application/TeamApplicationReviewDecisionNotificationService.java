@@ -59,7 +59,7 @@ public class TeamApplicationReviewDecisionNotificationService {
         notification.setCreatedAt(now);
 
         if (notificationMapper.insert(notification) != 1) {
-            throw new IllegalStateException("Failed to create team application review notification");
+            throw new IllegalStateException("通知发送失败");
         }
 
         CommunityNotificationRecipient recipient = new CommunityNotificationRecipient();
@@ -70,7 +70,7 @@ public class TeamApplicationReviewDecisionNotificationService {
         recipient.setCreatedAt(now);
 
         if (recipientMapper.insert(recipient) != 1) {
-            throw new IllegalStateException("Failed to create team application review notification recipient");
+            throw new IllegalStateException("通知发送失败");
         }
 
         log.info(

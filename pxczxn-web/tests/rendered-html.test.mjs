@@ -79,7 +79,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
     readFile(new URL("../app/teams/[teamSlug]/workspace/layout.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(home, /return <DiscoverPage \/>;/);
+  assert.match(home, /return <HomePage \/>/);
   assert.match(topbar, /const primaryNavItems = \[/);
   assert.match(topbar, /\{ href: "\/", label: "首页", Icon: House \}/);
   assert.match(topbar, /\{ href: "\/discover", label: "发现", Icon: Compass \}/);
@@ -89,9 +89,7 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
   assert.match(discover, /communityApi\.discoverRankedArticles/);
   assert.match(discover, /communityApi\.moments/);
   assert.match(discover, /communityApi\.tags/);
-  assert.match(discover, /communityApi\.myFollowing/);
-  assert.match(discover, /不使用智能推荐算法/);
-  for (const path of ["/discover", "/articles", "/moments", "/series", "/teams", "/tags"]) {
+  for (const path of ["/discover", "/articles", "/moments", "/series", "/teams"]) {
     assert.match(topbar, new RegExp(path.replaceAll("/", "\\/")));
   }
   assert.doesNotMatch(topbar, /ai-explorers|agent-architecture|agent-patterns/);

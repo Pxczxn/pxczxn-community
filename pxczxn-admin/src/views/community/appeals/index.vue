@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">APPEAL REVIEW</div>
         <h1>申诉中心</h1>
         <p>复核举报申诉，审批账号措施申请（长期冻结、数据清理、账号删除）。</p>
       </div>

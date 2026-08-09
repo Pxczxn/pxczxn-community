@@ -160,7 +160,7 @@ public class ArticleContentProcessor {
                 html.append(">");
             }
             case "text" -> html.append(renderMarkedText(node));
-            default -> throw new BusinessException(400, "包含不支持的富文本节点: " + type);
+            default -> throw new BusinessException(400, "包含不支持的内容格式");
         }
     }
 
@@ -175,11 +175,11 @@ public class ArticleContentProcessor {
             return;
         }
         if (!content.isArray()) {
-            throw new BusinessException(400, "富文本 content 必须为数组");
+            throw new BusinessException(400, "内容格式不正确，请检查后重试");
         }
         for (JsonNode child : content) {
             if (!child.isObject()) {
-                throw new BusinessException(400, "富文本节点格式无效");
+                throw new BusinessException(400, "内容格式不正确，请检查后重试");
             }
             renderRichNode(child, html, depth + 1, counter);
         }
@@ -287,7 +287,7 @@ public class ArticleContentProcessor {
         try {
             tocJson = objectMapper.writeValueAsString(toc);
         } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("生成文章目录失败", exception);
+            throw new IllegalStateException("文章处理异常，请稍后重试", exception);
         }
         return new SafeDocument(clean.body().html(), clean.body().text(), tocJson);
     }
@@ -374,7 +374,7 @@ public class ArticleContentProcessor {
                             .digest(value.getBytes(StandardCharsets.UTF_8))
             );
         } catch (Exception exception) {
-            throw new IllegalStateException("SHA-256 不可用", exception);
+            throw new IllegalStateException("系统异常，请稍后重试", exception);
         }
     }
 

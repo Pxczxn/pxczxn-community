@@ -33,22 +33,22 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
     public Long submitApplication(SubmitTeamApplicationCommand command) {
         // Validate input
         if (command.getApplicantUserId() == null) {
-            throw new IllegalArgumentException("Applicant user ID is required");
+            throw new IllegalArgumentException("申请用户不能为空");
         }
         if (command.getTeamName() == null || command.getTeamName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Team name is required");
+            throw new IllegalArgumentException("团队名称不能为空");
         }
         if (command.getTeamSlug() == null || command.getTeamSlug().trim().isEmpty()) {
-            throw new IllegalArgumentException("Team slug is required");
+            throw new IllegalArgumentException("团队地址不能为空");
         }
 
         // Check if user exists and is active
         CommunityUser user = communityUserMapper.selectById(command.getApplicantUserId());
         if (user == null) {
-            throw new BusinessException("User not found");
+            throw new BusinessException("用户不存在");
         }
         if (!ACTIVE_USER_STATUSES.contains(user.getStatus())) {
-            throw new BusinessException("User is not active and cannot submit team application");
+            throw new BusinessException("账号状态异常，暂无法提交团队申请");
         }
 
         // Check if idempotency key already exists
@@ -63,7 +63,7 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
         // Reject a distinct request while preserving a same-key replay above.
         TeamApplication existingPending = teamApplicationMapper.findPendingByApplicant(command.getApplicantUserId());
         if (existingPending != null) {
-            throw new BusinessException("User already has a pending team application");
+            throw new BusinessException("您已有待审核的团队申请");
         }
 
         // Check if slug is already taken by an existing blog
@@ -72,13 +72,13 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
                 .isNull(Blog::getDeletedAt);
         Blog existingBlog = blogMapper.selectOne(blogQuery);
         if (existingBlog != null) {
-            throw new BusinessException("Team slug is already taken");
+            throw new BusinessException("该团队地址已被占用");
         }
 
         // Check if slug is in another pending/approved application
         int slugCount = teamApplicationMapper.countBySlugInPendingOrApproved(command.getTeamSlug());
         if (slugCount > 0) {
-            throw new BusinessException("Team slug is already requested by another application");
+            throw new BusinessException("该团队地址已被其他申请使用");
         }
 
         // Create application
@@ -101,17 +101,17 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
     @Override
     public TeamApplicationView getApplication(Long applicationId, Long applicantUserId) {
         if (applicationId == null || applicantUserId == null) {
-            throw new IllegalArgumentException("Application ID and applicant user ID are required");
+            throw new IllegalArgumentException("申请编号不能为空");
         }
 
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new IllegalArgumentException("Application not found");
+            throw new IllegalArgumentException("申请不存在");
         }
 
         // Only applicant can view their own application
         if (!application.getApplicantUserId().equals(applicantUserId)) {
-            throw new BusinessException(403, "You are not authorized to view this application");
+            throw new BusinessException(403, "无权查看该申请");
         }
 
         return toView(application);
@@ -120,7 +120,7 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
     @Override
     public TeamApplicationView getMyApplication(Long applicantUserId) {
         if (applicantUserId == null) {
-            throw new IllegalArgumentException("Applicant user ID is required");
+            throw new IllegalArgumentException("申请用户不能为空");
         }
 
         TeamApplication application = teamApplicationMapper.findPendingByApplicant(applicantUserId);
@@ -131,28 +131,28 @@ public class TeamApplicationServiceImpl implements TeamApplicationService {
     @Transactional(rollbackFor = Exception.class)
     public void cancelApplication(Long applicationId, Long applicantUserId) {
         if (applicationId == null || applicantUserId == null) {
-            throw new IllegalArgumentException("Application ID and applicant user ID are required");
+            throw new IllegalArgumentException("申请编号不能为空");
         }
 
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new IllegalArgumentException("Application not found");
+            throw new IllegalArgumentException("申请不存在");
         }
 
         // Only applicant can cancel their own application
         if (!application.getApplicantUserId().equals(applicantUserId)) {
-            throw new BusinessException(403, "You are not authorized to cancel this application");
+            throw new BusinessException(403, "无权取消该申请");
         }
 
         // Can only cancel PENDING applications
         if (!"PENDING".equals(application.getStatus())) {
-            throw new BusinessException("Only pending applications can be cancelled");
+            throw new BusinessException("仅待审核状态的申请可以取消");
         }
 
         // Update status to CANCELLED with optimistic lock
         int updated = teamApplicationMapper.cancelWithOptimisticLock(applicationId, application.getLockVersion());
         if (updated != 1) {
-            throw new BusinessException("Failed to cancel application due to concurrent modification");
+            throw new BusinessException("取消失败，请刷新后重试");
         }
     }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   AlertTriangle,
   Bookmark,
@@ -10,7 +11,6 @@ import {
   Filter,
   Globe2,
   Hash,
-  Image as ImageIcon,
   Link2,
   Lock,
   LoaderCircle,
@@ -23,11 +23,9 @@ import {
   Rocket,
   Send,
   Share2,
-  Smile,
   Star,
   TrendingUp,
   Users,
-  UserPlus,
   Video,
   X,
 } from "lucide-react";
@@ -46,7 +44,6 @@ import {
   Moment,
   MomentFeedFilter,
   PlatformTag,
-  NOTIFICATION_EVENT,
   communityApi,
   publicFileUrl,
 } from "../lib/community-api";
@@ -62,8 +59,6 @@ const NAV_ITEMS: { key: string; label: string; Icon: React.ComponentType<{ size?
   { key: "recommended", label: "推荐", Icon: Star },
   { key: "following", label: "关注", Icon: Users },
   { key: "latest", label: "最新", Icon: RefreshCw },
-  { key: "team", label: "团队动态", Icon: Users },
-  { key: "mine", label: "我的互动", Icon: MessageCircle },
 ];
 
 /* ─── 热门话题与创作者从 API 动态加载 ─── */
@@ -75,35 +70,6 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-/** 从动态列表聚合作者（去重，按活跃度排序） */
-function deriveCreators(list: Moment[]) {
-  const map = new Map<string, {
-    blogId: string;
-    name: string;
-    avatar: string | null;
-    momentCount: number;
-    totalLikes: number;
-  }>();
-  for (const m of list) {
-    const key = m.blog.blogId;
-    const existing = map.get(key);
-    const name = m.author.displayName || m.author.username;
-    const avatar = publicFileUrl(m.author.avatarFileId);
-    if (existing) {
-      existing.momentCount += 1;
-      existing.totalLikes += m.likeCount;
-    } else {
-      map.set(key, { blogId: key, name, avatar, momentCount: 1, totalLikes: m.likeCount });
-    }
-  }
-  return Array.from(map.values())
-    .sort((a, b) => b.totalLikes - a.totalLikes)
-    .slice(0, 5)
-    .map((c) => ({
-      ...c,
-      desc: `${c.momentCount} 条动态 · ${c.totalLikes} 次互动`,
-    }));
-}
 
 export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: string }) {
   const [moments, setMoments] = useState<Moment[]>([]);
@@ -123,12 +89,10 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
   const [activeTab, setActiveTab] = useState<string>("recommended");
   const [composerFullscreen, setComposerFullscreen] = useState(false);
   const [hotTopics, setHotTopics] = useState<PlatformTag[]>([]);
-  const [followingBlogIds, setFollowingBlogIds] = useState<Set<string>>(new Set());
-  // 公共流筛选态（仅 recommended / latest 生效；following / mine 不应用）
+  // 公共流筛选态（仅 recommended / latest 生效）
   const [momentTypeFilter, setMomentTypeFilter] = useState<string[]>([]);
   const [filterDraft, setFilterDraft] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -165,9 +129,6 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     try {
       let page: { records: Moment[]; total: number };
       switch (activeTab) {
-        case "mine":
-          page = await communityApi.myMoments(1, 20);
-          break;
         case "recommended": {
           // 推荐模式：拉更多条，按热度公式本地排序（受 momentTypeFilter 约束）
           const raw = await communityApi.moments(1, 40, publicFeedFilter);
@@ -231,17 +192,6 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     const timer = window.setTimeout(() => void loadHotTags(), 0);
     return () => window.clearTimeout(timer);
   }, [loadHotTags]);
-
-  useEffect(() => {
-    const fetchUnread = () => {
-      void communityApi.unreadNotifications()
-        .then((result) => setUnreadCount(result.total))
-        .catch(() => setUnreadCount(0));
-    };
-    fetchUnread();
-    window.addEventListener(NOTIFICATION_EVENT, fetchUnread);
-    return () => window.removeEventListener(NOTIFICATION_EVENT, fetchUnread);
-  }, []);
 
   useEffect(() => {
     if (!visibilityOpen) return;
@@ -368,19 +318,6 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
     setNotice("动态链接已复制。");
   }
 
-  async function toggleCreatorFollow(c: { blogId: string; followed: boolean }) {
-    try {
-      await communityApi.setBlogFollow(c.blogId, !c.followed);
-      setFollowingBlogIds((prev) => {
-        const next = new Set(prev);
-        if (c.followed) next.delete(c.blogId); else next.add(c.blogId);
-        return next;
-      });
-    } catch {
-      // 静默失败，不弹错误
-    }
-  }
-
   async function submitComment(event: FormEvent) {
     event.preventDefault();
     if (!selected || !commentText.trim()) return;
@@ -425,11 +362,14 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                   >
                     <Icon size={17} />
                     <span>{label}</span>
-                    {key === "mine" && unreadCount > 0 && <span className="moments-nav__dot" />}
                   </button>
                 </li>
               ))}
             </ul>
+            <Link href="/me/favorites" className="moments-nav__item" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", marginTop: 8, borderTop: "1px solid var(--border-default)", paddingTop: 12 }}>
+              <MessageCircle size={17} />
+              <span>我的互动</span>
+            </Link>
           </nav>
 
           <section className="moments-sidebar__topics">
@@ -482,22 +422,6 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
 
           {/* 标签切换栏 */}
           <div className="moments-feed__tabs">
-            <div className="moments-feed__tab-bar">
-              {[
-                { key: "recommended", label: "推荐" },
-                { key: "latest", label: "最新" },
-                { key: "following", label: "关注" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  className={`moments-feed__tab ${activeTab === tab.key ? "active" : ""}`}
-                  onClick={() => setActiveTab(tab.key)}
-                  type="button"
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
             <div ref={filterContainerRef} className="moments-feed__filter-wrapper">
               <button
                 aria-controls="moments-filter-popover"
@@ -657,44 +581,6 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
               ))}
             </div>
           </section>
-
-          {/* 创作者推荐 — 从当前列表聚合作者 */}
-          <section className="surface moments-right-card">
-            <header className="moments-right-card__header">
-              <h3>创作者推荐</h3>
-              <a href="#">更多 ›</a>
-            </header>
-            {moments.length === 0 ? (
-              <p className="muted" style={{ padding: "8px 12px", fontSize: 13 }}>加载动态后显示活跃作者</p>
-            ) : (
-              <ul className="moments-creator-list">
-                {deriveCreators(moments).map((c) => ({
-                  ...c,
-                  followed: followingBlogIds.has(c.blogId),
-                })).map((c) => (
-                  <li key={c.blogId} className="moments-creator-item">
-                    {c.avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img alt="" className="avatar avatar-sm avatar-image" src={c.avatar} />
-                    ) : (
-                      <Avatar label={c.name.slice(0, 1)} size="sm" />
-                    )}
-                    <div className="moments-creator-info">
-                      <strong>{c.name}</strong>
-                      <small>{c.desc}</small>
-                    </div>
-                    <button
-                      className={`${c.followed ? "secondary-button" : "primary-button"} moments-creator-follow`}
-                      onClick={() => void toggleCreatorFollow(c)}
-                      type="button"
-                    >
-                      {c.followed ? "已关注" : <><UserPlus size={13} /> 关注</>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </aside>
       </main>
 
@@ -791,12 +677,9 @@ function ComposerForm(props: ComposerFormProps) {
       )}
       <div className="composer-toolbar">
         <div className="composer-toolbar__tools">
-          <button disabled type="button"><ImageIcon size={16} /> 图片</button>
           <button onClick={() => onLinkChange(linkUrl ? "" : "https://")} type="button">
             <Link2 size={16} /> 链接
           </button>
-          <button disabled type="button"><MessageCircle size={16} /> 投票</button>
-          <button disabled type="button"><Smile size={16} /> 话题</button>
         </div>
         <div className="composer-toolbar__actions">
           {!isFull && (

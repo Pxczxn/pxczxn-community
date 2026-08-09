@@ -1,7 +1,7 @@
 <template>
   <div class="community-page">
     <header class="page-heading">
-      <div><div class="page-eyebrow">SERIES REVIEW</div><h1>系列审核</h1><p>审核创作者提交的系列；通过后才会在社区公开展示。</p></div>
+      <div><h1>系列审核</h1><p>审核创作者提交的系列；通过后才会在社区公开展示。</p></div>
       <n-button :loading="loading" @click="loadData"><template #icon><n-icon><RefreshOutline /></n-icon></template>刷新队列</n-button>
     </header>
     <n-card>

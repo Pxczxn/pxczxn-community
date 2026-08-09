@@ -120,7 +120,7 @@ export function RequestsTab({
           <section className="surface requests-panel">
             <header className="requests-panel__header">
               <span className="eyebrow"><Inbox size={15} /> 收到的邀请</span>
-              {invitations.length > 0 && <span className="badge badge--warn">{invitations.length} 条待处理</span>}
+              {invitations.filter(i => i.status === "PENDING").length > 0 && <span className="badge badge--warn">{invitations.filter(i => i.status === "PENDING").length} 条待处理</span>}
             </header>
 
             {lastAccepted && (
@@ -208,7 +208,7 @@ export function RequestsTab({
 
             {!application ? (
               <div className="requests-panel__empty">
-                <p>你还没有提交过团队建立申请。</p>
+                <p>提交建队申请后，审核结果会显示在这里。</p>
                 <Link href="/team-applications" className="secondary-button" onClick={onRequireLogin}>
                   <UserPlus size={15} /> 申请建立团队
                 </Link>

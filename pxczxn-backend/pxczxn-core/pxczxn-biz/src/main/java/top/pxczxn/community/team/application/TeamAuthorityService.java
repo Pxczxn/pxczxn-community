@@ -182,27 +182,27 @@ public class TeamAuthorityService {
         // Verify current owner
         Team team = teamMapper.selectById(teamId);
         if (team == null || team.getDeletedAt() != null) {
-            throw new IllegalStateException("Team not found or disbanded");
+            throw new IllegalStateException("团队不存在或已解散");
         }
         if (!Objects.equals(team.getOwnerUserId(), currentOwnerId)) {
-            throw new IllegalStateException("Current user is not the owner");
+            throw new IllegalStateException("当前用户不是团队负责人");
         }
 
         // Verify blog exists and is TEAM type
         Blog blog = blogMapper.selectById(team.getBlogId());
         if (blog == null || !"TEAM".equals(blog.getBlogType())) {
-            throw new IllegalStateException("Team blog not found or invalid");
+            throw new IllegalStateException("团队博客不存在");
         }
 
         // Verify target is active member
         TeamMember newOwnerMember = teamMemberMapper.findActiveMember(teamId, newOwnerId);
         if (newOwnerMember == null) {
-            throw new IllegalStateException("Target user is not an active team member");
+            throw new IllegalStateException("目标用户不是活跃的团队成员");
         }
 
         TeamMember currentOwnerMember = teamMemberMapper.findActiveMember(teamId, currentOwnerId);
         if (currentOwnerMember == null) {
-            throw new IllegalStateException("Current owner member record not found");
+            throw new IllegalStateException("当前负责人记录不存在");
         }
 
         String newOwnerOldRole = newOwnerMember.getRoleCode();
@@ -219,7 +219,7 @@ public class TeamAuthorityService {
                 teamLockVersion
         );
         if (teamUpdated != 1) {
-            throw new IllegalStateException("Failed to update team owner (concurrent modification or owner changed)");
+            throw new IllegalStateException("负责人移交失败，请刷新后重试");
         }
 
         // Update current owner to ADMIN with conditional update
@@ -229,7 +229,7 @@ public class TeamAuthorityService {
                 currentOwnerMemberLockVersion
         );
         if (currentOwnerUpdated != 1) {
-            throw new IllegalStateException("Failed to update current owner role (concurrent modification)");
+            throw new IllegalStateException("负责人移交失败，请刷新后重试");
         }
 
         // Update new owner to OWNER with conditional update
@@ -239,7 +239,7 @@ public class TeamAuthorityService {
                 newOwnerMemberLockVersion
         );
         if (newOwnerUpdated != 1) {
-            throw new IllegalStateException("Failed to update new owner role (concurrent modification)");
+            throw new IllegalStateException("负责人移交失败，请刷新后重试");
         }
 
         // Update blog owner with conditional update
@@ -249,7 +249,7 @@ public class TeamAuthorityService {
                 blogLockVersion
         );
         if (blogUpdated != 1) {
-            throw new IllegalStateException("Failed to update blog owner (concurrent modification)");
+            throw new IllegalStateException("负责人移交失败，请刷新后重试");
         }
 
         // Write audit events

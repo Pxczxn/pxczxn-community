@@ -2,10 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div class="heading-content">
-        <div class="page-eyebrow">
-          <n-icon size="14" class="eyebrow-icon"><ShieldOutline /></n-icon>
-          <span>ACCOUNT MANAGEMENT</span>
-        </div>
         <h1>账号管理</h1>
         <p>账号处置、账号安全、冻结管理与操作记录的统一处理入口。</p>
       </div>

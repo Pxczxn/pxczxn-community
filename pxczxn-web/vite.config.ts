@@ -47,6 +47,7 @@ export default defineConfig(async () => {
     server: {
       port: 8847,
       strictPort: true,
+      allowedHosts: ["pxczxn.mars-tunnel.ccwu.cc"],
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),

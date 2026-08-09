@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">BLOG SPACES</div>
         <h1>博客管理</h1>
         <p>查看个人博客与团队博客的主体、内容规模和运营状态。</p>
       </div>

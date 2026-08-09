@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS `community_abuse_event_prevent_delete`; DROP TRIGGER IF EXISTS `community_abuse_event_prevent_update`; DROP TABLE IF EXISTS `community_abuse_event`; DROP TABLE IF EXISTS `community_abuse_window`;

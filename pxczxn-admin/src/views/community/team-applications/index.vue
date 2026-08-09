@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">TEAM APPLICATION REVIEW</div>
         <h1>团队申请审核</h1>
         <p>审核用户提交的团队创建申请，通过后自动创建团队博客与成员关系。</p>
       </div>

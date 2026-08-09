@@ -124,7 +124,7 @@ export default function WorkspaceMembersPage() {
   const pendingInvitations = useMemo(() => invitations.filter((item) => item.status === "PENDING"), [invitations]);
   const handledInvitations = useMemo(() => invitations.filter((item) => item.status !== "PENDING").slice(0, 10), [invitations]);
 
-  async function run(action: () => Promise<unknown>, key: string): Promise<boolean> {
+  async function run(action: () => Promise<unknown>, key: string, successMsg?: string): Promise<boolean> {
     setBusy(key);
     setError("");
     setNotice("");
@@ -132,7 +132,7 @@ export default function WorkspaceMembersPage() {
     try {
       await action();
       ok = true;
-      setNotice("操作成功。");
+      setNotice(successMsg || "操作成功。");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "操作失败，请稍后重试");
     }
@@ -140,7 +140,7 @@ export default function WorkspaceMembersPage() {
     try {
       await load();
     } catch {
-      setError((current) => current || "列表刷新失败，请手动重试。");
+      setError((current) => current || "成员列表刷新失败，请点击页面刷新。");
     }
     setBusy(null);
     return ok;
@@ -167,28 +167,29 @@ export default function WorkspaceMembersPage() {
     const ok = await run(
       () => communityApi.inviteTeamMember(teamId, { userId: invitePicked.userId, roleCode: inviteRole }),
       `invite-${invitePicked.userId}`,
+      "邀请已发送",
     );
     if (ok) clearPickedUser();
   }
 
   function revokeInvitation(invitation: TeamInvitation) {
     if (!teamId) return;
-    void run(() => communityApi.revokeTeamInvitation(teamId, invitation.id), `revoke-${invitation.id}`);
+    void run(() => communityApi.revokeTeamInvitation(teamId, invitation.id), `revoke-${invitation.id}`, "邀请已撤销");
   }
 
   function changeRole(member: TeamMemberView, roleCode: string) {
     if (!teamId) return;
-    void run(() => communityApi.changeTeamMemberRole(teamId, member.userId, roleCode), `role-${member.userId}`);
+    void run(() => communityApi.changeTeamMemberRole(teamId, member.userId, roleCode), `role-${member.userId}`, "角色已变更");
   }
 
   function remove(member: TeamMemberView) {
     if (!teamId) return;
-    void run(() => communityApi.removeTeamMember(teamId, member.userId), `remove-${member.userId}`);
+    void run(() => communityApi.removeTeamMember(teamId, member.userId), `remove-${member.userId}`, "已移除成员");
   }
 
   function transfer() {
     if (!teamId || !transferTarget) return;
-    void run(() => communityApi.transferTeamOwnership(teamId, transferTarget.userId), "transfer");
+    void run(() => communityApi.transferTeamOwnership(teamId, transferTarget.userId), "transfer", "团队已转让");
     setConfirmOpen(null);
   }
 

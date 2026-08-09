@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">TAXONOMY</div>
         <h1>平台标签</h1>
         <p>维护全站可用的规范标签、URL 标识和启停状态。</p>
       </div>

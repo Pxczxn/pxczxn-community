@@ -58,7 +58,7 @@ public class ArticleReviewDecisionNotificationService {
         notification.setLastActivityAt(now);
         notification.setCreatedAt(now);
         if (notificationMapper.insert(notification) != 1) {
-            throw new IllegalStateException("Failed to create review notification");
+            throw new IllegalStateException("通知创建失败");
         }
 
         CommunityNotificationRecipient recipient =
@@ -70,7 +70,7 @@ public class ArticleReviewDecisionNotificationService {
         recipient.setCreatedAt(now);
         if (recipientMapper.insert(recipient) != 1) {
             throw new IllegalStateException(
-                    "Failed to create review notification recipient"
+                    "通知接收人创建失败"
             );
         }
         log.info(

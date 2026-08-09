@@ -46,7 +46,7 @@ public class CommunityBlockServiceImpl implements CommunityBlockService {
         Long target = target(targetId);
         requireTarget(type, target);
         if (("USER".equals(type) || "CHAT".equals(type)) && blocker.equals(target)) {
-            throw new BusinessException(400, "Cannot block yourself");
+            throw new BusinessException(400, "不能屏蔽自己");
         }
         CommunityBlock existing = find(blocker, type, target);
         if (existing != null) {
@@ -60,7 +60,7 @@ public class CommunityBlockServiceImpl implements CommunityBlockService {
         block.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
         try {
             if (blockMapper.insert(block) != 1) {
-                throw new BusinessException(500, "Unable to create block");
+                throw new BusinessException(500, "屏蔽操作失败");
             }
         } catch (DuplicateKeyException exception) {
             CommunityBlock replay = find(blocker, type, target);
@@ -186,31 +186,31 @@ public class CommunityBlockServiceImpl implements CommunityBlockService {
             default -> false;
         };
         if (!exists) {
-            throw new BusinessException(404, "Block target does not exist");
+            throw new BusinessException(404, "屏蔽目标不存在");
         }
     }
 
     private Long user(Long value, String label) {
         if (value == null || value <= 0 || userMapper.selectById(value) == null) {
-            throw new BusinessException(401, "Unknown " + label);
+            throw new BusinessException(401, "未知的" + label);
         }
         return value;
     }
 
     private static String type(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new BusinessException(400, "Missing block target type");
+            throw new BusinessException(400, "缺少屏蔽目标类型");
         }
         String value = raw.strip().toUpperCase(Locale.ROOT);
         if (!TYPES.contains(value)) {
-            throw new BusinessException(400, "Invalid block target type");
+            throw new BusinessException(400, "无效的屏蔽目标类型");
         }
         return value;
     }
 
     private static Long target(Long value) {
         if (value == null || value <= 0) {
-            throw new BusinessException(400, "Invalid block target ID");
+            throw new BusinessException(400, "无效的屏蔽目标编号");
         }
         return value;
     }

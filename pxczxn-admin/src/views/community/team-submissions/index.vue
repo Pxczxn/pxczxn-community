@@ -1,7 +1,7 @@
 <template>
   <div class="community-page">
     <header class="page-heading">
-      <div><div class="page-eyebrow">TEAM SUBMISSION REVIEW</div><h1>外部投稿审核</h1><p>平台审核固定的个人文章版本。通过后会新建归属目标团队的文章，原文章不会被转移。</p></div>
+      <div><h1>外部投稿审核</h1><p>平台审核固定的个人文章版本。通过后会新建归属目标团队的文章，原文章不会被转移。</p></div>
       <n-button :loading="loading" @click="loadData"><template #icon><n-icon><RefreshOutline /></n-icon></template>刷新队列</n-button>
     </header>
     <n-card><n-alert v-if="errorMessage" type="error" class="table-alert">{{ errorMessage }}<template #action><n-button size="small" @click="loadData">重试</n-button></template></n-alert><n-empty v-if="!loading && rows.length === 0" description="暂无待平台审核的外部投稿"><template #icon><n-icon><CheckmarkDoneOutline /></n-icon></template></n-empty><n-data-table v-else :columns="columns" :data="rows" :loading="loading" :row-key="(row: TeamSubmission) => row.id" :scroll-x="1240" /></n-card>

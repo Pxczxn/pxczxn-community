@@ -5,12 +5,12 @@ import {
   ArrowRight,
   BookOpen,
   BookOpenCheck,
+  Clock,
   Layers,
   LibraryBig,
   ListTree,
   Loader2,
   Play,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,7 +18,7 @@ import { UserTopbar } from "../components/prototype-ui";
 import { communityApi, readSession, type Series } from "../lib/community-api";
 import { blogTypeLabel, readingPercent, serializationLabel } from "../lib/series-labels";
 
-type StatusFilter = "ALL" | "ONGOING" | "COMPLETED" | "PAUSED";
+type StatusFilter = "ALL" | "ONGOING" | "COMPLETED";
 
 export default function SeriesPage() {
   const [series, setSeries] = useState<Series[]>([]);
@@ -73,42 +73,36 @@ export default function SeriesPage() {
     [series, filter],
   );
 
+  const ongoingSeries = useMemo(
+    () => series.filter((item) => item.serializationStatus === "ONGOING"),
+    [series],
+  );
+
+  const completedSeries = useMemo(
+    () => series.filter((item) => item.serializationStatus === "COMPLETED"),
+    [series],
+  );
+
   return (
     <>
       <UserTopbar title="系列" />
       <main className="series-page page-shell">
-        <section className="series-hero surface-lg shadow-sm">
-          <div className="series-hero__copy">
-            <span className="eyebrow">
-              <LibraryBig size={15} /> 连载系列
+        {/* ── 紧凑标题行（弱化 Hero） ── */}
+        <section className="series-page__header">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>
+              <LibraryBig size={20} style={{ verticalAlign: -3, marginRight: 6 }} />
+              连载系列
+            </h1>
+            <span className="muted" style={{ fontSize: "0.85rem" }}>
+              {summary.series} 个系列 · {summary.chapters} 章 · {summary.ongoing} 个连载中
             </span>
-            <h1>把一篇篇好内容，读成完整的故事</h1>
-            <p>这里收录来自个人博客与团队博客的公开连载。按章节顺序展开，方便你从第一篇读到最后一篇。</p>
-            <div className="series-hero__actions">
-              <Link className="primary-button" href="/discover">
-                <Sparkles size={16} /> 去发现文章
-              </Link>
-              {signedIn && (
-                <Link className="ghost-button" href="/me/series">
-                  管理我的系列 <ArrowRight size={16} />
-                </Link>
-              )}
-            </div>
           </div>
-          <div className="series-hero__stats" aria-label="公开系列概览">
-            <div>
-              <strong>{summary.series}</strong>
-              <span>公开系列</span>
-            </div>
-            <div>
-              <strong>{summary.chapters}</strong>
-              <span>公开章节</span>
-            </div>
-            <div>
-              <strong>{summary.ongoing}</strong>
-              <span>正在连载</span>
-            </div>
-          </div>
+          {signedIn && (
+            <Link className="ghost-button" href="/me/series" style={{ fontSize: "0.85rem", whiteSpace: "nowrap" }}>
+              管理我的系列 <ArrowRight size={14} />
+            </Link>
+          )}
         </section>
 
         {!loading && reading.length > 0 && (
@@ -148,6 +142,44 @@ export default function SeriesPage() {
           </section>
         )}
 
+        {/* ── 正在连载 ── */}
+        {!loading && ongoingSeries.length > 0 && (
+          <section className="series-toolbar" aria-label="正在连载">
+            <div>
+              <span className="eyebrow">
+                <Play size={15} /> 正在连载
+              </span>
+              <h2>连载中 · {ongoingSeries.length} 个</h2>
+            </div>
+          </section>
+        )}
+        {!loading && ongoingSeries.length > 0 && (
+          <section className="series-shelf" aria-label="连载中的系列">
+            {ongoingSeries.map((item) => (
+              <SeriesCard item={item} key={`ongoing-${item.id}`} />
+            ))}
+          </section>
+        )}
+
+        {/* ── 最近完结 ── */}
+        {!loading && completedSeries.length > 0 && (
+          <section className="series-toolbar" aria-label="最近完结">
+            <div>
+              <span className="eyebrow">
+                <BookOpenCheck size={15} /> 最近完结
+              </span>
+              <h2>已完结 · {completedSeries.length} 个</h2>
+            </div>
+          </section>
+        )}
+        {!loading && completedSeries.length > 0 && (
+          <section className="series-shelf" aria-label="已完结的系列">
+            {completedSeries.map((item) => (
+              <SeriesCard item={item} key={`completed-${item.id}`} />
+            ))}
+          </section>
+        )}
+
         <section className="series-toolbar" aria-label="系列列表说明">
           <div>
             <span className="eyebrow">
@@ -161,7 +193,6 @@ export default function SeriesPage() {
                 ["ALL", "全部"],
                 ["ONGOING", "连载中"],
                 ["COMPLETED", "已完结"],
-                ["PAUSED", "已暂停"],
               ] as const
             ).map(([value, label]) => {
               const count = value === "ALL" ? series.length : series.filter((s) => s.serializationStatus === value).length;
@@ -220,6 +251,21 @@ export default function SeriesPage() {
   );
 }
 
+/** 将 ISO 时间字符串格式化为相对时间（如"3 天前"）。 */
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "刚刚";
+  if (mins < 60) return `${mins} 分钟前`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} 天前`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} 个月前`;
+  return `${Math.floor(months / 12)} 年前`;
+}
+
 /** "继续阅读"卡片：唯一目标是让读者一键回到上次那一章。 */
 function ContinueCard({ item }: { item: Series }) {
   const percent = readingPercent(item.viewerReadChapterCount, item.chapterCount);
@@ -260,8 +306,8 @@ function SeriesCard({ item }: { item: Series }) {
         <span className={`series-status series-status--${item.serializationStatus.toLowerCase()}`}>
           {serializationLabel(item.serializationStatus)}
         </span>
-        <span className="series-card__chapter-count">
-          <Layers size={14} /> {item.chapterCount} 篇章节
+        <span className="series-card__chapter-count" style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+          <Layers size={15} /> {item.chapterCount} 章
         </span>
       </div>
       <span className="series-card__icon">
@@ -269,11 +315,9 @@ function SeriesCard({ item }: { item: Series }) {
       </span>
       <h3>{item.title}</h3>
       <p>{item.summary || "这个系列暂未添加简介。"}</p>
-      {percent > 0 && (
-        <div className="series-progress series-progress--slim" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
-          <span style={{ width: `${percent}%` }} />
-        </div>
-      )}
+      <div className="series-progress series-progress--slim" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        <span style={{ width: `${percent}%` }} />
+      </div>
       <footer>
         <span className="series-card__owner">
           {item.blogName || "未署名博客"}
@@ -285,6 +329,9 @@ function SeriesCard({ item }: { item: Series }) {
               <Users size={13} /> {item.followerCount}
             </span>
           )}
+          <span className="muted" style={{ fontSize: "0.78rem", marginRight: 6 }}>
+            <Clock size={12} /> {formatRelativeTime(item.updatedAt)}
+          </span>
           查看系列 <ArrowRight size={15} />
         </span>
       </footer>

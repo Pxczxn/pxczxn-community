@@ -277,11 +277,11 @@ export default function TeamDetailPage() {
         {tab === "series" && (
           <section className="surface team-portal-panel">
             <header className="workspace-panel__header">
-              <h2>团队系列</h2>
+              <h2>系列</h2>
               <span className="secondary">仅展示公开且通过审核的系列</span>
             </header>
             {series.length === 0 ? (
-              <p className="workspace-panel__empty">团队还没有公开系列。</p>
+              <p className="workspace-panel__empty">该团队还没有公开系列。</p>
             ) : (
               <div className="team-portal-series-grid">
                 {series.map((item) => (

@@ -96,4 +96,29 @@ public interface SeriesMapper extends BaseMapper<Series> {
     int decideReview(@Param("id") Long id, @Param("expectedLockVersion") Integer expectedLockVersion,
                      @Param("reviewStatus") String reviewStatus, @Param("adminId") Long adminId,
                      @Param("comment") String comment, @Param("now") LocalDateTime now);
+
+    /**
+     * Popular series for the Discover Hub. Ranked by follower count (from community_follow),
+     * then by publish time. Only approved, non-deleted series on active blogs.
+     */
+    @Select("""
+            SELECT s.id, s.blog_id, s.title, s.slug, s.summary, s.cover_file_id,
+                   s.published_at,
+                   b.name AS blog_name, b.slug AS blog_slug, b.blog_type,
+                   COALESCE(creator.display_name, creator.username) AS creator_name,
+                   COALESCE(fc.follow_count, 0) AS follow_count
+            FROM series s
+            INNER JOIN blog b ON b.id = s.blog_id AND b.status = 'ACTIVE' AND b.deleted_at IS NULL
+            LEFT JOIN community_user creator ON creator.id = s.created_by_user_id
+            LEFT JOIN (
+                SELECT target_id, COUNT(DISTINCT follower_user_id) AS follow_count
+                FROM community_follow
+                WHERE target_type = 'SERIES'
+                GROUP BY target_id
+            ) fc ON fc.target_id = s.id
+            WHERE s.deleted_at IS NULL AND s.review_status = 'APPROVED'
+            ORDER BY follow_count DESC, s.published_at DESC, s.id DESC
+            LIMIT #{limit}
+            """)
+    List<SeriesPopularRow> selectPopular(@Param("limit") int limit);
 }

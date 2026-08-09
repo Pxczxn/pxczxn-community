@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">REVIEW QUEUE</div>
         <h1>文章审核</h1>
         <p>按风险级别处理固定内容版本，审核动作受任务锁与 RBAC 双重约束。</p>
       </div>

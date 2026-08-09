@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">MEMBERS</div>
         <h1>社区用户</h1>
         <p>查询社区账号、认证状态、个人博客和最近登录情况。</p>
       </div>

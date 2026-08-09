@@ -25,7 +25,7 @@ public class FollowingFeedService {
         Long userId = communityAuth.getLoginUserId();
         List<FollowingFeedItemView> records = mapper.selectPage(userId, (long) (pageNum - 1) * pageSize, pageSize).stream()
                 .filter(row -> !blocked(userId, row.getItemType(), row.getTargetId(), row.getAuthorUserId(), row.getBlogId()))
-                .map(row -> new FollowingFeedItemView(row.getItemType(), row.getTargetId(), row.getTitle(), row.getExcerpt(), row.getCanonicalPath(), row.getAuthorName(), row.getBlogName(), row.getTagName(), row.getOccurredAt())).toList();
+                .map(row -> new FollowingFeedItemView(row.getItemType(), row.getTargetId(), row.getTitle(), row.getExcerpt(), row.getCanonicalPath(), row.getAuthorName(), row.getBlogName(), row.getTagName(), row.getOccurredAt(), row.getSpecialFollow())).toList();
         return new FollowingFeedPageView(records, mapper.count(userId), pageNum, pageSize);
     }
 

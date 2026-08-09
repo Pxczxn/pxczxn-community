@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">CONTENT POLICY</div>
         <h1>内容规则</h1>
         <p>维护关键词、内容范围、风险等级与自动处理动作。</p>
       </div>
@@ -80,6 +79,7 @@ import {
   useMessage
 } from 'naive-ui'
 import { communityApi, type ContentRule } from '@/api/community'
+import { statusLabel } from '@/utils/community'
 
 interface ContentRuleForm {
   keyword: string
@@ -102,10 +102,17 @@ const statusOptions = [
   { label: '启用', value: 'ACTIVE' },
   { label: '停用', value: 'DISABLED' }
 ]
-const riskOptions = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-  .map((value) => ({ label: value, value }))
-const actionOptions = ['WARN', 'MANUAL_REVIEW', 'BLOCK']
-  .map((value) => ({ label: value, value }))
+const riskOptions = [
+  { label: '低风险', value: 'LOW' },
+  { label: '中风险', value: 'MEDIUM' },
+  { label: '高风险', value: 'HIGH' },
+  { label: '极高风险', value: 'CRITICAL' }
+]
+const actionOptions = [
+  { label: '警告', value: 'WARN' },
+  { label: '人工审核', value: 'MANUAL_REVIEW' },
+  { label: '拦截', value: 'BLOCK' }
+]
 
 const form = reactive<ContentRuleForm>({
   keyword: '',
@@ -198,13 +205,13 @@ function remove(row: ContentRule) {
 const columns: DataTableColumns<ContentRule> = [
   { title: '关键词', key: 'keyword' },
   { title: '范围', key: 'contentScopes' },
-  { title: '风险', key: 'riskLevel' },
-  { title: '动作', key: 'hitAction' },
+  { title: '风险', key: 'riskLevel', render: (row) => h(NTag, { size: 'small', bordered: false }, { default: () => statusLabel(row.riskLevel) }) },
+  { title: '动作', key: 'hitAction', render: (row) => h(NTag, { size: 'small', bordered: false }, { default: () => statusLabel(row.hitAction) }) },
   {
     title: '状态',
     key: 'status',
     render: (row) => h(NTag, { type: row.status === 'ACTIVE' ? 'success' : 'default' }, {
-      default: () => row.status
+      default: () => statusLabel(row.status)
     })
   },
   {

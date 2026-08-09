@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.article.application.PublicArticleQuery;
+import top.pxczxn.community.article.application.PublicDiscoveryQuery;
 import top.pxczxn.community.article.application.PublicArticleService;
 
 import java.util.List;
@@ -30,21 +31,27 @@ public class PublicArticleController {
 
     @GetMapping("/articles")
     public Result<PublicArticlePageResponse> discover(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String tagSlug,
             @RequestParam(required = false) Integer pageNum,
             @RequestParam(required = false) Integer pageSize
     ) {
         return Result.ok(PublicArticlePageResponse.from(
-                articleService.discover(new PublicArticleQuery(null, pageNum, pageSize))
+                articleService.discover(new PublicDiscoveryQuery(keyword, tagSlug, null, pageNum, pageSize))
         ));
     }
 
     @GetMapping("/discover/articles")
     public Result<PublicDiscoveryPageResponse> rankedDiscover(
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String tagSlug,
             @RequestParam(required = false) Integer pageNum,
             @RequestParam(required = false) Integer pageSize
     ) {
-        return Result.ok(PublicDiscoveryPageResponse.from(articleService.discoverRanked(sort, new PublicArticleQuery(null, pageNum, pageSize))));
+        return Result.ok(PublicDiscoveryPageResponse.from(
+                articleService.discoverRanked(new PublicDiscoveryQuery(keyword, tagSlug, sort, pageNum, pageSize))
+        ));
     }
 
     @GetMapping("/blogs/{blogSlug}/articles")

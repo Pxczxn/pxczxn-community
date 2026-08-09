@@ -302,7 +302,7 @@ public class ScheduledArticlePublicationService {
         );
         if (updated != 1) {
             throw new IllegalStateException(
-                    "Scheduled publication task state collision"
+                    "定时发布任务状态冲突"
             );
         }
     }

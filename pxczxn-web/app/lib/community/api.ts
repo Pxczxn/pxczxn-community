@@ -194,8 +194,11 @@ export const communityApi = {
       false,
     );
   },
-  discoverRankedArticles(sort: DiscoverySort = "LATEST", pageNum = 1, pageSize = 20) {
-    return communityRequest<PublicDiscoveryPage>(`/api/v1/public/discover/articles?sort=${sort}&pageNum=${pageNum}&pageSize=${pageSize}`, {}, false);
+  discoverRankedArticles(sort: DiscoverySort = "LATEST", pageNum = 1, pageSize = 20, tagSlug?: string, keyword?: string) {
+    const query = new URLSearchParams({ sort, pageNum: String(pageNum), pageSize: String(pageSize) });
+    if (tagSlug) query.set("tagSlug", tagSlug);
+    if (keyword) query.set("keyword", keyword);
+    return communityRequest<PublicDiscoveryPage>(`/api/v1/public/discover/articles?${query}`, {}, false);
   },
   search(keyword: string, type: UnifiedSearchType = "ALL", pageNum = 1, pageSize = 20) {
     const query = new URLSearchParams({ keyword, type, pageNum: String(pageNum), pageSize: String(pageSize) });

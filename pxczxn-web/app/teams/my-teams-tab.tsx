@@ -53,7 +53,7 @@ export function MyTeamsTab({ teams }: { teams: MyTeam[] }) {
                   <span className="badge badge--danger">{team.revisionRequiredCount} 篇投稿需修改</span>
                 )}
                 {!hasReview && team.revisionRequiredCount === 0 && (
-                  <span className="badge badge--muted">暂无待办</span>
+                  <span className="badge badge--info">暂无待办</span>
                 )}
               </div>
 

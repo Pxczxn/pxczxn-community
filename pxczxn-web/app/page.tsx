@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DiscoverPage } from "./discover/discover-page";
+import { HomePage } from "./home/home-page";
 
 export const metadata: Metadata = {
   title: "首页",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <DiscoverPage />;
+  return <HomePage />;
 }

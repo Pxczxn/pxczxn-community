@@ -1,0 +1,3 @@
+SELECT COUNT(*) AS sanction_tables FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name IN ('community_sanction','community_sanction_event','community_sanction_rate_limit');
+SELECT COUNT(*) AS sanction_event_triggers FROM information_schema.triggers WHERE trigger_schema=DATABASE() AND event_object_table='community_sanction_event' AND trigger_name IN ('community_sanction_event_prevent_update','community_sanction_event_prevent_delete');
+SELECT COUNT(*) AS sanction_user_columns FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='community_user' AND column_name IN ('submission_restricted_until','sanction_original_status');

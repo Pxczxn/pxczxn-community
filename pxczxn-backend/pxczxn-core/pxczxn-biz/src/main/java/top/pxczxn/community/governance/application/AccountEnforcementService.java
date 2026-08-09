@@ -367,7 +367,7 @@ public class AccountEnforcementService {
     public CommunityAccountEnforcementAppeal primaryReviewAppeal(Long adminId, Long appealId, String decision, String note, boolean superAdmin) {
         CommunityAccountEnforcementAppeal appeal = requireAppeal(appealId);
         CommunityAccountEnforcementCase item = requireCase(appeal.getCaseId());
-        if (!"SUBMITTED".equals(appeal.getStatus())) throw new BusinessException(409, "Appeal has already entered review");
+        if (!"SUBMITTED".equals(appeal.getStatus())) throw new BusinessException(409, "申诉已进入审核阶段");
         if (adminId.equals(item.getRequestedByAdminId()) && !superAdmin) throw new BusinessException(403, "您是该措施的原处置人，不能初审自己的申诉，请由其他管理员处理");
         validateAppealDecision(decision, note, null);
         appeal.setPrimaryReviewedByAdminId(adminId); appeal.setPrimaryDecision(decision); appeal.setPrimaryReviewNote(note.trim()); appeal.setPrimaryReviewedAt(now()); appeal.setStatus("PRIMARY_REVIEWED");
@@ -419,9 +419,9 @@ public class AccountEnforcementService {
         return appeal;
     }
 
-    private CommunityAccountEnforcementAppeal requireAppeal(Long appealId) { CommunityAccountEnforcementAppeal appeal = appeals.selectById(appealId); if (appeal == null) throw new BusinessException(404, "Appeal does not exist"); return appeal; }
+    private CommunityAccountEnforcementAppeal requireAppeal(Long appealId) { CommunityAccountEnforcementAppeal appeal = appeals.selectById(appealId); if (appeal == null) throw new BusinessException(404, "申诉不存在"); return appeal; }
     private static String appealEvidenceSnapshot(List<Long> fileIds) { if (fileIds == null || fileIds.isEmpty()) return null; LinkedHashSet<Long> normalized = new LinkedHashSet<>(fileIds); normalized.remove(null); if (normalized.size() > 10) throw new BusinessException(400, "最多上传 10 个申诉附件"); return normalized.toString(); }
-    private void validateAppealDecision(String decision, String note, LocalDateTime modifiedExpiresAt) { if (!Set.of("UPHOLD", "MODIFY", "REVOKE").contains(decision)) throw new BusinessException(400, "Invalid appeal decision"); requireText(note, "review note", 2000); if ("MODIFY".equals(decision) && (modifiedExpiresAt == null || !modifiedExpiresAt.isAfter(now()))) throw new BusinessException(400, "Modified expiry must be in the future"); }
+    private void validateAppealDecision(String decision, String note, LocalDateTime modifiedExpiresAt) { if (!Set.of("UPHOLD", "MODIFY", "REVOKE").contains(decision)) throw new BusinessException(400, "申诉裁决无效"); requireText(note, "审核意见", 2000); if ("MODIFY".equals(decision) && (modifiedExpiresAt == null || !modifiedExpiresAt.isAfter(now()))) throw new BusinessException(400, "修改后的到期时间必须晚于当前时间"); }
 
     public List<CommunityAccountEnforcementCase> mine(Long userId) {
         return list(userId);

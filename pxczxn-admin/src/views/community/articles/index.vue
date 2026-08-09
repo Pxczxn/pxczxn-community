@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">CONTENT INVENTORY</div>
         <h1>文章管理</h1>
         <p>检索文章发布、审核与可见性状态，并查看固定版本的安全渲染快照。</p>
       </div>

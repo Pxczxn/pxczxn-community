@@ -48,10 +48,10 @@ export function SearchPage() {
 
   return (
     <>
-      <UserTopbar title="统一搜索" />
+      <UserTopbar title="搜索" />
       <main className="page-shell search-page">
         <section className="search-hero-card shadow-sm">
-          <span className="eyebrow"><Search size={15} /> 全站统一搜索</span>
+          <span className="eyebrow"><Search size={15} /> 全站搜索</span>
           <h1>找到你关心的内容</h1>
           <form className="search-input-group" onSubmit={submit}>
             <Search size={20} style={{ color: "var(--text-tertiary)" }} />

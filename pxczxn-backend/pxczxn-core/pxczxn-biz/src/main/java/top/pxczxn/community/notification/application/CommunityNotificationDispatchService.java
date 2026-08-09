@@ -202,7 +202,7 @@ public class CommunityNotificationDispatchService {
         }
         if (notification == null) {
             throw new IllegalStateException(
-                    "Failed to resolve notification after insert"
+                    "通知创建异常"
             );
         }
         ensureUnreadRecipient(
@@ -232,7 +232,7 @@ public class CommunityNotificationDispatchService {
         try {
             if (notificationMapper.insert(notification) != 1) {
                 throw new IllegalStateException(
-                        "Failed to create community notification"
+                        "通知创建失败"
                 );
             }
             return notification;
@@ -272,7 +272,7 @@ public class CommunityNotificationDispatchService {
                         .setSql("aggregate_count = aggregate_count + 1")
         ) != 1) {
             throw new IllegalStateException(
-                    "Failed to aggregate community notification"
+                    "通知聚合失败"
             );
         }
     }
@@ -306,7 +306,7 @@ public class CommunityNotificationDispatchService {
         try {
             if (recipientMapper.insert(recipient) != 1) {
                 throw new IllegalStateException(
-                        "Failed to create notification recipient"
+                        "通知接收人创建失败"
                 );
             }
         } catch (DuplicateKeyException exception) {
@@ -343,7 +343,7 @@ public class CommunityNotificationDispatchService {
                 + ":" + bucket;
         if (key.length() > 120) {
             throw new IllegalArgumentException(
-                    "Notification aggregation key is too long"
+                    "通知参数异常"
             );
         }
         return key;

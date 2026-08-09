@@ -1,0 +1,1 @@
+ALTER TABLE `content_keyword_rule` DROP CHECK `chk_keyword_rule_hit_action`, DROP CHECK `chk_keyword_rule_risk_level`, DROP COLUMN `hit_action`, DROP COLUMN `risk_level`, DROP COLUMN `content_scopes`;

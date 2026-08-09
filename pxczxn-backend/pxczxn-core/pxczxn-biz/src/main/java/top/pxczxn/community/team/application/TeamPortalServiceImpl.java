@@ -75,10 +75,10 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public TeamPortalView publicTeam(String teamSlug) {
         Blog blog = blogMapper.selectOne(Wrappers.<Blog>lambdaQuery().eq(Blog::getSlug, normalizeSlug(teamSlug))
                 .eq(Blog::getBlogType, "TEAM").eq(Blog::getStatus, "ACTIVE").isNull(Blog::getDeletedAt).last("LIMIT 1"));
-        if (blog == null) throw new BusinessException(404, "Team does not exist");
+        if (blog == null) throw new BusinessException(404, "团队不存在");
         Team team = teamMapper.selectOne(Wrappers.<Team>lambdaQuery().eq(Team::getBlogId, blog.getId())
                 .eq(Team::getStatus, "ACTIVE").isNull(Team::getDeletedAt).last("LIMIT 1"));
-        if (team == null) throw new BusinessException(404, "Team does not exist");
+        if (team == null) throw new BusinessException(404, "团队不存在");
         return portal(team, blog);
     }
 
@@ -87,9 +87,9 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public TeamWorkspaceView workspace(Long viewerUserId, Long teamId) {
         Team team = requireActiveTeam(teamId);
         TeamMember member = memberMapper.findActiveMember(teamId, viewerUserId);
-        if (member == null) throw new BusinessException(403, "Not allowed to access team workspace");
+        if (member == null) throw new BusinessException(403, "无权访问团队工作台");
         Blog blog = blogMapper.selectById(team.getBlogId());
-        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "Team does not exist");
+        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "团队不存在");
         return new TeamWorkspaceView(portal(team, blog), member.getRoleCode(),
                 CAPABILITIES.getOrDefault(member.getRoleCode(), List.of()),
                 authorityService.getPermissions(viewerUserId, teamId));
@@ -144,9 +144,9 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public TeamDashboardView dashboard(Long viewerUserId, Long teamId) {
         Team team = requireActiveTeam(teamId);
         TeamMember member = memberMapper.findActiveMember(teamId, viewerUserId);
-        if (member == null) throw new BusinessException(403, "Not allowed to access team dashboard");
+        if (member == null) throw new BusinessException(403, "无权访问团队面板");
         Blog blog = blogMapper.selectById(team.getBlogId());
-        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "Team does not exist");
+        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "团队不存在");
 
         String role = member.getRoleCode();
         List<String> capabilities = CAPABILITIES.getOrDefault(role, List.of());
@@ -191,7 +191,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public List<TeamActivityView> activities(Long viewerUserId, Long teamId, int limit) {
         Team team = requireActiveTeam(teamId);
         if (memberMapper.findActiveMember(teamId, viewerUserId) == null) {
-            throw new BusinessException(403, "Not allowed to view team activities");
+            throw new BusinessException(403, "无权查看团队动态");
         }
         int capped = Math.max(1, Math.min(limit <= 0 ? DEFAULT_ACTIVITY_LIMIT : limit, MAX_ACTIVITY_LIMIT));
         List<TeamAuditEvent> events = auditEventMapper.findRecentByTeam(teamId, capped);
@@ -205,10 +205,10 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public List<TeamArticleBriefView> teamArticles(Long viewerUserId, Long teamId, String publishStatus) {
         Team team = requireActiveTeam(teamId);
         if (memberMapper.findActiveMember(teamId, viewerUserId) == null) {
-            throw new BusinessException(403, "Not allowed to view team content");
+            throw new BusinessException(403, "无权查看团队内容");
         }
         Blog blog = blogMapper.selectById(team.getBlogId());
-        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "Team does not exist");
+        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "团队不存在");
         String status = publishStatus == null || publishStatus.isBlank() ? null : publishStatus.trim().toUpperCase(java.util.Locale.ROOT);
         List<Article> articles = articleMapper.findByBlog(blog.getId(), status, CONTENT_LIST_LIMIT);
         Map<Long, CommunityUser> authors = resolveUsers(articles.stream().map(Article::getAuthorUserId).toList());
@@ -221,16 +221,16 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     public TeamSummaryView updateSettings(Long viewerUserId, Long teamId, UpdateTeamSettingsCommand command) {
         Team team = requireActiveTeam(teamId);
         if (!authorityService.hasPermission(viewerUserId, teamId, "MANAGE_TEAM")) {
-            throw new BusinessException(403, "Not allowed to update team settings");
+            throw new BusinessException(403, "无权更新团队设置");
         }
         Blog blog = blogMapper.selectById(team.getBlogId());
-        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "Team does not exist");
+        if (blog == null || !"TEAM".equals(blog.getBlogType())) throw new BusinessException(404, "团队不存在");
 
         String name = command == null || command.name() == null ? null : command.name().trim();
-        if (name == null || name.isEmpty()) throw new BusinessException(400, "Team name cannot be empty");
-        if (name.length() > 120) throw new BusinessException(400, "Team name is too long");
+        if (name == null || name.isEmpty()) throw new BusinessException(400, "团队名称不能为空");
+        if (name.length() > 120) throw new BusinessException(400, "团队名称过长");
         String summary = command.summary() == null ? null : command.summary().trim();
-        if (summary != null && summary.length() > 500) throw new BusinessException(400, "Team summary is too long");
+        if (summary != null && summary.length() > 500) throw new BusinessException(400, "团队简介过长");
 
         String category = trimMax(command.category(), 50, "团队分类");
         String contentDirection = trimMax(command.contentDirection(), 500, "内容方向");
@@ -244,11 +244,11 @@ public class TeamPortalServiceImpl implements TeamPortalService {
 
         int blogUpdated = blogMapper.updateProfileWithOptimisticLock(
                 blog.getId(), name, summary, command.avatarFileId(), command.backgroundFileId(), blog.getLockVersion());
-        if (blogUpdated != 1) throw new BusinessException(409, "Team profile has changed; refresh and retry");
+        if (blogUpdated != 1) throw new BusinessException(409, "团队资料已变更，请刷新后重试");
         int teamUpdated = teamMapper.updatePortalSettingsWithOptimisticLock(
                 team.getId(), category, contentDirection, theme, seoTitle, seoDescription,
                 publicMembers, allowSubmissions, submissionGuideline, contactInfo, team.getLockVersion());
-        if (teamUpdated != 1) throw new BusinessException(409, "Team settings have changed; refresh and retry");
+        if (teamUpdated != 1) throw new BusinessException(409, "团队设置已变更，请刷新后重试");
 
         auditEventMapper.insert(auditEvent(team.getId(), viewerUserId, "TEAM_PROFILE_UPDATED", "TEAM", team.getId(),
                 "{\"name\":\"" + escape(blog.getName()) + "\"}", "{\"name\":\"" + escape(name) + "\"}"));
@@ -265,7 +265,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private static String trimMax(String value, int max, String label) {
         if (value == null) return null;
         String trimmed = value.trim();
-        if (trimmed.length() > max) throw new BusinessException(400, label + " is too long");
+        if (trimmed.length() > max) throw new BusinessException(400, label + "过长");
         return trimmed.isEmpty() ? null : trimmed;
     }
 
@@ -378,7 +378,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     private Team requireActiveTeam(Long teamId) {
         Team team = teamMapper.selectById(teamId);
         if (team == null || team.getDeletedAt() != null || !"ACTIVE".equals(team.getStatus())) {
-            throw new BusinessException(404, "Team does not exist");
+            throw new BusinessException(404, "团队不存在");
         }
         return team;
     }
@@ -392,7 +392,7 @@ public class TeamPortalServiceImpl implements TeamPortalService {
     }
 
     private static String normalizeSlug(String value) {
-        if (value == null || !value.matches("[a-z0-9]+(?:[-_][a-z0-9]+)*")) throw new BusinessException(400, "Invalid team slug");
+        if (value == null || !value.matches("[a-z0-9]+(?:[-_][a-z0-9]+)*")) throw new BusinessException(400, "团队地址格式无效");
         return value;
     }
 }

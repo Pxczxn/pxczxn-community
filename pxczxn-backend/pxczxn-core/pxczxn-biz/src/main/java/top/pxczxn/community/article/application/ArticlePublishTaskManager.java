@@ -44,7 +44,7 @@ public class ArticlePublishTaskManager {
         task.setCreatedAt(now);
         task.setUpdatedAt(now);
         if (taskMapper.insert(task) != 1) {
-            throw new IllegalStateException("Failed to create scheduled publication task");
+            throw new IllegalStateException("创建定时发布任务失败");
         }
     }
 

@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">COMMENT GOVERNANCE</div>
         <h1>评论治理</h1>
         <p>审核关键词转人工评论，执行线程级下架与恢复，并追溯不可变治理事件。</p>
       </div>

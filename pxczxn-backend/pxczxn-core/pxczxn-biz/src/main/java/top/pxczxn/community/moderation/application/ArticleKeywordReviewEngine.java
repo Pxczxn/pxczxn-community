@@ -69,7 +69,7 @@ public class ArticleKeywordReviewEngine {
 
     private static String normalizeContentType(String raw) {
         String type = raw == null ? "ARTICLE" : raw.trim().toUpperCase(Locale.ROOT);
-        if (!CONTENT_TYPES.contains(type)) throw new IllegalArgumentException("Unsupported content type");
+        if (!CONTENT_TYPES.contains(type)) throw new IllegalArgumentException("不支持的内容类型");
         return type;
     }
 

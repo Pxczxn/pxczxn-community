@@ -26,7 +26,7 @@
               <div v-else class="logo-icon">{{ siteName.charAt(0) }}</div>
               <span class="logo-text">{{ siteName }}</span>
             </div>
-            <h1 class="banner-title">{{ siteDescription || '后台管理系统' }}</h1>
+            <h1 class="banner-title">{{ siteDescription || '星语社区运营中心' }}</h1>
             <p class="banner-desc">博客社区运营与治理平台</p>
             <div class="banner-features">
               <div class="feature-item">
@@ -115,7 +115,7 @@
               <div v-else class="logo-icon">{{ siteName.charAt(0) }}</div>
               <span class="logo-text">{{ siteName }}</span>
             </div>
-            <h1 class="banner-title">{{ siteDescription || '后台管理系统' }}</h1>
+            <h1 class="banner-title">{{ siteDescription || '星语社区运营中心' }}</h1>
             <p class="banner-desc">博客社区运营与治理平台</p>
             <div class="banner-features">
               <div class="feature-item">
@@ -204,7 +204,7 @@
               <div v-else class="logo-icon" style="background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2);">{{ siteName.charAt(0) }}</div>
               <span class="logo-text">{{ siteName }}</span>
             </div>
-            <h1 class="banner-title" style="color: #fff;">{{ siteDescription || '后台管理系统' }}</h1>
+            <h1 class="banner-title" style="color: #fff;">{{ siteDescription || '星语社区运营中心' }}</h1>
             <p class="banner-desc">博客社区运营与治理平台</p>
             <div class="banner-features">
               <div class="feature-item">

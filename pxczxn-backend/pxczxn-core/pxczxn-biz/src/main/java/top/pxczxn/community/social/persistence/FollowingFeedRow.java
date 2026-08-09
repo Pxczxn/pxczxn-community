@@ -19,4 +19,5 @@ public class FollowingFeedRow {
     private String blogName;
     private String tagName;
     private LocalDateTime occurredAt;
+    private Integer specialFollow;
 }

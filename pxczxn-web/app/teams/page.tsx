@@ -155,8 +155,8 @@ export default function TeamsPage() {
         <header className="teams-hub__header surface-lg">
           <div className="teams-hub__header-copy">
             <span className="eyebrow"><Users size={15} /> 团队空间</span>
-            <h1>团队</h1>
-            <p>管理你参与的团队、内容投稿与协作事项。</p>
+            <h1>团队空间</h1>
+            <p>浏览团队、参与协作与管理内容投稿。</p>
           </div>
           <div className="teams-hub__header-actions">
             <Link href="/team-applications" className="primary-button" onClick={requireLogin}>
@@ -218,7 +218,7 @@ export default function TeamsPage() {
             className={activeTab === "requests" ? "active" : ""}
             onClick={() => selectTab("requests")}
           >
-            邀请与申请
+            邀请与建队申请
             {pendingRequestCount > 0 && <span className="badge badge--warn">{pendingRequestCount}</span>}
           </button>
         </nav>

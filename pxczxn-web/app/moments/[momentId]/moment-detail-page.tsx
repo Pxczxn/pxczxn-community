@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   BookOpen,
   Check,
-  ChevronDown,
   Edit3,
   ExternalLink,
   Hash,
@@ -13,7 +12,6 @@ import {
   LayoutGrid,
   LoaderCircle,
   MessageCircle,
-  MoreHorizontal,
   Share2,
   TrendingUp,
 } from "lucide-react";
@@ -37,7 +35,7 @@ import {
 /* ─── 快捷操作（静态导航） ─── */
 const QUICK_ACTIONS = [
   { icon: Edit3, label: "发布动态", desc: "分享你的想法与生活", href: "/moments" },
-  { icon: BookOpen, label: "写文章", desc: "记录内容与分享", href: "/write" },
+  { icon: BookOpen, label: "写文章", desc: "记录内容与分享", href: "/editor/new" },
   { icon: LayoutGrid, label: "返回动态广场", desc: "浏览更多精彩动态", href: "/moments" },
 ];
 
@@ -206,9 +204,6 @@ export function MomentDetailPage({ momentId }: { momentId: string }) {
                       <time className="detail-author__time">{relativeTime(moment.createdAt)}</time>
                     </div>
                   </div>
-                  <button aria-label="更多操作" className="icon-button detail-article__more" type="button">
-                    <MoreHorizontal size={18} />
-                  </button>
                 </header>
 
                 {/* 正文内容 */}
@@ -315,10 +310,6 @@ export function MomentDetailPage({ momentId }: { momentId: string }) {
                       placeholder="写下你的评论..."
                       value={commentText}
                     />
-                    <div className="detail-comment-tools">
-                      <button aria-label="表情" className="icon-button" type="button">😊</button>
-                      <button aria-label="图片" className="icon-button" type="button">🖼️</button>
-                    </div>
                   </div>
                   <button
                     className="primary-button detail-comment-send"
@@ -338,14 +329,6 @@ export function MomentDetailPage({ momentId }: { momentId: string }) {
                     <p className="muted comments-empty">还没有评论，来聊聊你的看法。</p>
                   )}
                 </div>
-
-                {/* 加载更多 */}
-                {comments.length > 0 && (
-                  <button className="detail-comments__load-more" type="button">
-                    加载更多评论
-                    <ChevronDown size={14} />
-                  </button>
-                )}
               </section>
             </>
           )}
@@ -375,21 +358,21 @@ export function MomentDetailPage({ momentId }: { momentId: string }) {
                     <strong>{authorName}</strong>
                   </span>
                   <p className="detail-author-card__bio">
-                    {moment.blog.name} · {moment.likeCount} 次获赞 · {moment.momentId ? `${moment.commentCount} 条评论` : ""}
+                    {moment.blog.name} · 该动态 {moment.likeCount} 次获赞 · {moment.commentCount} 条评论
                   </p>
                 </div>
               </div>
               <div className="detail-author-card__stats">
                 <div className="detail-stat">
-                  <strong>获赞</strong>
+                  <strong>该动态获赞</strong>
                   <span>{moment.likeCount}</span>
                 </div>
                 <div className="detail-stat">
-                  <strong>评论</strong>
+                  <strong>该动态评论</strong>
                   <span>{moment.commentCount}</span>
                 </div>
                 <div className="detail-stat">
-                  <strong>收藏</strong>
+                  <strong>该动态收藏</strong>
                   <span>{moment.favoriteCount}</span>
                 </div>
               </div>
@@ -403,28 +386,29 @@ export function MomentDetailPage({ momentId }: { momentId: string }) {
             </section>
           )}
 
-          {/* ── 相关动态（依赖话题体系，暂显示提示） ── */}
+          {/* ── 相关动态（依赖话题体系，暂不展示） ── */}
+          {false && (
           <section className="surface detail-side-section">
             <header className="detail-side-section__header">
               <h3>相关动态</h3>
             </header>
             <p className="muted" style={{ padding: "12px 16px", fontSize: 13 }}>
-              基于话题标签的相关推荐正在开发中，敬请期待~
+              相关动态推荐即将上线
             </p>
           </section>
+          )}
 
           {/* ── 热门话题（来自平台标签 API） ── */}
           <section className="surface detail-side-section">
             <header className="detail-side-section__header">
               <h3><TrendingUp size={15} /> 热门话题</h3>
-              <a href="#" className="detail-side-section__more">更多 ›</a>
             </header>
             {hotTopics.length === 0 ? (
               <p className="muted" style={{ padding: "10px 16px", fontSize: 13 }}>加载中…</p>
             ) : (
               <div className="detail-topics-grid">
                 {hotTopics.map((t) => (
-                  <a key={t.tagId} className="detail-topic-pill" href="#">
+                  <a key={t.tagId} className="detail-topic-pill" href={`/articles?tag=${t.slug}`}>
                     <Hash size={12} />
                     {t.name}
                     <span className="detail-topic-pill__count">{formatDetailCount(t.usageCount)}</span>

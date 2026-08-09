@@ -71,7 +71,7 @@ public class PublicArticleService {
         );
         Article article = access.article();
         if (isBlocked(article)) {
-            throw new BusinessException(404, "Article does not exist");
+            throw new BusinessException(404, "文章不存在");
         }
         ArticleVersion version = requirePublishedVersion(article);
         BlogSetting setting = findSetting(access.blog().getId());
@@ -144,71 +144,7 @@ public class PublicArticleService {
             );
         }
 
-        Map<Long, CommunityUser> authors = byId(
-                userMapper.selectBatchIds(distinct(
-                        articles.stream()
-                                .map(Article::getAuthorUserId)
-                                .toList()
-                )),
-                CommunityUser::getId
-        );
-        Map<Long, ArticleVersion> versions = byId(
-                versionMapper.selectBatchIds(distinct(
-                        articles.stream()
-                                .map(Article::getPublishedVersionId)
-                                .toList()
-                )),
-                ArticleVersion::getId
-        );
-        List<Long> categoryIds = distinct(
-                articles.stream()
-                        .map(Article::getCategoryId)
-                        .filter(Objects::nonNull)
-                        .toList()
-        );
-        Map<Long, BlogCategory> categories = categoryIds.isEmpty()
-                ? Map.of()
-                : byId(
-                        categoryMapper.selectBatchIds(categoryIds),
-                        BlogCategory::getId
-                );
-        Map<Long, List<PublicArticleTagView>> tags =
-                tagsByArticleIds(articles.stream().map(Article::getId).toList());
-
-        List<PublicArticleSummaryView> records = new ArrayList<>();
-        for (Article article : articles) {
-            CommunityUser articleAuthor = authors.get(article.getAuthorUserId());
-            ArticleVersion version = versions.get(article.getPublishedVersionId());
-            if (!isPublicListRecord(
-                    access.blog(),
-                    articleAuthor,
-                    article,
-                    version
-            ) || isBlocked(article)) {
-                continue;
-            }
-            BlogCategory category = categories.get(article.getCategoryId());
-            records.add(new PublicArticleSummaryView(
-                    article.getId(),
-                    article.getTitle(),
-                    article.getSlug(),
-                    article.getSummary(),
-                    article.getCoverFileId(),
-                    version.getContentMode(),
-                    author(articleAuthor),
-                    category(category, access.blog().getId()),
-                    tags.getOrDefault(article.getId(), List.of()),
-                    article.getPublishedAt(),
-                    article.getUpdatedAt(),
-                    safeInt(version.getWordCount()),
-                    Math.max(1, safeInt(version.getReadingTimeMinutes())),
-                    safeLong(article.getViewCount()),
-                    safeLong(article.getLikeCount()),
-                    safeLong(article.getFavoriteCount()),
-                    safeLong(article.getCommentCount()),
-                    canonicalPath(access.blog(), article)
-            ));
-        }
+        List<PublicArticleSummaryView> records = hydrateSummary(articles);
         return new PublicArticlePageView(
                 List.copyOf(records),
                 result.getTotal(),
@@ -223,60 +159,119 @@ public class PublicArticleService {
      * algorithm; ranking remains an explicit presentation concern in the client.
      */
     @Transactional(readOnly = true)
-    public PublicArticlePageView discover(PublicArticleQuery rawQuery) {
-        PublicArticleQuery query = normalizeQuery(rawQuery);
+    public PublicArticlePageView discover(PublicDiscoveryQuery rawQuery) {
+        PublicArticleQuery query = normalizeDiscoveryQuery(rawQuery);
         IPage<Article> result = articleMapper.selectDiscoverPublicPage(
-                new Page<>(query.pageNum(), query.pageSize())
+                new Page<>(query.pageNum(), query.pageSize()),
+                rawQuery.keyword(),
+                rawQuery.tagSlug()
         );
         List<Article> articles = result.getRecords() == null
                 ? List.of()
                 : result.getRecords();
-        List<PublicArticleSummaryView> records = articles.stream()
-                .filter(article -> !isBlocked(article))
-                .map(Article::getId)
-                .map(this::detail)
-                .map(detail -> new PublicArticleSummaryView(
-                        detail.articleId(),
-                        detail.title(),
-                        detail.slug(),
-                        detail.summary(),
-                        detail.coverFileId(),
-                        detail.contentMode(),
-                        detail.author(),
-                        detail.category(),
-                        detail.tags(),
-                        detail.publishedAt(),
-                        detail.updatedAt(),
-                        detail.wordCount(),
-                        detail.readingTimeMinutes(),
-                        detail.viewCount(),
-                        detail.likeCount(),
-                        detail.favoriteCount(),
-                        detail.commentCount(),
-                        detail.canonicalPath()
-                ))
-                .toList();
-        return new PublicArticlePageView(
-                records,
-                result.getTotal(),
-                query.pageNum(),
-                query.pageSize()
-        );
+        if (articles.isEmpty()) {
+            return new PublicArticlePageView(List.of(), result.getTotal(), query.pageNum(), query.pageSize());
+        }
+        List<PublicArticleSummaryView> records = hydrateSummary(articles);
+        return new PublicArticlePageView(records, result.getTotal(), query.pageNum(), query.pageSize());
     }
 
     @Transactional(readOnly = true)
-    public PublicDiscoveryPageView discoverRanked(
-            String rawSort,
-            PublicArticleQuery rawQuery
-    ) {
-        PublicArticleQuery query = normalizeQuery(rawQuery);
-        PublicDiscoverySort sort = PublicDiscoverySort.parse(rawSort);
+    public PublicDiscoveryPageView discoverRanked(PublicDiscoveryQuery rawQuery) {
+        PublicArticleQuery query = normalizeDiscoveryQuery(rawQuery);
+        PublicDiscoverySort sort = PublicDiscoverySort.parse(rawQuery.sort());
         IPage<Article> result = articleMapper.selectDiscoverRankedPage(
-                new Page<>(query.pageNum(), query.pageSize()), sort.name());
-        List<PublicArticleSummaryView> records = (result.getRecords() == null ? List.<Article>of() : result.getRecords())
-                .stream().filter(article -> !isBlocked(article)).map(Article::getId).map(this::detail)
-                .map(detail -> new PublicArticleSummaryView(detail.articleId(), detail.title(), detail.slug(), detail.summary(), detail.coverFileId(), detail.contentMode(), detail.author(), detail.category(), detail.tags(), detail.publishedAt(), detail.updatedAt(), detail.wordCount(), detail.readingTimeMinutes(), detail.viewCount(), detail.likeCount(), detail.favoriteCount(), detail.commentCount(), detail.canonicalPath())).toList();
+                new Page<>(query.pageNum(), query.pageSize()),
+                sort.name(),
+                rawQuery.keyword(),
+                rawQuery.tagSlug()
+        );
+        List<Article> articles = result.getRecords() == null ? List.<Article>of() : result.getRecords();
+        List<PublicArticleSummaryView> records = articles.isEmpty()
+                ? List.of()
+                : hydrateSummary(articles);
         return new PublicDiscoveryPageView(new PublicArticlePageView(records, result.getTotal(), query.pageNum(), query.pageSize()), sort);
+    }
+
+    /**
+     * Batch hydrate articles into summary views. Resolves authors, versions,
+     * categories, and tags in bulk to avoid N+1 queries.
+     */
+    private List<PublicArticleSummaryView> hydrateSummary(List<Article> articles) {
+        List<Article> filtered = articles.stream()
+                .filter(article -> !isBlocked(article))
+                .toList();
+        if (filtered.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, CommunityUser> authors = byId(
+                userMapper.selectBatchIds(distinct(
+                        filtered.stream().map(Article::getAuthorUserId).toList()
+                )),
+                CommunityUser::getId
+        );
+        Map<Long, ArticleVersion> versions = byId(
+                versionMapper.selectBatchIds(distinct(
+                        filtered.stream().map(Article::getPublishedVersionId).toList()
+                )),
+                ArticleVersion::getId
+        );
+        List<Long> categoryIds = distinct(
+                filtered.stream().map(Article::getCategoryId).filter(Objects::nonNull).toList()
+        );
+        Map<Long, BlogCategory> categories = categoryIds.isEmpty()
+                ? Map.of()
+                : byId(categoryMapper.selectBatchIds(categoryIds), BlogCategory::getId);
+        Map<Long, List<PublicArticleTagView>> tags =
+                tagsByArticleIds(filtered.stream().map(Article::getId).toList());
+
+        // Group articles by blog for blog info lookup
+        List<Long> blogIds = distinct(filtered.stream().map(Article::getBlogId).toList());
+        Map<Long, Blog> blogs = blogIds.isEmpty()
+                ? Map.of()
+                : byId(blogMapper.selectBatchIds(blogIds), Blog::getId);
+        Map<Long, BlogSetting> settings = blogIds.isEmpty()
+                ? Map.of()
+                : byId(settingMapper.selectList(Wrappers.<BlogSetting>lambdaQuery()
+                        .in(BlogSetting::getBlogId, blogIds)), BlogSetting::getBlogId);
+
+        List<PublicArticleSummaryView> records = new ArrayList<>();
+        for (Article article : filtered) {
+            CommunityUser articleAuthor = authors.get(article.getAuthorUserId());
+            ArticleVersion version = versions.get(article.getPublishedVersionId());
+            if (version == null
+                    || !Objects.equals(version.getArticleId(), article.getId())
+                    || version.getRenderedHtml() == null) {
+                continue;
+            }
+            Blog blog = blogs.get(article.getBlogId());
+            if (blog == null) {
+                continue;
+            }
+            BlogSetting setting = settings.get(article.getBlogId());
+            BlogCategory category = categories.get(article.getCategoryId());
+            records.add(new PublicArticleSummaryView(
+                    article.getId(),
+                    article.getTitle(),
+                    article.getSlug(),
+                    article.getSummary(),
+                    article.getCoverFileId(),
+                    version.getContentMode(),
+                    author(articleAuthor),
+                    category(category, article.getBlogId()),
+                    tags.getOrDefault(article.getId(), List.of()),
+                    article.getPublishedAt(),
+                    article.getUpdatedAt(),
+                    safeInt(version.getWordCount()),
+                    Math.max(1, safeInt(version.getReadingTimeMinutes())),
+                    safeLong(article.getViewCount()),
+                    safeLong(article.getLikeCount()),
+                    safeLong(article.getFavoriteCount()),
+                    safeLong(article.getCommentCount()),
+                    canonicalPath(blog, article)
+            ));
+        }
+        return List.copyOf(records);
     }
 
     @Transactional(readOnly = true)
@@ -501,6 +496,22 @@ public class PublicArticleService {
                 ? null
                 : normalizeSlug(query.categorySlug(), "分类地址");
         return new PublicArticleQuery(categorySlug, pageNum, pageSize);
+    }
+
+    private static PublicArticleQuery normalizeDiscoveryQuery(PublicDiscoveryQuery rawQuery) {
+        int pageNum = rawQuery == null || rawQuery.pageNum() == null
+                ? 1
+                : rawQuery.pageNum();
+        int pageSize = rawQuery == null || rawQuery.pageSize() == null
+                ? 10
+                : rawQuery.pageSize();
+        if (pageNum < 1) {
+            throw new BusinessException(400, "页码必须大于 0");
+        }
+        if (pageSize < 1 || pageSize > 50) {
+            throw new BusinessException(400, "每页数量必须在 1-50 之间");
+        }
+        return new PublicArticleQuery(null, pageNum, pageSize);
     }
 
     private static String canonicalPath(Blog blog, Article article) {

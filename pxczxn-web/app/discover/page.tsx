@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DiscoverPage } from "./discover-page";
+import DiscoverPage from "./discover-page";
 
 export const metadata: Metadata = {
   title: "发现",

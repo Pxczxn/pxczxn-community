@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">INTERACTION INVENTORY</div>
         <h1>互动查询</h1>
         <p>只读检索点赞、收藏和关注关系；收藏夹名称与结构不会进入运营查询结果。</p>
       </div>

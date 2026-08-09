@@ -134,7 +134,7 @@ export default function WorkspaceSettingsPage() {
     }
   }
 
-  async function run(action: () => Promise<unknown>, key: string): Promise<boolean> {
+  async function run(action: () => Promise<unknown>, key: string, successMsg?: string): Promise<boolean> {
     setBusy(key);
     setError("");
     setNotice("");
@@ -142,7 +142,7 @@ export default function WorkspaceSettingsPage() {
     try {
       await action();
       ok = true;
-      setNotice("操作成功。");
+      setNotice(successMsg || "操作成功。");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "操作失败，请稍后重试");
     }
@@ -152,13 +152,13 @@ export default function WorkspaceSettingsPage() {
 
   function leave() {
     if (!teamId) return;
-    void run(() => communityApi.leaveTeam(teamId), "leave");
+    void run(() => communityApi.leaveTeam(teamId), "leave", "已退出团队");
     setConfirmOpen(null);
   }
 
   function disband() {
     if (!teamId) return;
-    void run(() => communityApi.disbandTeam(teamId), "disband");
+    void run(() => communityApi.disbandTeam(teamId), "disband", "团队已解散");
     setConfirmOpen(null);
   }
 

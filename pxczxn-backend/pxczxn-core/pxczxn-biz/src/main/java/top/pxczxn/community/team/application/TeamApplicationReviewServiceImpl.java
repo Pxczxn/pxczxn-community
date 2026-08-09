@@ -51,12 +51,12 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
     @Override
     public TeamApplicationView getApplicationForReview(Long applicationId) {
         if (applicationId == null) {
-            throw new IllegalArgumentException("Application ID is required");
+            throw new IllegalArgumentException("申请编号不能为空");
         }
 
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new IllegalArgumentException("Application not found");
+            throw new IllegalArgumentException("申请不存在");
         }
 
         return toView(application);
@@ -66,18 +66,18 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
     @Transactional(rollbackFor = Exception.class)
     public Long approveApplication(Long applicationId, Long reviewerUserId, String reviewComment, String requestId) {
         if (applicationId == null || reviewerUserId == null) {
-            throw new IllegalArgumentException("Application ID and reviewer user ID are required");
+            throw new IllegalArgumentException("申请编号不能为空");
         }
 
         // Load application
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new IllegalArgumentException("Application not found");
+            throw new IllegalArgumentException("申请不存在");
         }
 
         // Must be in PENDING status
         if (!"PENDING".equals(application.getStatus())) {
-            throw new BusinessException("Application is not in PENDING status");
+            throw new BusinessException("该申请当前状态不允许审核");
         }
 
         // Update application status to APPROVED with conditional update (only one reviewer succeeds)
@@ -88,7 +88,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
                 application.getLockVersion()
         );
         if (updated != 1) {
-            throw new BusinessException("Failed to approve application due to concurrent modification or status change");
+            throw new BusinessException("审核失败，请刷新后重试");
         }
 
         // Atomically create team blog, team, owner member, default settings/category, and audit event
@@ -109,7 +109,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
         blog.setCreatedAt(LocalDateTime.now());
         blog.setUpdatedAt(LocalDateTime.now());
         if (blogMapper.insert(blog) != 1) {
-            throw new BusinessException("Failed to create team blog");
+            throw new BusinessException("团队创建失败，请稍后重试");
         }
 
         // 2. Create team record
@@ -121,7 +121,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
         team.setCreatedAt(LocalDateTime.now());
         team.setUpdatedAt(LocalDateTime.now());
         if (teamMapper.insert(team) != 1) {
-            throw new BusinessException("Failed to create team record");
+            throw new BusinessException("团队创建失败，请稍后重试");
         }
 
         Long teamId = team.getId();
@@ -134,7 +134,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
         ownerMember.setJoinedAt(LocalDateTime.now());
         ownerMember.setLockVersion(0);
         if (teamMemberMapper.insert(ownerMember) != 1) {
-            throw new BusinessException("Failed to create team owner member");
+            throw new BusinessException("团队创建失败，请稍后重试");
         }
 
         // 4. Create default blog settings
@@ -146,7 +146,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
         setting.setAllowRepost("ALLOW");
         setting.setThemeKey("light");
         if (blogSettingMapper.insert(setting) != 1) {
-            throw new BusinessException("Failed to create blog settings");
+            throw new BusinessException("团队创建失败，请稍后重试");
         }
 
         // 5. Create default category
@@ -162,7 +162,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
         category.setCreatedAt(LocalDateTime.now());
         category.setUpdatedAt(LocalDateTime.now());
         if (blogCategoryMapper.insert(category) != 1) {
-            throw new BusinessException("Failed to create default blog category");
+            throw new BusinessException("团队创建失败，请稍后重试");
         }
 
         // 6. Record audit event
@@ -194,21 +194,21 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
     @Transactional(rollbackFor = Exception.class)
     public void rejectApplication(Long applicationId, Long reviewerUserId, String reviewComment, String requestId) {
         if (applicationId == null || reviewerUserId == null) {
-            throw new IllegalArgumentException("Application ID and reviewer user ID are required");
+            throw new IllegalArgumentException("申请编号不能为空");
         }
         if (reviewComment == null || reviewComment.trim().isEmpty()) {
-            throw new IllegalArgumentException("Review comment is required for rejection");
+            throw new BusinessException("驳回时审核意见不能为空");
         }
 
         // Load application
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new IllegalArgumentException("Application not found");
+            throw new IllegalArgumentException("申请不存在");
         }
 
         // Must be in PENDING status
         if (!"PENDING".equals(application.getStatus())) {
-            throw new BusinessException("Application is not in PENDING status");
+            throw new BusinessException("该申请当前状态不允许审核");
         }
 
         // Update application status to REJECTED with conditional update (only one reviewer succeeds)
@@ -219,7 +219,7 @@ public class TeamApplicationReviewServiceImpl implements TeamApplicationReviewSe
                 application.getLockVersion()
         );
         if (updated != 1) {
-            throw new BusinessException("Failed to reject application due to concurrent modification or status change");
+            throw new BusinessException("审核失败，请刷新后重试");
         }
 
         // Publish notification event (after commit)

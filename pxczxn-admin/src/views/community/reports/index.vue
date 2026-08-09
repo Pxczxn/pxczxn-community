@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">REPORT OPERATIONS</div>
         <h1>举报中心</h1>
         <p>认领并处理社区用户提交的举报，支持按举报目标筛选与回溯。</p>
       </div>

@@ -29,7 +29,7 @@ public class CommunityAbuseGuard {
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = BusinessException.class)
     public void check(String actorKey, String action, int threshold, int seconds) {
         if (actorKey == null || actorKey.isBlank()) {
-            throw new BusinessException(400, "Missing abuse actor");
+            throw new BusinessException(400, "操作用户信息缺失");
         }
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
@@ -39,7 +39,7 @@ public class CommunityAbuseGuard {
                 .eq("action_type", action)
                 .last("FOR UPDATE"));
         if (row == null || row.getAttemptCount() == null) {
-            throw new IllegalStateException("Abuse window was not persisted");
+            throw new IllegalStateException("操作过于频繁，请稍后再试");
         }
 
         int attempts = row.getAttemptCount();
@@ -62,14 +62,14 @@ public class CommunityAbuseGuard {
         events.insert(event);
 
         if (!allowed) {
-            throw new BusinessException(429, "Too many " + action + " actions; retry after the policy window");
+            throw new BusinessException(429, "操作过于频繁，请稍后再试");
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = BusinessException.class)
     public void rejectDuplicateContent(Long userId, String scope, String content) {
         if (userId == null || scope == null || scope.isBlank()) {
-            throw new BusinessException(400, "Missing duplicate-content subject");
+            throw new BusinessException(400, "缺少重复内容检查参数");
         }
         String normalized = Normalizer.normalize(content == null ? "" : content, Normalizer.Form.NFKC)
                 .replaceAll("\\s+", " ")
@@ -90,7 +90,7 @@ public class CommunityAbuseGuard {
             }
             return result.toString();
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 unavailable", exception);
+            throw new IllegalStateException("系统异常，请稍后重试", exception);
         }
     }
 }

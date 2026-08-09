@@ -38,6 +38,7 @@ const labelMap: Record<string, string> = {
   MEDIUM: '中风险',
   HIGH: '高风险',
   CRITICAL: '严重风险',
+  WARN: '警告',
   AUTO_PUBLISHED: '自动发布',
   AUTO_REVIEW_QUEUED: '自动转人工',
   USER_DELETED: '用户删除',
@@ -59,6 +60,10 @@ const labelMap: Record<string, string> = {
   LIKE: '点赞',
   FAVORITE: '收藏',
   FOLLOW: '关注',
+  OWNER: '所有者',
+  ADMIN: '管理员',
+  MEMBER: '成员',
+  CONTRIBUTOR: '贡献者',
   TEXT: '文字动态',
   IMAGE: '图片',
   LINK: '链接分享',
@@ -85,7 +90,7 @@ export function statusTone(value?: string | null): StatusTone {
   if (['NORMAL', 'ACTIVE', 'VERIFIED', 'APPROVED', 'PUBLISHED', 'COMPLETED', 'PLATFORM_APPROVED', 'PLATFORM_RESTORED'].includes(value)) {
     return 'success'
   }
-  if (['PENDING', 'PENDING_REVIEW', 'SCHEDULED', 'QUEUED', 'AUTO_REVIEWING', 'MANUAL_REVIEWING', 'MEDIUM', 'FROZEN'].includes(value)) {
+  if (['PENDING', 'PENDING_REVIEW', 'SCHEDULED', 'QUEUED', 'AUTO_REVIEWING', 'MANUAL_REVIEWING', 'MEDIUM', 'FROZEN', 'WARN'].includes(value)) {
     return 'warning'
   }
   if (['DISABLED', 'BANNED', 'DELETED', 'REJECTED', 'PUBLISH_FAILED', 'CRITICAL', 'HIGH', 'TAKEN_DOWN', 'SPAM', 'PLATFORM_REJECTED', 'PLATFORM_TAKEN_DOWN', 'DEACTIVATED'].includes(value)) {

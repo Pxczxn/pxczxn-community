@@ -118,7 +118,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
                   {serializationLabel(series.serializationStatus)}
                 </span>
                 <span className="series-card__chapter-count">
-                  <Layers size={14} /> 共 {series.chapterCount} 篇章节
+                  <Layers size={14} /> 共 {series.chapterCount} 章
                 </span>
                 <span className="series-card__chapter-count">
                   <Users size={14} /> {followerCount} 人追更

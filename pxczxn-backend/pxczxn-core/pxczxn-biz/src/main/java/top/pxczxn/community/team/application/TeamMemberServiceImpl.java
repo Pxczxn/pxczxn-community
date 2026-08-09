@@ -62,16 +62,16 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public TeamInvitationView invite(Long actorUserId, InviteTeamMemberCommand command) {
-        Long teamId = requirePositive(command.teamId(), "Invalid team ID");
-        Long inviteeUserId = requirePositive(command.inviteeUserId(), "Invalid invitee user ID");
+        Long teamId = requirePositive(command.teamId(), "团队编号无效");
+        Long inviteeUserId = requirePositive(command.inviteeUserId(), "被邀请用户编号无效");
         String role = role(command.roleCode());
         requireActiveTeam(teamId);
         abuseGuard.check("USER:" + actorUserId, "TEAM_INVITE", 5, 300);
         if (!authorityService.canManageMember(actorUserId, teamId, role)) {
-            throw new BusinessException(403, "Not allowed to invite this member role");
+            throw new BusinessException(403, "无权邀请该角色成员");
         }
         if (actorUserId.equals(inviteeUserId) || authorityService.isMember(inviteeUserId, teamId)) {
-            throw new BusinessException(409, "User is already a member or cannot invite self");
+            throw new BusinessException(409, "用户已是团队成员或不能邀请自己");
         }
         requireActiveUser(inviteeUserId);
 
@@ -81,7 +81,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             if (replay != null) {
                 if (!teamId.equals(replay.getTeamId()) || !inviteeUserId.equals(replay.getInviteeUserId())
                         || !role.equals(replay.getRoleCode()) || !actorUserId.equals(replay.getInvitedByUserId())) {
-                    throw new BusinessException(409, "Idempotency key conflicts with an existing request");
+                    throw new BusinessException(409, "幂等键与已有请求冲突");
                 }
                 return invitationView(replay);
             }
@@ -90,7 +90,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         TeamInvitation pending = invitationMapper.findPendingForTeamAndInvitee(teamId, inviteeUserId);
         if (pending != null) {
             if (!expireIfNecessary(pending)) {
-                throw new BusinessException(409, "User already has a pending invitation for this team");
+                throw new BusinessException(409, "用户已有该团队的待处理邀请");
             }
         }
 
@@ -138,7 +138,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     public List<TeamInvitationView> teamInvitations(Long actorUserId, Long teamId) {
         requireActiveTeam(teamId);
         if (!authorityService.hasPermission(actorUserId, teamId, "MANAGE_MEMBERS")) {
-            throw new BusinessException(403, "Not allowed to view team invitations");
+            throw new BusinessException(403, "无权查看团队邀请");
         }
         return invitationViews(invitationMapper.findByTeam(teamId, TEAM_INVITATION_LIMIT));
     }
@@ -148,20 +148,20 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     public void revokeInvitation(Long actorUserId, Long teamId, Long invitationId) {
         requireActiveTeam(teamId);
         TeamInvitation invitation = invitationMapper.findForTeam(
-                requirePositive(invitationId, "Invalid invitation ID"),
-                requirePositive(teamId, "Invalid team ID"));
+                requirePositive(invitationId, "邀请编号无效"),
+                requirePositive(teamId, "团队编号无效"));
         if (invitation == null) {
-            throw new BusinessException(404, "Invitation does not exist");
+            throw new BusinessException(404, "邀请不存在");
         }
         // Judged against the invited role, so an ADMIN cannot cancel an invitation addressed to an ADMIN.
         if (!authorityService.canManageMember(actorUserId, teamId, invitation.getRoleCode())) {
-            throw new BusinessException(403, "Not allowed to revoke this invitation");
+            throw new BusinessException(403, "无权撤销该邀请");
         }
         if (!"PENDING".equals(invitation.getStatus())) {
-            throw new BusinessException(409, "Only pending invitations can be revoked");
+            throw new BusinessException(409, "仅待处理的邀请可以撤销");
         }
         if (invitationMapper.revoke(invitationId, teamId, invitation.getLockVersion()) != 1) {
-            throw new BusinessException(409, "Invitation state has changed; refresh and retry");
+            throw new BusinessException(409, "邀请状态已变更，请刷新后重试");
         }
         authorityService.recordAuditEvent(teamId, actorUserId, "INVITATION_REVOKED", "TEAM_INVITATION",
                 invitationId, UUID.randomUUID().toString(), "{\"status\":\"PENDING\"}", "{\"status\":\"REVOKED\"}");
@@ -174,10 +174,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         requireActiveTeam(invitation.getTeamId());
         requireActiveUser(inviteeUserId);
         if (authorityService.isMember(inviteeUserId, invitation.getTeamId())) {
-            throw new BusinessException(409, "Already a team member");
+            throw new BusinessException(409, "已是团队成员");
         }
         if (invitationMapper.accept(invitationId, inviteeUserId, invitation.getLockVersion()) != 1) {
-            throw new BusinessException(409, "Invitation state has changed; refresh and retry");
+            throw new BusinessException(409, "邀请状态已变更，请刷新后重试");
         }
         TeamMember member = new TeamMember();
         member.setTeamId(invitation.getTeamId());
@@ -201,7 +201,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     public void reject(Long inviteeUserId, Long invitationId) {
         TeamInvitation invitation = pendingInvitation(inviteeUserId, invitationId);
         if (invitationMapper.reject(invitationId, inviteeUserId, invitation.getLockVersion()) != 1) {
-            throw new BusinessException(409, "Invitation state has changed; refresh and retry");
+            throw new BusinessException(409, "邀请状态已变更，请刷新后重试");
         }
         authorityService.recordAuditEvent(invitation.getTeamId(), inviteeUserId, "INVITATION_REJECTED",
                 "TEAM_INVITATION", invitationId, UUID.randomUUID().toString(), null, null);
@@ -213,7 +213,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         requireActiveTeam(teamId);
         TeamMember member = activeMember(teamId, userId);
         if ("OWNER".equals(member.getRoleCode())) {
-            throw new BusinessException(409, "Team owner must transfer ownership before leaving");
+            throw new BusinessException(409, "团队负责人离开前必须先转让负责人身份");
         }
         deactivate(member, userId, "MEMBER_LEFT");
     }
@@ -224,10 +224,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         requireActiveTeam(teamId);
         TeamMember member = activeMember(teamId, memberUserId);
         if (!authorityService.canManageMember(actorUserId, teamId, member.getRoleCode())) {
-            throw new BusinessException(403, "Not allowed to remove this member");
+            throw new BusinessException(403, "无权移除该成员");
         }
         if (actorUserId.equals(memberUserId) || "OWNER".equals(member.getRoleCode())) {
-            throw new BusinessException(409, "Cannot remove this member with this operation");
+            throw new BusinessException(409, "无法通过此操作移除该成员");
         }
         deactivate(member, actorUserId, "MEMBER_REMOVED");
     }
@@ -241,10 +241,10 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         if ("OWNER".equals(role) || "OWNER".equals(member.getRoleCode())
                 || !authorityService.canManageMember(actorUserId, teamId, member.getRoleCode())
                 || !authorityService.canManageMember(actorUserId, teamId, role)) {
-            throw new BusinessException(403, "Not allowed to change this member role");
+            throw new BusinessException(403, "无权修改该成员角色");
         }
         if (memberMapper.updateRoleWithOptimisticLock(member.getId(), role, member.getLockVersion()) != 1) {
-            throw new BusinessException(409, "Member state has changed; refresh and retry");
+            throw new BusinessException(409, "成员状态已变更，请刷新后重试");
         }
         authorityService.recordAuditEvent(teamId, actorUserId, "MEMBER_ROLE_CHANGED", "TEAM_MEMBER",
                 member.getId(), UUID.randomUUID().toString(), "{\"role\":\"" + member.getRoleCode() + "\"}",
@@ -263,7 +263,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
         Team team = requireActiveTeam(teamId);
         if (!ownerUserId.equals(team.getOwnerUserId())
                 || teamMapper.disbandWithOptimisticLock(teamId, ownerUserId, team.getLockVersion()) != 1) {
-            throw new BusinessException(403, "Only the team owner can disband the team");
+            throw new BusinessException(403, "仅团队负责人可以解散团队");
         }
         memberMapper.leaveAllActive(teamId);
         authorityService.recordAuditEvent(teamId, ownerUserId, "TEAM_DISBANDED", "TEAM", teamId,
@@ -274,7 +274,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     public List<TeamMemberView> members(Long viewerUserId, Long teamId) {
         Team team = requireActiveTeam(teamId);
         if (!authorityService.isMember(viewerUserId, teamId)) {
-            throw new BusinessException(403, "Not allowed to view team members");
+            throw new BusinessException(403, "无权查看团队成员");
         }
         List<TeamMember> members = memberMapper.findActiveMembers(teamId);
         if (members.isEmpty()) {
@@ -319,35 +319,35 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private TeamInvitation pendingInvitation(Long userId, Long invitationId) {
         TeamInvitation invitation = invitationMapper.findForInvitee(invitationId, userId);
         if (invitation == null || !"PENDING".equals(invitation.getStatus())) {
-            throw new BusinessException(404, "Invitation does not exist or was already processed");
+            throw new BusinessException(404, "邀请不存在或已处理");
         }
         if (expireIfNecessary(invitation)) {
-            throw new BusinessException(409, "Invitation has expired");
+            throw new BusinessException(409, "邀请已过期");
         }
         return invitation;
     }
 
     private TeamMember activeMember(Long teamId, Long userId) {
-        TeamMember member = memberMapper.findActiveMember(requirePositive(teamId, "Invalid team ID"),
-                requirePositive(userId, "Invalid user ID"));
+        TeamMember member = memberMapper.findActiveMember(requirePositive(teamId, "团队编号无效"),
+                requirePositive(userId, "用户编号无效"));
         if (member == null) {
-            throw new BusinessException(404, "Team member does not exist");
+            throw new BusinessException(404, "团队成员不存在");
         }
         return member;
     }
 
     private void deactivate(TeamMember member, Long actorUserId, String eventType) {
         if (memberMapper.leaveWithOptimisticLock(member.getId(), member.getLockVersion()) != 1) {
-            throw new BusinessException(409, "Member state has changed; refresh and retry");
+            throw new BusinessException(409, "成员状态已变更，请刷新后重试");
         }
         authorityService.recordAuditEvent(member.getTeamId(), actorUserId, eventType, "TEAM_MEMBER",
                 member.getId(), UUID.randomUUID().toString(), "{\"role\":\"" + member.getRoleCode() + "\"}", null);
     }
 
     private Team requireActiveTeam(Long teamId) {
-        Team team = teamMapper.selectById(requirePositive(teamId, "Invalid team ID"));
+        Team team = teamMapper.selectById(requirePositive(teamId, "团队编号无效"));
         if (team == null || team.getDeletedAt() != null || !"ACTIVE".equals(team.getStatus())) {
-            throw new BusinessException(404, "Team does not exist or has been disbanded");
+            throw new BusinessException(404, "团队不存在或已解散");
         }
         return team;
     }
@@ -355,7 +355,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private void requireActiveUser(Long userId) {
         CommunityUser user = userMapper.selectById(userId);
         if (user == null || !ACTIVE_USER_STATUSES.contains(user.getStatus())) {
-            throw new BusinessException(400, "Invitee user is not active");
+            throw new BusinessException(400, "被邀请用户状态异常");
         }
     }
 
@@ -377,7 +377,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
     private static String role(String value) {
         String role = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
         if (!ROLES.contains(role)) {
-            throw new BusinessException(400, "Invalid team role");
+            throw new BusinessException(400, "无效的团队角色");
         }
         return role;
     }
@@ -387,7 +387,7 @@ public class TeamMemberServiceImpl implements TeamMemberService {
             return null;
         }
         if (key.length() > 64) {
-            throw new BusinessException(400, "Idempotency key is too long");
+            throw new BusinessException(400, "幂等键过长");
         }
         return key.trim();
     }

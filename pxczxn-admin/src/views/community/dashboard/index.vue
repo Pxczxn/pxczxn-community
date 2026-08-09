@@ -2,7 +2,6 @@
   <div class="community-page">
     <header class="page-heading">
       <div>
-        <div class="page-eyebrow">COMMUNITY OPERATIONS</div>
         <h1>运营总览</h1>
         <p>集中查看用户增长、内容生产、审核队列与发布运行状态。</p>
       </div>

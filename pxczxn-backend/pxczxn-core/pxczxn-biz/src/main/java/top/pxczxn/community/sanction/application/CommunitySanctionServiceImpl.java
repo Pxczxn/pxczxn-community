@@ -47,10 +47,10 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         SanctionType type = parse(sanctionType);
         requireUser(targetUserId);
         if (type.requiresExpiry() && (expiresAt == null || !expiresAt.isAfter(now()))) {
-            throw new BusinessException(400, "Timed sanction requires a future expiry");
+            throw new BusinessException(400, "定时处罚必须设置未来的到期时间");
         }
         if (!type.requiresExpiry() && expiresAt != null) {
-            throw new BusinessException(400, "This sanction type must not have an expiry");
+            throw new BusinessException(400, "该处罚类型不支持设置到期时间");
         }
 
         CommunitySanction sanction = new CommunitySanction();
@@ -65,7 +65,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         sanction.setExpiresAt(expiresAt);
         sanction.setStatus("ACTIVE");
         if (mapper.insert(sanction) != 1) {
-            throw new BusinessException(500, "Unable to issue sanction");
+            throw new BusinessException(500, "处罚下发失败");
         }
         event(sanction, "ADMIN", adminId, "ISSUED");
         sync(targetUserId);
@@ -77,7 +77,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
     public SanctionView revoke(Long adminId, Long sanctionId, String note) {
         CommunitySanction sanction = mapper.selectById(requiredId(sanctionId, "sanction"));
         if (sanction == null) {
-            throw new BusinessException(404, "Sanction does not exist");
+            throw new BusinessException(404, "处罚记录不存在");
         }
         expireDueFor(sanction.getTargetUserId());
         sanction = mapper.selectById(sanctionId);
@@ -89,7 +89,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         sanction.setRevokedAt(now());
         sanction.setRevokeNote(normalizeNote(note));
         if (mapper.updateById(sanction) != 1) {
-            throw new BusinessException(409, "Sanction changed concurrently");
+            throw new BusinessException(409, "处罚状态已变更，请刷新后重试");
         }
         event(sanction, "ADMIN", adminId, "REVOKED");
         sync(sanction.getTargetUserId());
@@ -134,7 +134,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         expireDueFor(userId);
         List<CommunitySanction> active = activeRecords(userId);
         if (hasBlockingSanction(active, action)) {
-            throw new BusinessException(403, "Account is restricted from this action");
+            throw new BusinessException(403, "账号当前被限制此操作");
         }
         if (action != SanctionAction.LOGIN && hasType(active, SanctionType.RATE_LIMIT)) {
             LocalDateTime now = now();
@@ -149,11 +149,11 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
                     rateLimits.create(userId, action.name(), now);
                     acquired = true;
                 } catch (DuplicateKeyException exception) {
-                    throw new BusinessException(429, "Account is temporarily rate limited");
+                    throw new BusinessException(429, "操作过于频繁，请稍后再试");
                 }
             }
             if (!acquired) {
-                throw new BusinessException(429, "Account is temporarily rate limited");
+                throw new BusinessException(429, "操作过于频繁，请稍后再试");
             }
         }
     }
@@ -283,7 +283,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
     private CommunityUser requireUser(Long userId) {
         CommunityUser user = users.selectById(requiredId(userId, "user"));
         if (user == null) {
-            throw new BusinessException(404, "User does not exist");
+            throw new BusinessException(404, "用户不存在");
         }
         return user;
     }
@@ -292,20 +292,20 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         try {
             return SanctionType.valueOf(required(rawType, "sanction type").toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            throw new BusinessException(400, "Invalid sanction type");
+            throw new BusinessException(400, "无效的处罚类型");
         }
     }
 
     private static Long requiredId(Long value, String label) {
         if (value == null || value <= 0) {
-            throw new BusinessException(400, "Missing " + label);
+            throw new BusinessException(400, "缺少必填参数");
         }
         return value;
     }
 
     private static String required(String value, String label) {
         if (value == null || value.isBlank()) {
-            throw new BusinessException(400, "Missing " + label);
+            throw new BusinessException(400, "缺少必填参数");
         }
         return value.trim();
     }
@@ -316,7 +316,7 @@ public class CommunitySanctionServiceImpl implements CommunitySanctionService {
         }
         String note = value.trim();
         if (note.length() > 1000) {
-            throw new BusinessException(400, "Reason note is too long");
+            throw new BusinessException(400, "说明文字过长");
         }
         return note;
     }
