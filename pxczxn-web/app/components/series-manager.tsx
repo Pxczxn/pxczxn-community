@@ -41,7 +41,7 @@ export function SeriesManager({
   blogId,
   publicHref,
   scopeNoun = "你",
-  articleSourceHint = "只有已发布的文章可以编排进系列。",
+  articleSourceHint = "只有已发布的文章可以编排进连载。",
 }: SeriesManagerProps) {
   const [series, setSeries] = useState<Series[]>([]);
   const [articles, setArticles] = useState<SeriesChapter[]>([]);
@@ -74,7 +74,7 @@ export function SeriesManager({
         setError("");
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "无法加载系列");
+        if (active) setError(cause instanceof Error ? cause.message : "无法加载连载内容");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -137,7 +137,7 @@ export function SeriesManager({
   if (!blogId || loading) {
     return (
       <div className="series-loading surface" aria-live="polite">
-        <Loader2 className="animate-spin" size={22} /> 正在加载系列…
+        <Loader2 className="animate-spin" size={22} /> 正在加载连载内容…
       </div>
     );
   }
@@ -147,7 +147,7 @@ export function SeriesManager({
       <section className="surface inline-feedback error" role="alert">
         <AlertCircle size={20} />
         <div>
-          <strong>系列暂时无法加载</strong>
+          <strong>连载内容暂时无法加载</strong>
           <p>{error}</p>
         </div>
       </section>
@@ -163,22 +163,22 @@ export function SeriesManager({
       )}
 
       <section className="surface workspace-series-create">
-        <h2>创建系列</h2>
+        <h2>创建连载</h2>
         <div className="workspace-series-create__fields">
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="系列标题，例如：Spring Boot 从入门到项目实战"
+            placeholder="连载标题，例如：Spring Boot 从入门到项目实战"
             maxLength={160}
-            aria-label="系列标题"
+            aria-label="连载标题"
           />
           <textarea
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
-            placeholder="系列简介：读者会先看到这段话，写清楚这个系列讲什么、适合谁读"
+            placeholder="连载简介：读者会先看到这段话，写清楚这部连载讲什么、适合谁读"
             maxLength={1000}
             rows={2}
-            aria-label="系列简介"
+            aria-label="连载简介"
           />
           <select
             value={status}
@@ -204,8 +204,8 @@ export function SeriesManager({
             <BookOpen size={26} />
           </span>
           <div>
-            <h2>还没有系列</h2>
-            <p>创建系列后，可以把{scopeNoun}已发布的文章按顺序编排成完整连载，提交审核通过即可公开。</p>
+            <h2>还没有连载</h2>
+            <p>创建连载后，可以把{scopeNoun}已发布的文章按顺序编排成完整连载，提交审核通过即可公开。</p>
           </div>
         </section>
       ) : (
@@ -278,8 +278,8 @@ function ManagedSeriesCard({
       <header className="workspace-series-card__header">
         {editing ? (
           <div className="workspace-series-card__edit">
-            <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} maxLength={160} aria-label="系列标题" />
-            <textarea value={editSummary} onChange={(event) => setEditSummary(event.target.value)} maxLength={1000} rows={2} aria-label="系列简介" />
+            <input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} maxLength={160} aria-label="连载标题" />
+            <textarea value={editSummary} onChange={(event) => setEditSummary(event.target.value)} maxLength={1000} rows={2} aria-label="连载简介" />
             <select
               value={editStatus}
               onChange={(event) => setEditStatus(event.target.value as Series["serializationStatus"])}
@@ -399,7 +399,7 @@ function ManagedSeriesCard({
       {editable && (
         <div className="workspace-series-card__footer">
           <select
-            aria-label="选择文章加入系列"
+            aria-label="选择文章加入连载"
             defaultValue=""
             disabled={saving || available.length === 0}
             onChange={(event) => {
@@ -426,7 +426,7 @@ function ManagedSeriesCard({
           </button>
         </div>
       )}
-      {!editable && <p className="secondary workspace-series-card__note">该系列正在审核或已经公开，章节调整需等待新的审核流程。</p>}
+      {!editable && <p className="secondary workspace-series-card__note">该连载正在审核或已经公开，章节调整需等待新的审核流程。</p>}
     </section>
   );
 }

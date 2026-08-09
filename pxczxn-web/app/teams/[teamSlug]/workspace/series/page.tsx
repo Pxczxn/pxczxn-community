@@ -15,8 +15,8 @@ export default function WorkspaceSeriesPage() {
     <div className="workspace-series-page">
       <header className="workspace-content-page__header">
         <div>
-          <span className="eyebrow">系列管理</span>
-          <p>将团队文章编排成系列与连载，提交审核后公开展示。</p>
+          <span className="eyebrow">连载管理</span>
+          <p>将团队文章编排成连载，提交审核后公开展示。</p>
         </div>
       </header>
 

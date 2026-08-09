@@ -66,7 +66,7 @@ export default function WorkspaceOverviewPage() {
     { label: "待审核投稿", count: todos.pendingSubmissionCount, href: `submissions`, show: hasReviewPermission },
     { label: "待修改投稿", count: todos.revisionRequiredCount, href: `submissions`, show: true },
     { label: "待处理邀请", count: todos.pendingInvitationCount, href: `members`, show: hasMemberPermission },
-    { label: "待审核系列", count: todos.pendingSeriesReviewCount, href: `series`, show: hasSeriesPermission },
+    { label: "待审核连载", count: todos.pendingSeriesReviewCount, href: `series`, show: hasSeriesPermission },
     { label: "内容审核异常", count: todos.contentRiskCount, href: `content`, show: true },
   ];
   const workspaceHref = (segment: string) => `/teams/${teamSlug}/workspace/${segment}`;
@@ -83,7 +83,7 @@ export default function WorkspaceOverviewPage() {
         <div className="workspace-quick__actions">
           <Link className="secondary-button" href={`/editor/new?blogId=${dashboard.team.blogId}`}><PenLine size={14} /> 写团队文章</Link>
           <Link className="secondary-button" href={workspaceHref("submissions")}><Send size={14} /> 向团队投稿</Link>
-          {hasSeriesPermission && <Link className="ghost-button" href={workspaceHref("series")}><BookOpen size={14} /> 创建系列</Link>}
+          {hasSeriesPermission && <Link className="ghost-button" href={workspaceHref("series")}><BookOpen size={14} /> 创建连载</Link>}
           {hasMemberPermission && <Link className="ghost-button" href={workspaceHref("members")}><UserPlus size={14} /> 邀请成员</Link>}
           {hasSettingsPermission && <Link className="ghost-button" href={workspaceHref("settings")}><Settings2 size={14} /> 编辑团队资料</Link>}
         </div>
@@ -94,7 +94,7 @@ export default function WorkspaceOverviewPage() {
           { label: "公开文章", value: stats.publishedArticleCount, icon: BookOpen },
           { label: "草稿", value: stats.draftArticleCount, icon: PenLine },
           { label: "审核中", value: stats.reviewingArticleCount, icon: Inbox },
-          { label: "系列", value: stats.seriesCount, icon: BookOpen },
+          { label: "连载", value: stats.seriesCount, icon: BookOpen },
           { label: "成员", value: stats.memberCount, icon: Users },
           { label: "关注者", value: stats.followerCount, icon: Users },
           { label: "累计浏览", value: stats.totalViewCount, icon: Eye },
@@ -118,7 +118,7 @@ export default function WorkspaceOverviewPage() {
             <Link className="ghost-button" href={workspaceHref("content")}>全部内容 <ArrowUpRight size={14} /></Link>
           </header>
           {recentArticles.length === 0 ? (
-            <p className="workspace-panel__empty">团队还没有文章，可以投稿或创建系列开始内容建设。</p>
+            <p className="workspace-panel__empty">团队还没有文章，可以投稿或创建连载开始内容建设。</p>
           ) : (
             <ul className="workspace-article-list">
               {recentArticles.map((article) => (

@@ -43,7 +43,7 @@ export function MyTeamsTab({ teams }: { teams: MyTeam[] }) {
               <div className="my-team-card__stats" aria-label="团队数据">
                 <span><Users size={13} /> {team.memberCount} 成员</span>
                 <span><BookOpen size={13} /> {team.articleCount} 文章</span>
-                <span><FileText size={13} /> {team.seriesCount} 系列</span>
+                <span><FileText size={13} /> {team.seriesCount} 连载</span>
                 <span><Inbox size={13} /> {formatCount(team.followerCount)} 关注</span>
               </div>
 

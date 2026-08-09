@@ -49,7 +49,7 @@ export default function SeriesPage() {
         setFollowing(followingList);
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "无法加载系列");
+        if (active) setError(cause instanceof Error ? cause.message : "无法加载连载");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -85,22 +85,22 @@ export default function SeriesPage() {
 
   return (
     <>
-      <UserTopbar title="系列" />
+      <UserTopbar title="书架" />
       <main className="series-page page-shell">
         {/* ── 紧凑标题行（弱化 Hero） ── */}
         <section className="series-page__header">
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>
               <LibraryBig size={20} style={{ verticalAlign: -3, marginRight: 6 }} />
-              连载系列
+              书架
             </h1>
             <span className="muted" style={{ fontSize: "0.85rem" }}>
-              {summary.series} 个系列 · {summary.chapters} 章 · {summary.ongoing} 个连载中
+              {summary.series} 部连载 · {summary.chapters} 章 · {summary.ongoing} 部连载中
             </span>
           </div>
           {signedIn && (
             <Link className="ghost-button" href="/me/series" style={{ fontSize: "0.85rem", whiteSpace: "nowrap" }}>
-              管理我的系列 <ArrowRight size={14} />
+              管理连载 <ArrowRight size={14} />
             </Link>
           )}
         </section>
@@ -127,7 +127,7 @@ export default function SeriesPage() {
               <h2>
                 <Users size={20} /> 我的追更
               </h2>
-              <span className="series-toolbar__count">共 {following.length} 个系列</span>
+              <span className="series-toolbar__count">共 {following.length} 部连载</span>
             </div>
             <div className="series-rail__track">
               {following.map((item) => (
@@ -149,12 +149,12 @@ export default function SeriesPage() {
               <span className="eyebrow">
                 <Play size={15} /> 正在连载
               </span>
-              <h2>连载中 · {ongoingSeries.length} 个</h2>
+              <h2>连载中 · {ongoingSeries.length} 部</h2>
             </div>
           </section>
         )}
         {!loading && ongoingSeries.length > 0 && (
-          <section className="series-shelf" aria-label="连载中的系列">
+          <section className="series-shelf" aria-label="连载中的作品">
             {ongoingSeries.map((item) => (
               <SeriesCard item={item} key={`ongoing-${item.id}`} />
             ))}
@@ -168,24 +168,24 @@ export default function SeriesPage() {
               <span className="eyebrow">
                 <BookOpenCheck size={15} /> 最近完结
               </span>
-              <h2>已完结 · {completedSeries.length} 个</h2>
+              <h2>已完结 · {completedSeries.length} 部</h2>
             </div>
           </section>
         )}
         {!loading && completedSeries.length > 0 && (
-          <section className="series-shelf" aria-label="已完结的系列">
+          <section className="series-shelf" aria-label="已完结的连载">
             {completedSeries.map((item) => (
               <SeriesCard item={item} key={`completed-${item.id}`} />
             ))}
           </section>
         )}
 
-        <section className="series-toolbar" aria-label="系列列表说明">
+        <section className="series-toolbar" aria-label="连载列表说明">
           <div>
             <span className="eyebrow">
               <ListTree size={15} /> 按最近更新排序
             </span>
-            <h2>全部系列</h2>
+            <h2>全部连载</h2>
           </div>
           <div className="series-filters">
             {(
@@ -207,13 +207,13 @@ export default function SeriesPage() {
                 </button>
               );
             })}
-            {!loading && !error && <span className="series-toolbar__count">共 {filteredSeries.length} 个公开系列</span>}
+            {!loading && !error && <span className="series-toolbar__count">共 {filteredSeries.length} 部公开连载</span>}
           </div>
         </section>
 
         {loading && (
           <div className="series-loading surface" aria-busy="true">
-            <Loader2 className="animate-spin" size={22} /> 正在整理连载系列…
+            <Loader2 className="animate-spin" size={22} /> 正在整理书架…
           </div>
         )}
         {error && (
@@ -227,7 +227,7 @@ export default function SeriesPage() {
               <BookOpen size={28} />
             </span>
             <div>
-              <h2>{filter === "ALL" ? "还没有公开系列" : "未找到匹配条件的系列"}</h2>
+              <h2>{filter === "ALL" ? "还没有公开连载" : "未找到匹配条件的连载"}</h2>
               <p>
                 {filter === "ALL"
                   ? "个人博客和团队博客发布并通过审核的连载都会展示在这里。你可以先在发现页阅读已经公开的文章。"
@@ -240,7 +240,7 @@ export default function SeriesPage() {
           </section>
         )}
         {!loading && !error && filteredSeries.length > 0 && (
-          <section className="series-shelf" aria-label="公开文章系列">
+          <section className="series-shelf" aria-label="公开连载作品">
             {filteredSeries.map((item) => (
               <SeriesCard item={item} key={item.id} />
             ))}
@@ -314,7 +314,7 @@ function SeriesCard({ item }: { item: Series }) {
         <BookOpen size={22} />
       </span>
       <h3>{item.title}</h3>
-      <p>{item.summary || "这个系列暂未添加简介。"}</p>
+      <p>{item.summary || "这部连载暂未添加简介。"}</p>
       <div className="series-progress series-progress--slim" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
         <span style={{ width: `${percent}%` }} />
       </div>
@@ -332,7 +332,7 @@ function SeriesCard({ item }: { item: Series }) {
           <span className="muted" style={{ fontSize: "0.78rem", marginRight: 6 }}>
             <Clock size={12} /> {formatRelativeTime(item.updatedAt)}
           </span>
-          查看系列 <ArrowRight size={15} />
+          查看连载 <ArrowRight size={15} />
         </span>
       </footer>
     </Link>

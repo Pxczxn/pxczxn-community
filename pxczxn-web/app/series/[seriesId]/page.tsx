@@ -42,7 +42,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
         setLastReadArticleId(value.viewerLastReadArticleId);
       })
       .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "无法加载系列详情");
+        if (active) setError(cause instanceof Error ? cause.message : "无法加载连载详情");
       });
     return () => {
       active = false;
@@ -68,7 +68,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
   if (error && !series) {
     return (
       <>
-        <UserTopbar title="系列详情" />
+        <UserTopbar title="连载详情" />
         <main className="series-page page-shell">
           <BackLink />
           <div className="surface inline-feedback error" role="alert" style={{ padding: 24 }}>
@@ -82,11 +82,11 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
   if (!series) {
     return (
       <>
-        <UserTopbar title="系列详情" />
+        <UserTopbar title="连载详情" />
         <main className="series-page page-shell">
           <BackLink />
           <div className="series-loading surface" aria-busy="true">
-            <Loader2 className="animate-spin" size={24} /> 正在加载系列详情…
+            <Loader2 className="animate-spin" size={24} /> 正在加载连载详情…
           </div>
         </main>
       </>
@@ -103,7 +103,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
 
   return (
     <>
-      <UserTopbar title="系列详情" />
+      <UserTopbar title="连载详情" />
       <main className="series-page page-shell">
         <BackLink />
 
@@ -125,7 +125,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
                 </span>
               </div>
               <h1>{series.title}</h1>
-              <p>{series.summary || "这个系列暂未添加简介。"}</p>
+              <p>{series.summary || "这部连载暂未添加简介。"}</p>
 
               <div className="series-detail-owner">
                 {creatorAvatar ? (
@@ -176,7 +176,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
                       </>
                     ) : (
                       <>
-                        <BellRing size={16} /> 追更这个系列
+                        <BellRing size={16} /> 追更这部连载
                       </>
                     )}
                   </button>
@@ -252,7 +252,7 @@ function BackLink() {
   return (
     <div>
       <Link className="ghost-button" href="/series">
-        <ArrowLeft size={16} /> 返回连载系列
+        <ArrowLeft size={16} /> 返回书架
       </Link>
     </div>
   );

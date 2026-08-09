@@ -254,7 +254,7 @@ export function SocialCenterPage() {
         <nav className="tabs profile-tabs" aria-label="个人关系和收藏">
           {([
             ["articles", "文章", BookOpen],
-            ["series", "系列", Layers3],
+            ["series", "连载", Layers3],
             ["moments", "动态", Send],
           ] as const).map(([key, label, Icon]) => (
             <button
@@ -410,7 +410,7 @@ function CreatorWorkspace({
     <div className="creator-workspace">
       <section className="surface creator-feed">
         {activeTab === "articles" && <ArticleFeed articles={articles} />}
-        {activeTab === "series" && <EmptyState title="还没有创建系列" description="将有关联的文章整理为系列，方便读者持续阅读。" />}
+        {activeTab === "series" && <EmptyState title="还没有创建连载" description="将有关联的文章整理为连载，方便读者持续阅读。" />}
         {activeTab === "moments" && <MomentFeed favorites={favorites} likes={likes} moments={moments} />}
       </section>
       <aside className="creator-sidebar">
@@ -428,7 +428,7 @@ function CreatorWorkspace({
           <div className="creator-quick-actions">
             <Link href="/editor/new"><PenLine size={16} /> 写文章</Link>
             <Link href="/moments"><MessageCircle size={16} /> 发布动态</Link>
-            <Link href="/series"><Layers3 size={16} /> 新建系列</Link>
+            <Link href="/series"><Layers3 size={16} /> 创建连载</Link>
           </div>
         </section>
         <section className="surface creator-side-card creator-recent-card">

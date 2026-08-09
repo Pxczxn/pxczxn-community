@@ -11,13 +11,13 @@ const types: Array<{ value: UnifiedSearchType; label: string; Icon: typeof Searc
   { value: "ARTICLE", label: "文章", Icon: BookOpen },
   { value: "MOMENT", label: "动态", Icon: Orbit },
   { value: "BLOG", label: "博客", Icon: Users },
-  { value: "SERIES", label: "系列", Icon: Rss },
+  { value: "SERIES", label: "连载", Icon: Rss },
   { value: "TAG", label: "标签", Icon: Tag },
   { value: "USER", label: "用户", Icon: Users },
 ];
 
 const labels: Record<UnifiedSearchResult["type"], string> = {
-  ARTICLE: "文章", MOMENT: "动态", BLOG: "博客", SERIES: "系列", TAG: "标签", USER: "用户",
+  ARTICLE: "文章", MOMENT: "动态", BLOG: "博客", SERIES: "连载", TAG: "标签", USER: "用户",
 };
 
 export function SearchPage() {
@@ -55,7 +55,7 @@ export function SearchPage() {
           <h1>找到你关心的内容</h1>
           <form className="search-input-group" onSubmit={submit}>
             <Search size={20} style={{ color: "var(--text-tertiary)" }} />
-            <input aria-label="搜索关键词" maxLength={80} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索文章、动态、博客、系列、标签或用户..." value={keyword} />
+            <input aria-label="搜索关键词" maxLength={80} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索文章、动态、博客、连载、标签或用户..." value={keyword} />
             <button className="primary-button" type="submit" style={{ padding: "8px 20px" }}>搜索</button>
           </form>
           <p className="secondary" style={{ fontSize: 13, margin: 0 }}>只展示公开、仍可访问的内容；搜索结果中的匹配文本均经过安全处理。</p>

@@ -31,7 +31,7 @@ type BlogTab = "articles" | "series" | "about";
 
 const BLOG_TABS: Array<{ key: BlogTab; label: string }> = [
   { key: "articles", label: "文章" },
-  { key: "series", label: "系列" },
+  { key: "series", label: "连载" },
   { key: "about", label: "关于" },
 ];
 
@@ -118,7 +118,7 @@ export function PublicBlogPage({ slug }: { slug: string }) {
       .catch((cause: unknown) => {
         if (!active) return;
         setSeries([]);
-        setSeriesError(cause instanceof Error ? cause.message : "系列加载失败");
+        setSeriesError(cause instanceof Error ? cause.message : "连载加载失败");
       });
     return () => {
       active = false;
@@ -360,7 +360,7 @@ function BlogSeriesPanel({
   if (series === null) {
     return (
       <div className="series-loading surface" aria-busy="true">
-        <LoaderCircle className="spin" size={20} /> 正在加载系列…
+        <LoaderCircle className="spin" size={20} /> 正在加载连载…
       </div>
     );
   }
@@ -376,8 +376,8 @@ function BlogSeriesPanel({
   if (series.length === 0) {
     return (
       <EmptyState
-        title="还没有公开系列"
-        description={isMine ? "把已发布的文章编排成连载，通过审核后就会展示在这里。" : "作者还没有公开连载系列。"}
+        title="还没有公开连载"
+        description={isMine ? "把已发布的文章编排成连载，通过审核后就会展示在这里。" : "作者还没有公开连载。"}
       />
     );
   }
@@ -386,7 +386,7 @@ function BlogSeriesPanel({
     <div className="team-portal-series-grid">
       {isMine && (
         <Link className="ghost-button" href="/me/series">
-          管理我的系列 <ArrowUpRight size={14} />
+          管理连载 <ArrowUpRight size={14} />
         </Link>
       )}
       {series.map((item) => {
@@ -417,7 +417,7 @@ function BlogSeriesPanel({
             )}
             {item.chapterCount > 0 && (
               <Link className="ghost-button" href={`/series/${item.id}`}>
-                查看系列 <ArrowUpRight size={14} />
+                查看连载 <ArrowUpRight size={14} />
               </Link>
             )}
           </div>

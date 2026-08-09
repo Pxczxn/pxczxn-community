@@ -343,7 +343,7 @@ function ChapterNav({ nav }: { nav: { series: ArticleSeriesContext; prev: Series
   if (!nav) return null;
   const { series, prev, next } = nav;
   return (
-    <nav className="article-chapter-nav surface" aria-label="系列章节导航">
+    <nav className="article-chapter-nav surface" aria-label="连载章节导航">
       {prev ? (
         <Link className="article-chapter-nav__side" href={`/articles/${prev.articleId}`}>
           <ChevronLeft size={16} />

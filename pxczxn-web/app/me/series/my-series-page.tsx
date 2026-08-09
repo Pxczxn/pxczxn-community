@@ -39,10 +39,10 @@ export function MySeriesPage() {
   if (loading) {
     return (
       <>
-        <UserTopbar title="我的系列" />
+        <UserTopbar title="我的连载" />
         <main className="profile-page page-shell profile-state" aria-busy="true">
           <LoaderCircle className="spin" size={28} />
-          <strong>正在加载你的系列…</strong>
+          <strong>正在加载你的连载…</strong>
         </main>
       </>
     );
@@ -51,10 +51,10 @@ export function MySeriesPage() {
   if (error || !blog) {
     return (
       <>
-        <UserTopbar title="我的系列" />
+        <UserTopbar title="我的连载" />
         <main className="profile-page page-shell profile-state error">
           <AlertTriangle size={34} />
-          <h1>系列管理暂时无法打开</h1>
+          <h1>连载管理暂时无法打开</h1>
           <p>{error || "没有找到你的个人博客。"}</p>
           <Link className="ghost-button" href="/login">
             前往登录
@@ -66,16 +66,16 @@ export function MySeriesPage() {
 
   return (
     <>
-      <UserTopbar title="我的系列" />
+      <UserTopbar title="我的连载" />
       <main className="series-page page-shell">
         <header className="workspace-content-page__header">
           <div>
             <span className="eyebrow">
-              <LibraryBig size={15} /> 我的系列
+              <LibraryBig size={15} /> 我的连载
             </span>
             <h1>把零散的文章，串成一条读得下去的线</h1>
             <p>
-              系列属于你的个人博客「{blog.name}」。编排好章节并通过审核后，读者可以在
+              连载属于你的个人博客「{blog.name}」。编排好章节并通过审核后，读者可以在
               <Link href={`/${encodeURIComponent(blog.slug)}`}> 你的博客主页 </Link>
               和公开的连载书架上按顺序阅读。
             </p>

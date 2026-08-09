@@ -111,7 +111,7 @@ function FeedListItem({ item }: { item: FollowingFeedItem }) {
     item.itemType === "ARTICLE" || item.itemType === "TAG_ARTICLE"
       ? "文章"
       : item.itemType === "SERIES"
-        ? "系列"
+        ? "连载"
         : "动态";
 
   return (
@@ -341,7 +341,7 @@ export function HomePage() {
                 注册即拥有个人博客
               </h1>
               <p style={{ margin: "12px 0 0", fontSize: 16, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                专为技术与思想创作者设计的公开社区。写作、连载、组建团队系列，这里是沉淀长远价值的精神家园。
+                专为技术与思想创作者设计的公开社区。写作、连载、组建团队，这里是沉淀长远价值的精神家园。
               </p>
               <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
                 <Link className="primary-button" href="/login">
@@ -369,9 +369,9 @@ export function HomePage() {
               <span style={{ width: 44, height: 44, borderRadius: 10, background: "var(--primary-soft)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--primary)" }}>
                 <LibraryBig size={22} />
               </span>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>团队协作与连载系列</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>团队协作与连载</h3>
               <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                按章节顺序搭建深度系列与技术书架，方便读者循序渐进地阅读。
+                按章节顺序搭建深度连载与技术书架，方便读者循序渐进地阅读。
               </p>
             </Link>
             <Link href="/moments" className="surface" style={{ padding: 24, borderRadius: 14, textDecoration: "none", color: "var(--text-primary)", display: "flex", flexDirection: "column", gap: 10, transition: "box-shadow 0.15s" }}>
@@ -417,7 +417,7 @@ export function HomePage() {
                 <section>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                     <Flame size={18} style={{ color: "var(--warning)" }} />
-                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>热门系列</h2>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>热门连载</h2>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
                     {hotSeries.map((item) => (
@@ -449,7 +449,7 @@ export function HomePage() {
               )}
 
               {recommendedArticles.length === 0 && hotSeries.length === 0 && (
-                <EmptyState title="社区内容即将上线" description="精彩的文章和系列正在路上，敬请期待。" />
+                <EmptyState title="社区内容即将上线" description="精彩的文章和连载正在路上，敬请期待。" />
               )}
             </div>
           )}
@@ -479,7 +479,7 @@ export function HomePage() {
             <Orbit size={15} /> 发布动态
           </Link>
           <Link className="ghost-button" href="/me/series">
-            <LibraryBig size={15} /> 我的系列
+            <LibraryBig size={15} /> 我的连载
           </Link>
         </div>
 
@@ -647,7 +647,7 @@ export function HomePage() {
                     href="/me/series"
                     style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 13, textDecoration: "none", color: "var(--text-primary)", borderRadius: 6 }}
                   >
-                    <LibraryBig size={15} style={{ color: "var(--text-tertiary)" }} /> 我的系列
+                    <LibraryBig size={15} style={{ color: "var(--text-tertiary)" }} /> 我的连载
                   </Link>
                   <Link
                     href="/moments"

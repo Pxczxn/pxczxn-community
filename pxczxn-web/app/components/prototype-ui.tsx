@@ -38,7 +38,7 @@ const primaryNavItems = [
   { href: "/discover", label: "发现", Icon: Compass },
   { href: "/articles", label: "文章", Icon: FileText },
   { href: "/moments", label: "动态", Icon: Orbit },
-  { href: "/series", label: "系列", Icon: Sparkles },
+  { href: "/series", label: "书架", Icon: Sparkles },
   { href: "/teams", label: "团队", Icon: UsersRound },
 ] as const;
 

@@ -129,7 +129,7 @@ export default function WorkspaceContentPage() {
                 <span title="浏览"><Eye size={12} /> {article.viewCount}</span>
                 <span title="点赞"><ThumbsUp size={12} /> {article.likeCount}</span>
                 <span title="评论"><MessageSquare size={12} /> {article.commentCount}</span>
-                {article.seriesTitle && <span className="chip content-series" title={`所属系列：${article.seriesTitle}`}>{article.seriesTitle}</span>}
+                {article.seriesTitle && <span className="chip content-series" title={`所属连载：${article.seriesTitle}`}>{article.seriesTitle}</span>}
                 <span className={`chip content-status is-${article.publishStatus.toLowerCase()}`}>
                   {PUBLISH_STATUS_LABELS[article.publishStatus] || article.publishStatus}
                 </span>

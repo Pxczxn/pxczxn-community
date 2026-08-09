@@ -26,7 +26,7 @@ type PortalTab = "home" | "articles" | "series" | "members" | "about";
 const TABS: Array<{ key: PortalTab; label: string }> = [
   { key: "home", label: "主页" },
   { key: "articles", label: "文章" },
-  { key: "series", label: "系列" },
+  { key: "series", label: "连载" },
   { key: "members", label: "成员" },
   { key: "about", label: "关于" },
 ];
@@ -277,11 +277,11 @@ export default function TeamDetailPage() {
         {tab === "series" && (
           <section className="surface team-portal-panel">
             <header className="workspace-panel__header">
-              <h2>系列</h2>
-              <span className="secondary">仅展示公开且通过审核的系列</span>
+              <h2>连载</h2>
+              <span className="secondary">仅展示公开且通过审核的连载</span>
             </header>
             {series.length === 0 ? (
-              <p className="workspace-panel__empty">该团队还没有公开系列。</p>
+              <p className="workspace-panel__empty">该团队还没有公开连载。</p>
             ) : (
               <div className="team-portal-series-grid">
                 {series.map((item) => (
@@ -293,7 +293,7 @@ export default function TeamDetailPage() {
                     </p>
                     {item.chapterCount > 0 && (
                       <Link className="ghost-button" href={`/series/${item.id}`}>
-                        查看系列 <ArrowUpRight size={14} />
+                        查看连载 <ArrowUpRight size={14} />
                       </Link>
                     )}
                   </div>
@@ -363,7 +363,7 @@ export default function TeamDetailPage() {
                 <div><strong>{team.team.articleCount}</strong><span>公开文章</span></div>
                 <div><strong>{team.members.length}</strong><span>团队成员</span></div>
                 <div><strong>{formatCount(Number(team.team.followerCount))}</strong><span>关注者</span></div>
-                <div><strong>{series.length}</strong><span>公开系列</span></div>
+                <div><strong>{series.length}</strong><span>公开连载</span></div>
               </div>
               <p className="muted">
                 团队文章保留真实作者归属。

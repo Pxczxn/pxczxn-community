@@ -32,7 +32,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { key: "OVERVIEW", label: "概览", href: "/workspace", icon: LayoutDashboard, capability: "OVERVIEW" },
   { key: "ARTICLES", label: "内容", href: "/workspace/content", icon: FileText, capability: "ARTICLES" },
-  { key: "SERIES", label: "系列", href: "/workspace/series", icon: BookOpen, capability: "SERIES" },
+  { key: "SERIES", label: "连载", href: "/workspace/series", icon: BookOpen, capability: "SERIES" },
   { key: "SUBMISSIONS", label: "投稿", href: "/workspace/submissions", icon: Send },
   { key: "MEMBERS", label: "成员", href: "/workspace/members", icon: Users, capability: "MEMBERS" },
   { key: "SETTINGS", label: "设置", href: "/workspace/settings", icon: Settings, capability: "SETTINGS" },

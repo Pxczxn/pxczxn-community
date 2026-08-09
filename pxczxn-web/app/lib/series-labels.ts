@@ -33,7 +33,7 @@ export const BLOG_TYPE_LABELS: Record<string, string> = {
 };
 
 export function serializationLabel(value: string | null | undefined): string {
-  return (value && SERIALIZATION_LABELS[value]) || "系列";
+  return (value && SERIALIZATION_LABELS[value]) || "连载";
 }
 
 export function seriesReviewLabel(value: string | null | undefined): string {
