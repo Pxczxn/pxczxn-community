@@ -53,6 +53,20 @@ test("maps available content and interactions to the community API", async () =>
   }
 });
 
+test("does not display unconfirmed interaction updates as persisted", async () => {
+  const [context, moments] = await Promise.all([
+    source("app/prototype/context/AppContext.tsx"),
+    source("app/prototype/components/views/MomentsView.tsx"),
+  ]);
+
+  assert.match(context, /communityApi\.setLike\([\s\S]*?\.then\(\(relationship\) =>/);
+  assert.match(context, /communityApi\.setFavorite\([\s\S]*?\.then\(\(relationship\) =>/);
+  assert.match(context, /communityApi\.followSeries\(seriesId\)[\s\S]*?\.then\(\(readerState\) =>/);
+  assert.match(context, /communityApi\.unfollowSeries\(seriesId\)[\s\S]*?\.then\(\(readerState\) =>/);
+  assert.match(context, /addMoment: \(content: string, type\?: Moment\['momentType'\], link\?: string\) => Promise<boolean>/);
+  assert.match(moments, /const published = await addMoment/);
+});
+
 test("does not keep supported community actions as prototype-only state", async () => {
   const [context, api] = await Promise.all([
     source("app/prototype/context/AppContext.tsx"),

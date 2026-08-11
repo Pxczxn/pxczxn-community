@@ -52,12 +52,14 @@ export const MomentsView: React.FC = () => {
     return () => { cancelled = true; };
   }, [activeMoment?.id]);
 
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMomentText.trim()) return;
-    addMoment(newMomentText.trim(), momentType, linkInput || undefined);
-    setNewMomentText('');
-    setLinkInput('');
+    const published = await addMoment(newMomentText.trim(), momentType, linkInput || undefined);
+    if (published) {
+      setNewMomentText('');
+      setLinkInput('');
+    }
   };
 
   const handleComment = async (event: React.FormEvent) => {

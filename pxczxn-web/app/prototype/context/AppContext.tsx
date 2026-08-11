@@ -70,7 +70,7 @@ interface AppContextType {
   favoriteMoment: (momentId: string) => void;
   toggleFollowSeries: (seriesId: string) => void;
   toggleFollowTeam: (teamId: string) => void;
-  addMoment: (content: string, type?: Moment['momentType'], link?: string) => void;
+  addMoment: (content: string, type?: Moment['momentType'], link?: string) => Promise<boolean>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   markAllConversationsRead: () => void;
@@ -443,106 +443,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Article Actions
   const likeArticle = (articleId: string) => {
-    setArticles((prev) =>
-      prev.map((art) => {
-        if (art.id === articleId) {
-          const isLiked = !art.isLiked;
-          return {
-            ...art,
-            isLiked,
-            likesCount: isLiked ? art.likesCount + 1 : art.likesCount - 1,
-          };
-        }
-        return art;
-      })
-    );
     const target = articles.find((article) => article.id === articleId);
-    if (target) void communityApi.setLike('ARTICLE', articleId, !target.isLiked).catch(() => undefined);
+    if (!target) return;
+    void communityApi.setLike('ARTICLE', articleId, !target.isLiked).then((relationship) => {
+      setArticles((prev) => prev.map((article) => article.id === articleId
+        ? { ...article, isLiked: relationship.liked, likesCount: relationship.likeCount }
+        : article));
+    }).catch(() => undefined);
   };
 
   const favoriteArticle = (articleId: string) => {
-    setArticles((prev) =>
-      prev.map((art) => {
-        if (art.id === articleId) {
-          const isFavorited = !art.isFavorited;
-          return {
-            ...art,
-            isFavorited,
-            favoritesCount: isFavorited ? art.favoritesCount + 1 : art.favoritesCount - 1,
-          };
-        }
-        return art;
-      })
-    );
     const target = articles.find((article) => article.id === articleId);
-    if (target) void communityApi.setFavorite('ARTICLE', articleId, !target.isFavorited).catch(() => undefined);
+    if (!target) return;
+    void communityApi.setFavorite('ARTICLE', articleId, !target.isFavorited).then((relationship) => {
+      setArticles((prev) => prev.map((article) => article.id === articleId
+        ? { ...article, isFavorited: relationship.favorited, favoritesCount: relationship.favoriteCount }
+        : article));
+    }).catch(() => undefined);
   };
 
   // Moment Actions
   const likeMoment = (momentId: string) => {
-    setMoments((prev) =>
-      prev.map((m) => {
-        if (m.id === momentId) {
-          const isLiked = !m.isLiked;
-          return {
-            ...m,
-            isLiked,
-            likesCount: isLiked ? m.likesCount + 1 : m.likesCount - 1,
-          };
-        }
-        return m;
-      })
-    );
     const target = moments.find((moment) => moment.id === momentId);
-    if (target) void communityApi.setLike('MOMENT', momentId, !target.isLiked).catch(() => undefined);
+    if (!target) return;
+    void communityApi.setLike('MOMENT', momentId, !target.isLiked).then((relationship) => {
+      setMoments((prev) => prev.map((moment) => moment.id === momentId
+        ? { ...moment, isLiked: relationship.liked, likesCount: relationship.likeCount }
+        : moment));
+    }).catch(() => undefined);
   };
 
   const favoriteMoment = (momentId: string) => {
-    setMoments((prev) =>
-      prev.map((m) => {
-        if (m.id === momentId) {
-          const isFavorited = !m.isFavorited;
-          return {
-            ...m,
-            isFavorited,
-            favoritesCount: isFavorited ? m.favoritesCount + 1 : m.favoritesCount - 1,
-          };
-        }
-        return m;
-      })
-    );
     const target = moments.find((moment) => moment.id === momentId);
-    if (target) void communityApi.setFavorite('MOMENT', momentId, !target.isFavorited).catch(() => undefined);
+    if (!target) return;
+    void communityApi.setFavorite('MOMENT', momentId, !target.isFavorited).then((relationship) => {
+      setMoments((prev) => prev.map((moment) => moment.id === momentId
+        ? { ...moment, isFavorited: relationship.favorited, favoritesCount: relationship.favoriteCount }
+        : moment));
+    }).catch(() => undefined);
   };
 
-  const addMoment = (content: string, type: Moment['momentType'] = 'TEXT', linkUrl?: string) => {
-    if (!user) return;
-    void communityApi.publishMoment({ momentType: type, textContent: content, linkUrl, visibility: 'PUBLIC' })
-      .then((result) => setMoments((prev) => [toPrototypeMoment(result.moment), ...prev]))
-      .catch(() => undefined);
+  const addMoment = async (content: string, type: Moment['momentType'] = 'TEXT', linkUrl?: string) => {
+    if (!user) return false;
+    try {
+      const result = await communityApi.publishMoment({ momentType: type, textContent: content, linkUrl, visibility: 'PUBLIC' });
+      setMoments((prev) => [toPrototypeMoment(result.moment), ...prev]);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   // Series Actions
   const toggleFollowSeries = (seriesId: string) => {
-    setSeriesList((prev) =>
-      prev.map((s) => {
-        if (s.id === seriesId) {
-          const isFollowing = !s.isFollowing;
-          return {
-            ...s,
-            isFollowing,
-            followersCount: isFollowing ? s.followersCount + 1 : s.followersCount - 1,
-          };
-        }
-        return s;
-      })
-    );
     const target = seriesList.find((series) => series.id === seriesId);
     if (target) {
       void (target.isFollowing
         ? communityApi.unfollowSeries(seriesId)
         : communityApi.followSeries(seriesId)
-      ).catch(() => undefined);
+      ).then((readerState) => {
+        setSeriesList((prev) => prev.map((series) => series.id === seriesId
+          ? { ...series, isFollowing: readerState.following, followersCount: readerState.followerCount }
+          : series));
+      }).catch(() => undefined);
     }
   };
 
