@@ -100,6 +100,7 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(teamDetail, /communityApi\.createTeamSubmission/);
   assert.match(workspace, /communityApi\.teamSubmissions/);
   assert.match(workspace, /communityApi\.decideTeamSubmission/);
+  assert.match(workspace, /communityApi\.updateTeamSettings/);
   assert.match(settings, /communityApi\.updateProfile/);
   assert.match(settings, /communityApi\.updateMyBlog/);
   assert.match(search, /communityApi\.search/);

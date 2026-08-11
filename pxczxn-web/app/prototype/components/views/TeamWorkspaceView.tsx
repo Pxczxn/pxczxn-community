@@ -34,6 +34,7 @@ export const TeamWorkspaceView: React.FC = () => {
   const team = teams.find((t) => t.slug === slug) || teams[0];
 
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CONTENT' | 'SERIES' | 'SUBMISSIONS' | 'MEMBERS' | 'SETTINGS'>('OVERVIEW');
+  const [teamSettingsSaved, setTeamSettingsSaved] = useState(false);
 
   // Local state for submissions
   type WorkspaceSubmission = TeamSubmission & { author: string; submittedAt: string };
@@ -77,6 +78,21 @@ export const TeamWorkspaceView: React.FC = () => {
       } : item));
     } catch {
       // Keep the persisted value visible when the server rejects a stale or unauthorized action.
+    }
+  };
+
+  const handleTeamSettingsSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!team) return;
+    const form = new FormData(event.currentTarget);
+    try {
+      await communityApi.updateTeamSettings(team.id, {
+        name: team.name,
+        contentDirection: String(form.get('contentDirection') || ''),
+      });
+      setTeamSettingsSaved(true);
+    } catch {
+      setTeamSettingsSaved(false);
     }
   };
 
@@ -279,13 +295,14 @@ export const TeamWorkspaceView: React.FC = () => {
       {activeTab === 'SETTINGS' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 space-y-3 text-xs">
           <h2 className="text-xs font-bold text-slate-900 dark:text-white">团队 Portal 与 SEO 设置</h2>
-          <div className="space-y-2 max-w-md">
+          <form onSubmit={handleTeamSettingsSave} className="space-y-2 max-w-md">
             <div>
               <label className="block text-slate-500 mb-1">团队 Content Direction</label>
-              <input type="text" defaultValue={team?.contentDirection} className="w-full p-2 bg-slate-100 dark:bg-slate-800 border rounded-xl" />
+              <input name="contentDirection" type="text" defaultValue={team?.contentDirection} className="w-full p-2 bg-slate-100 dark:bg-slate-800 border rounded-xl" />
             </div>
-            <button className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-xl">保存设置</button>
-          </div>
+            <button type="submit" className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-xl">保存设置</button>
+            {teamSettingsSaved && <p className="text-emerald-600">设置已保存</p>}
+          </form>
         </div>
       )}
 
