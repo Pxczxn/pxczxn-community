@@ -338,6 +338,10 @@ export const SettingsView: React.FC = () => {
       setDefaultCommentScope(stringValue(settings.defaultCommentScope, 'EVERYONE') as typeof defaultCommentScope);
       setAllowRepost(booleanValue(settings.allowRepost, true));
       setKeywords(Array.isArray(settings.mutedKeywords) ? settings.mutedKeywords.filter((item): item is string => typeof item === 'string') : []);
+      setLocation(stringValue(settings.location, user?.location || ''));
+      setWebsite(stringValue(settings.website, user?.website || ''));
+      setGithubUrl(stringValue(settings.githubUrl, ''));
+      setBilibiliUrl(stringValue(settings.bilibiliUrl, ''));
       setPreferencesReady(true);
     }).catch(() => {
       if (!cancelled) setPreferencesReady(true);
@@ -355,10 +359,11 @@ export const SettingsView: React.FC = () => {
         fontSize, uiDensity, codeTheme, reduceMotion,
         defaultHomeFeed, defaultArticleSort, defaultPostVisibility,
         defaultCommentScope, allowRepost, mutedKeywords: keywords,
+        location, website, githubUrl, bilibiliUrl,
       }).catch(() => undefined);
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [allowRecommendation, allowRepost, allowSearchIndex, bookmarksPrivacy, codeTheme, defaultArticleSort, defaultCommentScope, defaultHomeFeed, defaultPostVisibility, dndMode, emailFrequency, fontSize, followingPrivacy, keywords, notifMatrix, preferencesReady, readingStatusPrivacy, reduceMotion, uiDensity, userId, whoCanMention, whoCanMessage]);
+  }, [allowRecommendation, allowRepost, allowSearchIndex, bilibiliUrl, bookmarksPrivacy, codeTheme, defaultArticleSort, defaultCommentScope, defaultHomeFeed, defaultPostVisibility, dndMode, emailFrequency, fontSize, followingPrivacy, githubUrl, keywords, location, notifMatrix, preferencesReady, readingStatusPrivacy, reduceMotion, uiDensity, userId, website, whoCanMention, whoCanMessage]);
 
   useEffect(() => {
     let cancelled = false;

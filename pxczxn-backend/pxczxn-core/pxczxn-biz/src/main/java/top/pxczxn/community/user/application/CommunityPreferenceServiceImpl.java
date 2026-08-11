@@ -28,7 +28,8 @@ public class CommunityPreferenceServiceImpl implements CommunityPreferenceServic
             "whoCanMessage", "whoCanMention", "allowSearchIndex", "allowRecommendation",
             "fontSize", "uiDensity", "codeTheme", "reduceMotion",
             "defaultHomeFeed", "defaultArticleSort", "defaultPostVisibility",
-            "defaultCommentScope", "allowRepost", "mutedKeywords"
+            "defaultCommentScope", "allowRepost", "mutedKeywords",
+            "location", "website", "githubUrl", "bilibiliUrl"
     );
 
     private final CommunityUserPreferenceMapper preferenceMapper;
