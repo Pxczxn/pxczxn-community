@@ -8,7 +8,6 @@ import {
   EyeOff,
   Github,
   LoaderCircle,
-  Lock,
   MessageCircle,
   UserRound,
 } from "lucide-react";
@@ -142,6 +141,11 @@ export function AuthPanel() {
 
   return (
     <section className="auth-panel">
+      <header className="auth-panel-heading">
+        <p>{mode === "login" ? "欢迎回来" : "开始你的创作空间"}</p>
+        <h1>{mode === "login" ? "登录星语社区" : "创建星语账号"}</h1>
+        <span>{mode === "login" ? "继续你的阅读、表达与协作。" : "用一个账号，开始记录与连接。"}</span>
+      </header>
       <Tabs className="auth-tabs-container" value={mode} onValueChange={(v) => setMode(v as "login" | "register")}>
         <TabsList className="w-full">
           <TabsTrigger className="flex-1" value="login">登录</TabsTrigger>
