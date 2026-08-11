@@ -1622,7 +1622,7 @@ export const SettingsView: React.FC = () => {
                     <Database className="w-4 h-4 text-cyan-500" />
                     <span>数据导出与账号生命周期</span>
                   </h2>
-                  <p className="text-[11px] text-slate-400 mt-0.5">打包导出全部个人内容备份或进行账号注销</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">打包导出当前可用的个人内容备份</p>
                 </div>
 
                 {/* Export Card */}
@@ -1631,10 +1631,10 @@ export const SettingsView: React.FC = () => {
                     <div>
                       <p className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                         <Download className="w-4 h-4 text-indigo-500" />
-                        <span>导出全部创作与社交数据 (.zip)</span>
+                        <span>导出个人内容数据 (.zip)</span>
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
-                        包含 Markdown 格式全量文章、动态 JSON、收藏夹与关系链清单
+                        包含个人资料、博客资料、文章与动态 JSON 数据
                       </p>
                     </div>
                     <button
