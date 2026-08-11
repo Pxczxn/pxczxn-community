@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
+import { communityApi } from '../../../lib/community-api';
 import { Moment } from '../../types';
 import {
   MessageSquare,
@@ -43,6 +44,15 @@ export const MomentsView: React.FC = () => {
     addMoment(newMomentText.trim(), momentType, linkInput || undefined);
     setNewMomentText('');
     setLinkInput('');
+  };
+
+  const handleComment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!activeMoment || !commentInput.trim()) return;
+    try {
+      await communityApi.createComment('MOMENT', activeMoment.id, commentInput.trim());
+      setCommentInput('');
+    } catch { /* Preserve the draft when the API rejects the comment. */ }
   };
 
   return (
@@ -327,13 +337,7 @@ export const MomentsView: React.FC = () => {
 
                 {/* Comment Input */}
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (commentInput.trim()) {
-                      alert('动态评论发送成功！');
-                      setCommentInput('');
-                    }
-                  }}
+                  onSubmit={handleComment}
                   className="space-y-2 pt-2"
                 >
                   <input
