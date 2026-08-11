@@ -389,7 +389,6 @@ export const SettingsView: React.FC = () => {
   // ================= 8. DATA & ACCOUNT LIFECYCLE =================
   const [exportingData, setExportingData] = useState(false);
   const accountLifecycleAvailable = false;
-  const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
 
   // Feedback State
   const [isSaved, setIsSaved] = useState(false);
@@ -1725,45 +1724,6 @@ export const SettingsView: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Deactivate / Danger Modal */}
-      {deactivateModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 text-rose-600 font-bold">
-                <AlertTriangle className="w-4 h-4" />
-                <span>确认停用 / 注销账号？</span>
-              </div>
-              <button onClick={() => setDeactivateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              停用后您的公开博客、文章与评论将暂时对站外用户隐身。您随时可以通过重新登录此账号激活恢复。若申请永久注销，需先确认您非任何活跃团队的 Owner。
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeactivateModalOpen(false)}
-                className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDeactivateModalOpen(false);
-                  alert('已提交申请，验证邮件已发送至绑定的邮箱');
-                }}
-                className="px-3.5 py-1.5 bg-rose-600 text-white font-semibold rounded-xl text-xs"
-              >
-                确认提交
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
