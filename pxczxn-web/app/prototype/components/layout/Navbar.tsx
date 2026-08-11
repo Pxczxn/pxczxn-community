@@ -46,8 +46,6 @@ export const Navbar: React.FC = () => {
   const {
     currentRoute,
     navigateTo,
-    isCompactViewport,
-    toggleCompactViewport,
     theme,
     setTheme,
     user,
@@ -204,7 +202,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
 
           {/* Brand Logo */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 shrink-0">
             <button
               onClick={() => navigateTo('/')}
               className="flex items-center space-x-3 group focus:outline-none"
@@ -212,7 +210,7 @@ export const Navbar: React.FC = () => {
               <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/30 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <div className="flex flex-col text-left">
+              <div className="hidden sm:flex flex-col text-left">
                 <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors flex items-center gap-2">
                   星语社区
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 font-mono font-medium">
@@ -247,7 +245,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Search & Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Quick Search Input */}
             <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />

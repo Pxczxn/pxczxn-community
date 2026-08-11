@@ -56,11 +56,11 @@ export const TeamDetailView: React.FC = () => {
   };
 
   if (!team) {
-    return <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-6 text-sm text-slate-500">团队加载中或不存在。</div>;
+    return <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 text-sm text-slate-500">团队加载中或不存在。</div>;
   }
 
   return (
-    <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
+    <div className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
 
       {/* Top Bar */}
       <button

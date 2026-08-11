@@ -325,7 +325,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Navigation State
   const currentRoute = routeFromPathname(pathname);
   const routeParams = useMemo(() => paramsFromPathname(pathname), [pathname]);
-  const [isCompactViewport, setIsCompactViewport] = useState<boolean>(true); // Default compact mode for 600-700px CSS height!
+  const [isCompactViewport, setIsCompactViewport] = useState<boolean>(false);
   const [theme, setThemeState] = useState<ThemeMode>('light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 

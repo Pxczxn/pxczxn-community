@@ -2,7 +2,7 @@
 
 /**
  * 星语社区 (pxczxn-community V2.1) - 主入口 (App Main Component)
- * 具备 600-700px 视口优化、全局响应式导航、三阶主题样式与 15+ 视图流切换
+ * 具备自然纵向滚动、全局响应式导航、三阶主题样式与 15+ 视图流切换
  */
 
 import { motion, AnimatePresence } from 'motion/react';
@@ -90,7 +90,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200">
+    <div className="community-desktop-density min-h-screen flex flex-col bg-background text-foreground font-sans antialiased selection:bg-primary selection:text-primary-foreground transition-colors duration-200">
       <Navbar />
       <main className="flex-1 w-full relative pb-16 md:pb-0">
         <AnimatePresence mode="wait">

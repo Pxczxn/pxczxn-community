@@ -182,6 +182,67 @@ html[data-theme="starry"] .text-indigo-600 {
   color: #d8b4fe !important;
 }
 
+/*
+ * Community desktop density baseline
+ * 1024px and above uses a reading-first rhythm: 14px controls/body copy,
+ * 12–13px secondary information, 15px compact section titles, 16px card
+ * spacing, and no forced short-viewport compression. The scope deliberately
+ * excludes the mobile bottom-navigation layout.
+ */
+@media (min-width: 1024px) {
+  .community-desktop-density .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .community-desktop-density .text-\[10px\],
+  .community-desktop-density .text-\[11px\] {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .community-desktop-density .text-\[12px\] {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .community-desktop-density :is(p, li).text-xs {
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
+  .community-desktop-density :is(button, input, select, textarea).text-xs {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .community-desktop-density :is(h1, h2, h3, h4).text-xs {
+    font-size: 0.9375rem;
+    line-height: 1.35;
+  }
+
+  .community-desktop-density .p-3,
+  .community-desktop-density .p-3\.5 {
+    padding: 1rem;
+  }
+
+  .community-desktop-density .p-2\.5 {
+    padding: 0.875rem;
+  }
+
+  .community-desktop-density .gap-3,
+  .community-desktop-density .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .community-desktop-density .gap-2,
+  .community-desktop-density .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+}
+
 button,
 input,
 textarea,

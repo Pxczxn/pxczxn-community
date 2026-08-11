@@ -73,7 +73,7 @@ export const MomentsView: React.FC = () => {
   };
 
   return (
-    <div className={`max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
+    <div className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
 
       {/* Three Column Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
