@@ -388,6 +388,7 @@ export const SettingsView: React.FC = () => {
 
   // ================= 8. DATA & ACCOUNT LIFECYCLE =================
   const exportAvailable = false;
+  const accountLifecycleAvailable = false;
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
 
   // Feedback State
@@ -1647,7 +1648,7 @@ export const SettingsView: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setDeactivateModalOpen(true)}
+                      disabled={!accountLifecycleAvailable}
                       className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-rose-50 text-rose-600 font-semibold rounded-xl text-xs shrink-0"
                     >
                       停用当前账号
@@ -1661,7 +1662,7 @@ export const SettingsView: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setDeactivateModalOpen(true)}
+                      disabled={!accountLifecycleAvailable}
                       className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs shrink-0"
                     >
                       申请永久注销
