@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import { ThemeBootstrap } from "./components/theme-bootstrap";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { swFonts } from "./fonts";
+
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -54,10 +57,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning className={`font-sans ${swFonts}`}>
       <body>
         <ThemeBootstrap />
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );

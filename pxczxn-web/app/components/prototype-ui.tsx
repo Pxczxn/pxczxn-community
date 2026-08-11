@@ -7,6 +7,7 @@ import {
   Compass,
   FileText,
   House,
+  LibraryBig,
   LogIn,
   LogOut,
   MessageCircle,
@@ -21,13 +22,18 @@ import {
   UserRound,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Badge, Tooltip } from "@/components/ui/community-ui";
+import { Avatar as ShadcnAvatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   CommunitySession,
+  CurrentCommunityUser,
   NOTIFICATION_EVENT,
   SESSION_EVENT,
   communityApi,
+  publicFileUrl,
   readSession,
   saveSession,
 } from "../lib/community-api";
@@ -38,15 +44,17 @@ const primaryNavItems = [
   { href: "/discover", label: "发现", Icon: Compass },
   { href: "/articles", label: "文章", Icon: FileText },
   { href: "/moments", label: "动态", Icon: Orbit },
-  { href: "/series", label: "书架", Icon: Sparkles },
+  { href: "/series", label: "书架", Icon: LibraryBig },
   { href: "/teams", label: "团队", Icon: UsersRound },
 ] as const;
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link className="app-topbar__brand" href="/discover">
-      <span className="brand-mark">星</span>
-      {!compact && <span>星语社区</span>}
+    <Link className="app-topbar__brand flex items-center gap-2 text-slate-900 dark:text-slate-100" href="/">
+      <span className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
+        <Sparkles size={16} className="fill-white stroke-white" />
+      </span>
+      {!compact && <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-slate-100">星语社区</span>}
     </Link>
   );
 }
@@ -64,25 +72,39 @@ export function Avatar({
 }) {
   if (src) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- 动态用户图片,尺寸由 CSS 控制
-      <img
-        alt={alt}
-        className={`avatar avatar-${size} avatar-image`}
-        src={src}
-      />
+      <ShadcnAvatar size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"} className="avatar-image" aria-label={alt}>
+        <AvatarImage src={src} alt={alt} />
+        <AvatarFallback>{label}</AvatarFallback>
+      </ShadcnAvatar>
     );
   }
 
-  return <span className={`avatar avatar-${size}`}>{label}</span>;
+  return (
+    <ShadcnAvatar
+      size={size === "sm" ? "sm" : size === "lg" ? "lg" : "default"}
+      style={{
+        backgroundColor: "var(--primary, #1677ff)",
+        color: "#fff",
+        fontWeight: 600,
+        fontSize: size === "sm" ? 13 : size === "lg" ? 18 : 15,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <AvatarFallback>{label}</AvatarFallback>
+    </ShadcnAvatar>
+  );
 }
 
 export function UserTopbar({ title }: { title?: string }) {
   const [session, setSession] = useState<CommunitySession | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentCommunityUser | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [theme, setCurrentTheme] = useState<ThemeMode>("light");
-  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
   const frozenSession = session?.status === "FROZEN";
 
   useEffect(() => {
@@ -90,9 +112,14 @@ export function UserTopbar({ title }: { title?: string }) {
       const nextSession = readSession();
       setSession(nextSession);
       if (!nextSession) {
+        setCurrentUser(null);
         setUnreadNotifications(0);
         return;
       }
+      void communityApi.me()
+        .then((user) => setCurrentUser(user))
+        .catch(() => setCurrentUser(null));
+
       void communityApi.unreadNotifications()
         .then((result) => setUnreadNotifications(result.total))
         .catch(() => setUnreadNotifications(0));
@@ -107,26 +134,6 @@ export function UserTopbar({ title }: { title?: string }) {
       window.removeEventListener("storage", sync);
     };
   }, []);
-
-  useEffect(() => {
-    if (!accountMenuOpen) return;
-
-    const closeWhenClickAway = (event: PointerEvent) => {
-      if (!accountMenuRef.current?.contains(event.target as Node)) {
-        setAccountMenuOpen(false);
-      }
-    };
-    const closeWithEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setAccountMenuOpen(false);
-    };
-
-    document.addEventListener("pointerdown", closeWhenClickAway);
-    document.addEventListener("keydown", closeWithEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeWhenClickAway);
-      document.removeEventListener("keydown", closeWithEscape);
-    };
-  }, [accountMenuOpen]);
 
   useEffect(() => {
     const syncTheme = (event?: Event) => {
@@ -149,88 +156,141 @@ export function UserTopbar({ title }: { title?: string }) {
     try {
       await communityApi.logout();
     } catch {
-      // Clearing the local session is still the safe result when the server is offline.
+      // Server offline fallback
     } finally {
       saveSession(null);
       window.location.assign("/login");
     }
   }
 
+  function handleSearchSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
+  }
+
+  const userMenuItems = [
+    ...(!frozenSession
+      ? [
+          {
+            key: "blog",
+            label: (
+              <Link href="/me/blog" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <UserRound size={16} /> 个人中心
+              </Link>
+            ),
+          },
+          {
+            key: "settings",
+            label: (
+              <Link href="/settings" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Settings size={16} /> 设置
+              </Link>
+            ),
+          },
+          { type: "divider" as const },
+        ]
+      : []),
+    {
+      key: "logout",
+      label: (
+        <span onClick={logout} style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--danger, #ef4444)" }}>
+          <LogOut size={16} /> 退出登录
+        </span>
+      ),
+    },
+  ];
+
   return (
     <header className="app-topbar">
       <div className="app-topbar__group">
         <Brand />
-        {title && <span className="secondary">/</span>}
-        {title && <strong>{title}</strong>}
       </div>
-      {!frozenSession && <nav className="community-primary-nav" aria-label="星语社区主导航">
-        {primaryNavItems.map(({ href, label, Icon }) => {
-          const isActive = href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <Link key={href} href={href} className={isActive ? "is-active" : undefined} aria-current={isActive ? "page" : undefined}>
-              <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>}
+      {!frozenSession && (
+        <nav className="community-primary-nav" aria-label="星语社区主导航">
+          {primaryNavItems.map(({ href, label, Icon }) => {
+            const isActive = href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <Link key={href} href={href} className={isActive ? "is-active" : undefined} aria-current={isActive ? "page" : undefined}>
+                <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
       <div className="app-topbar__group">
-        {!frozenSession && <label className="top-search">
-          <Search aria-hidden="true" size={17} />
-          <input aria-label="搜索" placeholder="搜索文章、动态和团队" />
-        </label>}
-        {!frozenSession && <div className="topbar-tools" aria-label="快捷工具">
-          {session && (
-            <Link aria-label="写文章" className="topbar-compose" href="/editor/new" title="写文章">
-              <PenLine size={18} /> <span>写文章</span>
-            </Link>
-          )}
-          {session && (
-            <Link aria-label="屏蔽管理" className="icon-button" href="/blocks" title="屏蔽管理">
-              <ShieldBan size={18} />
-            </Link>
-          )}
-          <button aria-label={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，切换主题`} className="icon-button" onClick={toggleTheme} title={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，点击切换`} type="button">
-            {theme === "light" ? <Sun size={18} /> : theme === "dark" ? <Moon size={18} /> : <Sparkles size={18} />}
-          </button>
-          <Link
-          aria-label={`通知${unreadNotifications ? `，${unreadNotifications} 条未读` : ""}`}
-          className="icon-button notification-button"
-          href={session ? "/notifications" : "/login"}
-          title={unreadNotifications ? `通知：${unreadNotifications} 条未读` : "通知"}
-        >
-          <Bell size={18} />
-          {unreadNotifications > 0 && (
-            <span className="notification-badge">
-              {unreadNotifications > 99 ? "99+" : unreadNotifications}
-            </span>
-          )}
-        </Link>
-          {session && (
-          <Link aria-label="即时聊天" className="icon-button" href="/chat" title="即时聊天">
-            <MessageCircle size={18} />
-          </Link>
-          )}
-        </div>}
-        {frozenSession && <Link className="secondary-button" href="/account-appeals">提交申诉</Link>}
-        {session ? (
-          <div className="account-menu" ref={accountMenuRef}>
-            <button aria-expanded={accountMenuOpen} aria-haspopup="menu" className="user-chip" onClick={() => setAccountMenuOpen((open) => !open)} type="button">
-              <Avatar label={(session.displayName || session.username || "?").slice(0, 1)} size="sm" />
-              <span>{session.displayName || session.username}</span>
-              <ChevronDown size={15} />
-            </button>
-            {accountMenuOpen && (
-              <div className="account-menu__popover" role="menu">
-                {!frozenSession && <Link onClick={() => setAccountMenuOpen(false)} href="/me/blog" role="menuitem"><UserRound size={16} />个人中心</Link>}
-                {!frozenSession && <Link onClick={() => setAccountMenuOpen(false)} href="/settings" role="menuitem"><Settings size={16} />设置</Link>}
-                <button onClick={logout} role="menuitem" type="button"><LogOut size={16} />退出登录</button>
-              </div>
+        {!frozenSession && (
+          <form onSubmit={handleSearchSubmit} className="top-search">
+            <Search aria-hidden="true" size={16} />
+            <input
+              aria-label="搜索"
+              name="q"
+              placeholder="搜索文章、动态、系列、用户..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
+        )}
+        {!frozenSession && (
+          <div className="topbar-tools" aria-label="快捷工具">
+            {session && (
+              <Tooltip title="写文章">
+                <Link className="topbar-compose" href="/editor/new">
+                  <PenLine size={16} /> <span>写文章</span>
+                </Link>
+              </Tooltip>
+            )}
+            {session && (
+              <Tooltip title="屏蔽管理">
+                <Link aria-label="屏蔽管理" className="icon-button" href="/blocks">
+                  <ShieldBan size={18} />
+                </Link>
+              </Tooltip>
+            )}
+            <Tooltip title={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，点击切换`}>
+              <button
+                aria-label={`当前${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "星空"}主题，切换主题`}
+                className="icon-button"
+                onClick={toggleTheme}
+                type="button"
+              >
+                {theme === "light" ? <Sun size={18} /> : theme === "dark" ? <Moon size={18} /> : <Sparkles size={18} />}
+              </button>
+            </Tooltip>
+            <Tooltip title={unreadNotifications ? `通知：${unreadNotifications} 条未读` : "通知"}>
+              <Link
+                aria-label={`通知${unreadNotifications ? `，${unreadNotifications} 条未读` : ""}`}
+                className="icon-button notification-button"
+                href={session ? "/notifications" : "/login"}
+              >
+                <Badge count={unreadNotifications} overflowCount={99} size="small">
+                  <Bell size={18} />
+                </Badge>
+              </Link>
+            </Tooltip>
+            {session && (
+              <Tooltip title="即时聊天">
+                <Link aria-label="即时聊天" className="icon-button" href="/chat">
+                  <MessageCircle size={18} />
+                </Link>
+              </Tooltip>
             )}
           </div>
+        )}
+        {frozenSession && <Link className="secondary-button" href="/account-appeals">提交申诉</Link>}
+        {session ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<button className="user-chip" type="button"><Avatar label={(currentUser?.displayName || session.displayName || session.username || "?").slice(0, 1)} src={currentUser?.avatarFileId ? publicFileUrl(currentUser.avatarFileId) : null} size="sm" /><span>{currentUser?.displayName || session.displayName || session.username}</span><ChevronDown size={14} /></button>} />
+            <DropdownMenuContent align="end">
+              {userMenuItems.map((item) => ("type" in item && item.type === "divider") ? <DropdownMenuSeparator key="divider" /> : <DropdownMenuItem key={item.key}>{item.label}</DropdownMenuItem>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <Link className="user-chip" href="/login">
-            <LogIn size={17} />
+            <LogIn size={16} />
             <span>登录</span>
           </Link>
         )}
@@ -270,6 +330,7 @@ export function ArticleThumb({ variant = 1 }: { variant?: number }) {
 
 export function SideNavigation({
   active,
+  teamSlug,
 }: {
   active:
     | "overview"
@@ -280,21 +341,23 @@ export function SideNavigation({
     | "members"
     | "roles"
     | "settings";
+  teamSlug?: string;
 }) {
+  const base = teamSlug ? `/teams/${teamSlug}/workspace` : "/teams";
   const links = [
-    ["overview", "团队主页", "/teams"],
-    ["submissions", "投稿管理", "/submissions"],
-    ["articles", "文章管理", "/articles"],
-    ["moments", "动态管理", "/moments"],
+    ["overview", "团队主页", teamSlug ? `/teams/${teamSlug}` : "/teams"],
+    ["submissions", "投稿管理", teamSlug ? `${base}/submissions` : "/submissions"],
+    ["articles", "文章管理", teamSlug ? `${base}/content` : "/articles"],
+    ["moments", "动态管理", teamSlug ? `${base}/content` : "/moments"],
     ["analytics", "数据统计", "/discover"],
-    ["members", "成员管理", "/teams"],
-    ["roles", "角色权限", "/teams"],
-    ["settings", "团队设置", "/settings"],
+    ["members", "成员管理", teamSlug ? `${base}/members` : "/teams"],
+    ["roles", "角色权限", teamSlug ? `${base}/members` : "/teams"],
+    ["settings", "团队设置", teamSlug ? `${base}/settings` : "/settings"],
   ] as const;
 
   return (
     <aside className="workspace-sidebar">
-      <Link className="workspace-brand" href="/teams">
+      <Link className="workspace-brand" href={teamSlug ? `/teams/${teamSlug}` : "/teams"}>
         <span className="brand-mark">星</span>
         <span>
           <strong>星语社区</strong>

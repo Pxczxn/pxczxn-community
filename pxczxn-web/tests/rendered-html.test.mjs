@@ -47,7 +47,7 @@ test("server-renders the community login entry instead of the starter skeleton",
 
 test("server-renders formal community routes without fixed prototype content", async () => {
   const routes = [
-    ["/discover", "发现值得阅读的内容"],
+    ["/discover", "由编辑视角组织主题、文章、连载与社区现场"],
     ["/articles", "按公开时间浏览社区文章"],
     ["/blocks", "屏蔽管理"],
     ["/teams", "团队空间"],
@@ -99,8 +99,10 @@ test("keeps M2.5 discovery, login and dynamic-route semantics in source", async 
 });
 
 test("keeps M1 user flows connected to the real community API", async () => {
-  const [api, auth, editor, submission, settings, css] = await Promise.all([
-    readFile(new URL("../app/lib/community-api.ts", import.meta.url), "utf8"),
+  const [api, session, client, auth, editor, submission, settings, css] = await Promise.all([
+    readFile(new URL("../app/lib/community/api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/community/session.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/community/client.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/login/auth-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/editor/article-editor-panel.tsx", import.meta.url), "utf8"),
     readFile(
@@ -111,14 +113,14 @@ test("keeps M1 user flows connected to the real community API", async () => {
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(api, /pxczxn-community-session/);
+  assert.match(session, /pxczxn-community-session/);
   assert.match(api, /\/api\/v1\/auth\/register/);
   assert.match(api, /\/api\/v1\/auth\/login/);
   assert.match(api, /\/api\/v1\/public\/articles/);
   assert.match(api, /\/submit-review/);
   assert.match(api, /\/publish/);
-  assert.match(api, /normalizePaginationNumbers/);
-  assert.match(api, /\["total", "pageNum", "pageSize"\]/);
+  assert.match(client, /normalizePaginationNumbers/);
+  assert.match(client, /\["total", "pageNum", "pageSize"\]/);
   assert.match(auth, /communityApi\.register/);
   assert.match(auth, /communityApi\.login/);
   assert.match(editor, /communityApi\.saveArticle/);
@@ -151,7 +153,7 @@ test("fails instead of changing the configured development port", async () => {
 
 test("keeps M4 block management connected to the real API", async () => {
   const [api, blocks, topbar] = await Promise.all([
-    readFile(new URL("../app/lib/community-api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/community/api.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/blocks/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/prototype-ui.tsx", import.meta.url), "utf8"),
   ]);
@@ -167,7 +169,7 @@ test("keeps M4 block management connected to the real API", async () => {
 
 test("keeps M2 moments, social relationships and notifications on real APIs", async () => {
   const [api, moments, social, notifications, topbar] = await Promise.all([
-    readFile(new URL("../app/lib/community-api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/lib/community/api.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/moments/moments-community-page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../app/me/favorites/social-center-page.tsx", import.meta.url),
@@ -197,4 +199,12 @@ test("keeps M2 moments, social relationships and notifications on real APIs", as
   assert.match(notifications, /communityApi\.readAllNotifications/);
   assert.match(topbar, /unreadNotifications/);
   assert.match(topbar, /href=\{session \? "\/notifications" : "\/login"\}/);
+});
+
+test("uses the shadcn tooltip provider rather than an Ant Design runtime bridge", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+
+  assert.match(layout, /TooltipProvider/);
+  assert.doesNotMatch(layout, /@ant-design\/nextjs-registry/);
+  assert.doesNotMatch(layout, /AntdProvider/);
 });

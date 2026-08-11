@@ -11,7 +11,6 @@ import {
   Flame,
   LibraryBig,
   Loader2,
-  MessageCircle,
   Orbit,
   PenLine,
   Play,
@@ -19,15 +18,16 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { UserTopbar, Avatar, EmptyState } from "../components/prototype-ui";
+import { AppNavbar } from "@/components/ui/navbar";
+import { EmptyState } from "../components/prototype-ui";
 import {
   communityApi,
   readSession,
   type Series,
   type FollowingFeedItem,
-  type Moment,
   type MyTeam,
   type PublicArticleSummary,
+  type CommunityNotification,
 } from "../lib/community-api";
 import { readingPercent } from "../lib/series-labels";
 
@@ -51,7 +51,7 @@ function feedLink(item: FollowingFeedItem): string {
     case "SERIES":
       return `/series/${item.targetId}`;
     default:
-      return "#";
+      return "/discover";
   }
 }
 
@@ -146,38 +146,26 @@ function FeedListItem({ item }: { item: FollowingFeedItem }) {
   );
 }
 
-/** 动态预览卡片 */
-function MomentPreviewCard({ item }: { item: Moment }) {
-  const name = item.author.displayName || item.author.username;
+/** 动态/通知 预览卡片 */
+function NotificationPreviewCard({ item }: { item: CommunityNotification }) {
   return (
     <article
       className="surface"
       style={{ padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 8 }}
     >
-      <Link
-        href={`/moments/${item.momentId}`}
-        style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "var(--text-primary)" }}
-      >
-        <Avatar label={name.slice(0, 1)} size="sm" />
-        <span style={{ fontWeight: 600, fontSize: 13 }}>{name}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Bell size={16} style={{ color: "var(--primary)" }} />
+        <span style={{ fontWeight: 600, fontSize: 13 }}>{item.title}</span>
         <span className="muted" style={{ fontSize: 12, marginLeft: "auto" }}>
           {timeLabel(item.createdAt)}
         </span>
-      </Link>
-      <Link
-        href={`/moments/${item.momentId}`}
-        style={{ textDecoration: "none", color: "var(--text-secondary)" }}
-      >
-        <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>
-          {item.textContent?.slice(0, 120) || "查看这条动态"}
-          {item.textContent && item.textContent.length > 120 && "…"}
-        </p>
-      </Link>
-      <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--text-tertiary)" }}>
-        <span>👍 {item.likeCount}</span>
-        <span>💬 {item.commentCount}</span>
-        <span>来自 {item.blog.name}</span>
       </div>
+      {item.content && (
+        <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          {item.content.slice(0, 120)}
+          {item.content.length > 120 && "…"}
+        </p>
+      )}
     </article>
   );
 }
@@ -264,13 +252,13 @@ function RecommendedArticleCard({ item }: { item: PublicArticleSummary }) {
 /* ═══════════════════════ 主组件 ═══════════════════════ */
 
 export function HomePage() {
-  const session = readSession();
-  const isLoggedIn = !!session;
+  const [session, setSession] = useState<ReturnType<typeof readSession> | null | undefined>(undefined);
+  const isLoggedIn = Boolean(session);
 
   /* ── 已登录状态 ── */
   const [readingSeries, setReadingSeries] = useState<Series[]>([]);
   const [followingFeed, setFollowingFeed] = useState<FollowingFeedItem[]>([]);
-  const [moments, setMoments] = useState<Moment[]>([]);
+  const [recentNotifications, setRecentNotifications] = useState<CommunityNotification[]>([]);
   const [teams, setTeams] = useState<MyTeam[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -281,21 +269,27 @@ export function HomePage() {
   const [hotSeries, setHotSeries] = useState<Series[]>([]);
 
   useEffect(() => {
+    setSession(readSession());
+  }, []);
+
+  useEffect(() => {
+    if (session === undefined) return;
+
     let active = true;
 
     if (isLoggedIn) {
       Promise.all([
         communityApi.myReadingSeries(6).catch(() => [] as Series[]),
         communityApi.followingFeed(1, 5).catch(() => ({ records: [] as FollowingFeedItem[] })),
-        communityApi.moments(1, 5).catch(() => ({ records: [] as Moment[] })),
+        communityApi.notifications(undefined, "UNREAD", 1, 5).catch(() => ({ records: [] as CommunityNotification[] })),
         communityApi.myTeams().catch(() => [] as MyTeam[]),
         communityApi.unreadNotifications().catch(() => ({ total: 0, categories: {} })),
       ])
-        .then(([reading, feed, momentPage, myTeams, notif]) => {
+        .then(([reading, feed, notifPage, myTeams, notif]) => {
           if (!active) return;
           setReadingSeries(reading);
           setFollowingFeed(feed.records);
-          setMoments(momentPage.records);
+          setRecentNotifications(notifPage.records);
           setTeams(myTeams);
           setUnreadCount(notif.total);
         })
@@ -320,14 +314,27 @@ export function HomePage() {
     }
 
     return () => { active = false; };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, session]);
 
-  /* ════════════════ 未登录 Portal ════════════════ */
-  if (!isLoggedIn) {
+  if (session === undefined) {
     return (
       <>
-        <UserTopbar title="首页" />
-        <main className="page-shell" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px 60px" }}>
+        <AppNavbar />
+        <main className="page-shell home-dashboard" aria-busy="true" style={{ paddingBottom: 60 }}>
+          <div className="surface" style={{ padding: 40, textAlign: "center", marginTop: 24, borderRadius: 12 }}>
+            <Loader2 size={22} style={{ animation: "spin 1s linear infinite" }} />
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  /* ════════════════ 未登录 Portal ════════════════ */
+  if (session === null || !isLoggedIn) {
+    return (
+      <>
+        <AppNavbar />
+        <main className="page-shell home-dashboard" style={{ paddingBottom: 60 }}>
           {/* ── Hero ── */}
           <section
             className="surface-lg shadow-sm"
@@ -335,7 +342,7 @@ export function HomePage() {
           >
             <div style={{ maxWidth: 720 }}>
               <span className="eyebrow">
-                <Sparkles size={15} /> 星语社区 Portal
+                <Sparkles size={15} /> 探索社区精选
               </span>
               <h1 style={{ margin: "12px 0 0", fontSize: "clamp(28px, 4.5vw, 44px)", fontWeight: 800, lineHeight: 1.15 }}>
                 注册即拥有个人博客
@@ -461,8 +468,8 @@ export function HomePage() {
   /* ════════════════ 已登录 Dashboard ════════════════ */
   return (
     <>
-      <UserTopbar title="首页" />
-      <main className="page-shell" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px 60px" }}>
+      <AppNavbar />
+      <main className="page-shell home-dashboard" style={{ paddingBottom: 60 }}>
         {/* ── 快速操作条 ── */}
         <div
           style={{
@@ -479,7 +486,7 @@ export function HomePage() {
             <Orbit size={15} /> 发布动态
           </Link>
           <Link className="ghost-button" href="/me/series">
-            <LibraryBig size={15} /> 我的连载
+            <LibraryBig size={15} /> 管理我的系列
           </Link>
         </div>
 
@@ -504,7 +511,7 @@ export function HomePage() {
             }}
           >
             {/* ── 主内容区 ── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
+            <div className="home-dashboard__main" style={{ display: "flex", flexDirection: "column", gap: 28, minWidth: 0 }}>
               {/* 继续阅读 */}
               {readingSeries.length > 0 && (
                 <section className="series-rail" aria-label="继续阅读">
@@ -538,16 +545,16 @@ export function HomePage() {
                 </section>
               )}
 
-              {/* 最新动态 */}
-              {moments.length > 0 && (
-                <section aria-label="最新动态">
+              {/* 最新通知 */}
+              {recentNotifications.length > 0 && (
+                <section aria-label="最新通知">
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <MessageCircle size={18} style={{ color: "var(--accent-secondary)" }} />
-                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>最新动态</h2>
+                    <Bell size={18} style={{ color: "var(--accent-secondary)" }} />
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>最新通知</h2>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
-                    {moments.map((item) => (
-                      <MomentPreviewCard item={item} key={item.momentId} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {recentNotifications.map((item) => (
+                      <NotificationPreviewCard item={item} key={item.notificationId} />
                     ))}
                   </div>
                 </section>
@@ -569,7 +576,7 @@ export function HomePage() {
               )}
 
               {/* 空状态 */}
-              {!error && readingSeries.length === 0 && followingFeed.length === 0 && moments.length === 0 && (
+              {!error && readingSeries.length === 0 && followingFeed.length === 0 && recentNotifications.length === 0 && teams.length === 0 && (
                 <div className="surface" style={{ borderRadius: 12 }}>
                   <EmptyState title="欢迎加入星语社区" description="开始创作你的第一篇文章，关注感兴趣的内容创作者，你的首页将在这里聚合展示。" />
                 </div>
@@ -578,6 +585,8 @@ export function HomePage() {
 
             {/* ── 侧栏 ── */}
             <aside
+              className="home-personal-rail"
+              aria-label="与你相关"
               style={{
                 position: "sticky",
                 top: 24,
@@ -645,7 +654,7 @@ export function HomePage() {
                   </Link>
                   <Link
                     href="/me/series"
-                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 13, textDecoration: "none", color: "var(--text-primary)", borderRadius: 6 }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", fontSize: 13, textDecoration: "none", color: "var(--text-tertiary)" }}
                   >
                     <LibraryBig size={15} style={{ color: "var(--text-tertiary)" }} /> 我的连载
                   </Link>

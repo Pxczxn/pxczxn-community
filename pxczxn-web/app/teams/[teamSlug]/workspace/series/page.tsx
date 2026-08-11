@@ -1,7 +1,10 @@
 "use client";
 
 import { SeriesManager } from "../../../../components/series-manager";
+import { Card, Typography } from "@/components/ui/community-ui";
 import { useWorkspace } from "../workspace-context";
+
+const { Text, Title } = Typography;
 
 /**
  * 团队工作台的系列管理。系列泛化为博客归属之后，这里不再有专属逻辑，
@@ -13,12 +16,13 @@ export default function WorkspaceSeriesPage() {
 
   return (
     <div className="workspace-series-page">
-      <header className="workspace-content-page__header">
+      <Card className="workspace-content-page__header" bordered={false}>
         <div>
-          <span className="eyebrow">连载管理</span>
-          <p>将团队文章编排成连载，提交审核后公开展示。</p>
+          <Text type="secondary">连载管理</Text>
+          <Title level={4}>团队系列</Title>
+          <Text type="secondary">将团队文章编排成系列，提交审核后公开展示。</Text>
         </div>
-      </header>
+      </Card>
 
       <SeriesManager
         blogId={blogId}

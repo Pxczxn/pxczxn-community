@@ -207,6 +207,27 @@ class PublicArticleServiceTest {
     }
 
     @Test
+    void discoverRankedArticlesWithoutCategoryAreReturned() {
+        article.setCategoryId(null);
+        Page<Article> page = new Page<>(1, 10);
+        page.setRecords(List.of(article));
+        page.setTotal(1);
+        when(articleMapper.selectDiscoverRankedPage(any(IPage.class), eq("LATEST"), eq(null), eq(null)))
+                .thenReturn(page);
+        when(userMapper.selectBatchIds(any(Collection.class))).thenReturn(List.of(author));
+        when(versionMapper.selectBatchIds(any(Collection.class))).thenReturn(List.of(publishedVersion));
+        when(blogMapper.selectBatchIds(any(Collection.class))).thenReturn(List.of(blog));
+        when(settingMapper.selectList(any())).thenReturn(List.of());
+
+        PublicDiscoveryPageView result = service.discoverRanked(
+                new PublicDiscoveryQuery(null, null, "LATEST", 1, 10)
+        );
+
+        assertThat(result.page().records()).hasSize(1);
+        assertThat(result.page().records().getFirst().category()).isNull();
+    }
+
+    @Test
     void blogPageFiltersByOwnedCategoryAndHydratesPublishedSnapshot() {
         arrangePublicBlog();
         when(categoryMapper.selectOne(any())).thenReturn(category);

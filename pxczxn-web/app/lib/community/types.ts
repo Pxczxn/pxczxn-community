@@ -131,7 +131,6 @@ export interface UnifiedSearchPage {
 }
 
 export interface EditorialCollection { id: string; kind: "TOPIC" | "EVENT" | "ANNOUNCEMENT" | "FEATURED" | "COLLECTION"; title: string; slug: string; summary: string | null; coverFileId: string | null; status: string; startsAt: string | null; endsAt: string | null; displayOrder: number; publishedAt: string | null; items: Array<{ targetType: "ARTICLE" | "SERIES"; targetId: string; displayOrder: number }>; }
-
 export interface PublicArticleDetail extends PublicArticleSummary {
   visibility: string;
   renderedHtml: string;
@@ -755,3 +754,97 @@ export interface AccountEnforcementCase {
   executeAfter: string | null;
 }
 export interface AccountEnforcementAppeal { id: string; caseId: string; status: string; statement: string; createdAt: string; }
+
+export interface ArticleVersionSummary {
+  versionId: string;
+  versionNo: number;
+  contentMode: "RICH_TEXT" | "MARKDOWN" | string;
+  contentHash: string;
+  wordCount: number;
+  readingTimeMinutes: number;
+  createdByUserId: string;
+  creationType: string;
+  currentVersion: boolean;
+  publishedVersion: boolean;
+  createdAt: string;
+}
+
+export interface ArticleVersionPage {
+  list: ArticleVersionSummary[];
+  pageNum: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface ArticleVersionDetail {
+  versionId: string;
+  articleId: string;
+  versionNo: number;
+  contentMode: "RICH_TEXT" | "MARKDOWN" | string;
+  richTextJson: string | null;
+  markdownContent: string | null;
+  renderedHtml: string;
+  plainText: string;
+  tocJson: string;
+  contentHash: string;
+  wordCount: number;
+  readingTimeMinutes: number;
+  createdByUserId: string;
+  creationType: string;
+  contentFileIds: string[];
+  currentVersion: boolean;
+  publishedVersion: boolean;
+  createdAt: string;
+}
+
+export interface RestoreArticleVersionInput {
+  expectedLockVersion: number;
+}
+
+export interface CreateCategoryInput {
+  name: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+}
+export type CreateBlogCategoryInput = CreateCategoryInput;
+
+export interface UpdateCategoryInput {
+  name?: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+}
+export type UpdateBlogCategoryInput = UpdateCategoryInput;
+
+export interface CreateFavoriteFolderInput {
+  name: string;
+  description?: string;
+  visibility?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateFavoriteFolderInput {
+  name?: string;
+  description?: string;
+  clearDescription?: boolean;
+  visibility?: string;
+  sortOrder?: number;
+}
+export type UpdateFolderInput = UpdateFavoriteFolderInput;
+
+export interface MomentDeletionResponse {
+  momentId: string;
+  status: string;
+  lockVersion: number;
+  idempotentReplay: boolean;
+  sourceRepostCount: number;
+}
+
+export interface CommentModerationResponse {
+  commentId: string;
+  status: string;
+  affectedComments: number;
+  targetCommentCount: number;
+}
+

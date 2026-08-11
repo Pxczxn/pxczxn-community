@@ -1,77 +1,93 @@
 "use client";
 
 import Link from "next/link";
+import { Button, Card, Col, Row, Space, Tag, Typography } from "@/components/ui/community-ui";
 import { ArrowUpRight, BookOpen, FileText, Inbox, LayoutDashboard, Users } from "lucide-react";
 import { Avatar } from "../components/prototype-ui";
 import { publicFileUrl, type MyTeam } from "../lib/community-api";
 import { formatCount, formatDateTime, ROLE_LABELS } from "./team-labels";
 
-/** “我的团队”Tab：展示用户加入的全部团队卡片。 */
+const { Title, Paragraph, Text } = Typography;
+
+/** “我的团队”Tab */
 export function MyTeamsTab({ teams }: { teams: MyTeam[] }) {
   return (
     <div className="my-teams">
-      <section className="my-teams__summary surface">
-        <div className="my-teams__summary-copy">
-          <span className="eyebrow"><Users size={15} /> 我的团队</span>
-          <p>
-            你参与了 <strong>{teams.length}</strong> 个团队。进入工作台后可在顶部切换团队；最近访问的团队会被记住。
-          </p>
-        </div>
-      </section>
+      <Card style={{ borderRadius: 14, marginBottom: 20 }}>
+        <Space align="center" size={8}>
+          <Users size={18} style={{ color: "var(--primary, #1677ff)" }} />
+          <Text strong style={{ fontSize: 15 }}>
+            你参与了 <Text strong style={{ color: "var(--primary, #1677ff)" }}>{teams.length}</Text> 个团队
+          </Text>
+        </Space>
+        <Text type="secondary" style={{ fontSize: 13, display: "block", marginTop: 4 }}>
+          进入工作台后可在顶部切换团队；最近访问的团队会被记住。
+        </Text>
+      </Card>
 
-      <div className="my-teams__grid">
+      <Row gutter={[16, 16]}>
         {teams.map((team) => {
           const hasReview = team.pendingSubmissionCount > 0;
           return (
-            <article className="surface my-team-card" key={team.teamId}>
-              <header className="my-team-card__header">
-                <Avatar
-                  alt={`${team.name}头像`}
-                  label={team.name.slice(0, 1)}
-                  size="md"
-                  src={publicFileUrl(team.avatarFileId)}
-                />
-                <div className="my-team-card__identity">
-                  <h3>{team.name}</h3>
-                  <span className="secondary">@{team.slug}</span>
+            <Col xs={24} md={12} key={team.teamId}>
+              <Card hoverable style={{ borderRadius: 14, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <Space size={12}>
+                      <Avatar
+                        alt={`${team.name}头像`}
+                        label={team.name.slice(0, 1)}
+                        size="md"
+                        src={publicFileUrl(team.avatarFileId)}
+                      />
+                      <div>
+                        <Title level={5} style={{ margin: 0, fontSize: 16 }}>{team.name}</Title>
+                        <Text type="secondary" style={{ fontSize: 12 }}>@{team.slug}</Text>
+                      </div>
+                    </Space>
+                    <Tag color="blue">{ROLE_LABELS[team.viewerRole] || team.viewerRole}</Tag>
+                  </div>
+
+                  <Paragraph type="secondary" style={{ fontSize: 13, margin: "0 0 12px" }} ellipsis={{ rows: 2 }}>
+                    {team.summary || "这个团队还没有添加简介。"}
+                  </Paragraph>
+
+                  <Space size={12} style={{ fontSize: 12, color: "var(--text-tertiary, #94a3b8)", marginBottom: 12, flexWrap: "wrap" }}>
+                    <span><Users size={12} /> {team.memberCount} 成员</span>
+                    <span><BookOpen size={12} /> {team.articleCount} 文章</span>
+                    <span><FileText size={12} /> {team.seriesCount} 连载</span>
+                    <span><Inbox size={12} /> {formatCount(team.followerCount)} 关注</span>
+                  </Space>
+
+                  <div style={{ marginBottom: 16 }}>
+                    {hasReview && <Tag color="warning">{team.pendingSubmissionCount} 篇投稿待审核</Tag>}
+                    {team.revisionRequiredCount > 0 && <Tag color="error">{team.revisionRequiredCount} 篇投稿需修改</Tag>}
+                    {!hasReview && team.revisionRequiredCount === 0 && <Tag color="default">暂无待办</Tag>}
+                  </div>
                 </div>
-                <span className="chip my-team-card__role">{ROLE_LABELS[team.viewerRole] || team.viewerRole}</span>
-              </header>
 
-              <p className="my-team-card__summary">{team.summary || "这个团队还没有添加简介。"}</p>
-
-              <div className="my-team-card__stats" aria-label="团队数据">
-                <span><Users size={13} /> {team.memberCount} 成员</span>
-                <span><BookOpen size={13} /> {team.articleCount} 文章</span>
-                <span><FileText size={13} /> {team.seriesCount} 连载</span>
-                <span><Inbox size={13} /> {formatCount(team.followerCount)} 关注</span>
-              </div>
-
-              <div className="my-team-card__todos" aria-label="待办事项">
-                {hasReview && <span className="badge badge--warn">{team.pendingSubmissionCount} 篇投稿待审核</span>}
-                {team.revisionRequiredCount > 0 && (
-                  <span className="badge badge--danger">{team.revisionRequiredCount} 篇投稿需修改</span>
-                )}
-                {!hasReview && team.revisionRequiredCount === 0 && (
-                  <span className="badge badge--info">暂无待办</span>
-                )}
-              </div>
-
-              <footer className="my-team-card__footer">
-                <Link className="primary-button" href={`/teams/${team.slug}/workspace`}>
-                  <LayoutDashboard size={15} /> 进入工作台
-                </Link>
-                <Link className="ghost-button" href={`/teams/${team.slug}`}>
-                  公开主页 <ArrowUpRight size={14} />
-                </Link>
-                <span className="my-team-card__updated" title={team.updatedAt || undefined}>
-                  更新于 {formatDateTime(team.updatedAt)}
-                </span>
-              </footer>
-            </article>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--color-border, #e2e8f0)", paddingTop: 12 }}>
+                  <Space size={8}>
+                    <Link href={`/teams/${team.slug}/workspace`}>
+                      <Button type="primary" size="small" icon={<LayoutDashboard size={14} />}>
+                        工作台
+                      </Button>
+                    </Link>
+                    <Link href={`/teams/${team.slug}`}>
+                      <Button size="small" icon={<ArrowUpRight size={13} />}>
+                        公开主页
+                      </Button>
+                    </Link>
+                  </Space>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    更新于 {formatDateTime(team.updatedAt)}
+                  </Text>
+                </div>
+              </Card>
+            </Col>
           );
         })}
-      </div>
+      </Row>
     </div>
   );
 }

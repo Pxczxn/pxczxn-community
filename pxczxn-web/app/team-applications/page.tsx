@@ -402,7 +402,7 @@ export default function TeamApplicationsPage() {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         /* Loading */
         .app-loading {
           display: flex;

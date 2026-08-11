@@ -168,6 +168,28 @@ class CommunityNotificationInboxServiceTest {
     }
 
     @Test
+    void systemNotificationWithoutSenderDoesNotFailInboxPage() {
+        CommunityNotificationRecipient recipient = recipient("UNREAD");
+        CommunityNotification notification = notification();
+        notification.setSenderUserId(null);
+        notification.setCategory("TEAM");
+        notification.setTargetType("TEAM_APPLICATION");
+        notification.setTargetId(1L);
+
+        when(recipientMapper.selectInbox(10L, null, null, 0, 20))
+                .thenReturn(List.of(recipient));
+        when(recipientMapper.countInbox(10L, null, null)).thenReturn(1L);
+        when(notificationMapper.selectBatchIds(any()))
+                .thenReturn(List.of(notification));
+
+        NotificationView view = service.page(null, null, 1, 20)
+                .records().getFirst();
+
+        assertThat(view.sender()).isNull();
+        assertThat(view.targetAvailable()).isFalse();
+    }
+
+    @Test
     void unreadCountIncludesStableZeroValuedCategories() {
         CommunityNotificationRecipient recipient1 = recipient("UNREAD");
         recipient1.setNotificationId(1L);

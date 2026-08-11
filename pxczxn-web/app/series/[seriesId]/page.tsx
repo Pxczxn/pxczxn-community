@@ -19,7 +19,7 @@ import { UserTopbar } from "../../components/prototype-ui";
 import { communityApi, publicFileUrl, readSession, type Series } from "../../lib/community-api";
 import { blogTypeLabel, readingPercent, serializationLabel } from "../../lib/series-labels";
 
-export default function SeriesDetailPage({ params }: { params: Promise<{ seriesId: string }> }) {
+export default function SeriesDetailPage({ params }: { params: Promise<{ seriesId: string }> | { seriesId: string } }) {
   const [series, setSeries] = useState<Series | null>(null);
   const [error, setError] = useState("");
   const [signedIn] = useState(() => Boolean(readSession()));
@@ -31,7 +31,7 @@ export default function SeriesDetailPage({ params }: { params: Promise<{ seriesI
 
   useEffect(() => {
     let active = true;
-    void params
+    void Promise.resolve(params)
       .then(({ seriesId }) => communityApi.seriesDetail(seriesId))
       .then((value) => {
         if (!active) return;

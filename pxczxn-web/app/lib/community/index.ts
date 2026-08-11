@@ -91,6 +91,19 @@ export type {
   SubmitTeamApplicationInput,
   AccountEnforcementCase,
   AccountEnforcementAppeal,
+  ArticleVersionSummary,
+  ArticleVersionPage,
+  ArticleVersionDetail,
+  RestoreArticleVersionInput,
+  CreateCategoryInput,
+  CreateBlogCategoryInput,
+  UpdateCategoryInput,
+  UpdateBlogCategoryInput,
+  CreateFavoriteFolderInput,
+  UpdateFavoriteFolderInput,
+  UpdateFolderInput,
+  MomentDeletionResponse,
+  CommentModerationResponse,
 } from "./types";
 
 // API client

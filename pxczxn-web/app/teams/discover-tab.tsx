@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, BookOpen, CheckCircle2, Loader2, Search, Sparkles, Users } from "lucide-react";
+import { Button, Card, Col, Empty, Input, Row, Select, Space, Spin, Tag, Typography } from "@/components/ui/community-ui";
+import { ArrowUpRight, BookOpen, CheckCircle2, Search, Sparkles, Users } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "../components/prototype-ui";
 import { communityApi, publicFileUrl, type MyTeam, type TeamSummary } from "../lib/community-api";
 import { formatCount, TEAM_CATEGORIES } from "./team-labels";
 
+const { Title, Paragraph, Text } = Typography;
+
 type SortKey = "LATEST" | "ARTICLES" | "FOLLOWERS";
 
-/** “发现团队”Tab：关键词搜索 + 排序 + 公开团队卡片。 */
 export function DiscoverTeamsTab({
   teams,
   mine,
@@ -70,120 +72,130 @@ export function DiscoverTeamsTab({
 
   return (
     <div className="discover-teams">
-      <section className="discover-teams__toolbar surface">
-        <div className="discover-teams__search">
-          <Search size={16} className="discover-teams__search-icon" />
-          <input
-            type="search"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="搜索团队名称、标识或简介…"
-            aria-label="搜索团队"
-          />
+      {/* Toolbar */}
+      <Card size="small" style={{ borderRadius: 12, marginBottom: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ minWidth: 240, flex: "1 1 280px" }}>
+            <Input
+              prefix={<Search size={15} style={{ color: "var(--text-tertiary)" }} />}
+              placeholder="搜索团队名称、标识或简介…"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              allowClear
+            />
+          </div>
+          <Space wrap size="middle">
+            <Select
+              value={category}
+              onChange={setCategory}
+              options={[
+                { value: "", label: "全部分类" },
+                ...TEAM_CATEGORIES.map((cat) => ({ value: cat.value, label: cat.label })),
+              ]}
+              style={{ width: 130 }}
+            />
+            <Select
+              value={sort}
+              onChange={(val) => setSort(val as SortKey)}
+              options={[
+                { value: "LATEST", label: "最近更新" },
+                { value: "ARTICLES", label: "文章最多" },
+                { value: "FOLLOWERS", label: "关注最多" },
+              ]}
+              style={{ width: 120 }}
+            />
+          </Space>
         </div>
-        <select
-          className="discover-teams__sort"
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          aria-label="团队分类筛选"
-        >
-          <option value="">全部分类</option>
-          {TEAM_CATEGORIES.map((cat) => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
-        </select>
-        <select
-          className="discover-teams__sort"
-          value={sort}
-          onChange={(event) => setSort(event.target.value as SortKey)}
-          aria-label="团队排序"
-        >
-          <option value="LATEST">最近更新</option>
-          <option value="ARTICLES">文章最多</option>
-          <option value="FOLLOWERS">关注最多</option>
-        </select>
-      </section>
+      </Card>
 
-      {followError && <p className="inline-feedback error" role="alert">{followError}</p>}
+      {followError && (
+        <Card style={{ borderRadius: 12, borderColor: "#ff4d4f", marginBottom: 16 }}>
+          <Text type="danger">{followError}</Text>
+        </Card>
+      )}
 
       {loading && (
-        <div className="series-loading surface" aria-live="polite">
-          <Loader2 className="animate-spin" size={22} /> 正在整理团队列表…
+        <div style={{ textAlign: "center", padding: 60 }}>
+          <Spin tip="正在整理团队列表…" />
         </div>
       )}
 
       {!loading && error && (
-        <section className="surface inline-feedback error" role="alert">
-          <strong>团队目录暂时无法加载</strong>
-          <p>{error}</p>
-        </section>
+        <Card style={{ borderRadius: 12, borderColor: "#ff4d4f", marginBottom: 16 }}>
+          <Text type="danger">{error}</Text>
+        </Card>
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <section className="series-empty surface">
-          <span className="series-empty__icon"><Users size={28} /></span>
-          <div>
-            <h2>{keyword ? "没有匹配的团队" : "还没有公开团队"}</h2>
-            <p>
-              {keyword
-                ? `没有找到与「${keyword}」匹配的团队，换个关键词试试。`
-                : "创建并发布后会展示在这里。你可以发起团队建立申请。"}
-            </p>
-          </div>
-          <Link href="/team-applications" className="secondary-button" onClick={onRequireLogin}>
-            申请建立团队 <ArrowUpRight size={16} />
+        <Empty description={keyword ? `没有找到与「${keyword}」匹配的团队` : "还没有公开团队"} style={{ margin: "40px 0" }}>
+          <Link href="/team-applications">
+            <Button type="primary" onClick={onRequireLogin} icon={<ArrowUpRight size={15} />}>
+              申请建立团队
+            </Button>
           </Link>
-        </section>
+        </Empty>
       )}
 
       {!loading && !error && filtered.length > 0 && (
-        <section className="teams-grid" aria-label="公开团队">
+        <Row gutter={[16, 16]}>
           {filtered.map((team) => {
             const isMember = memberTeamIds.has(team.teamId);
             return (
-              <article className="team-card surface" key={team.teamId}>
-                <div className="team-card__head">
-                  <Avatar
-                    alt={`${team.name}头像`}
-                    label={team.name.slice(0, 1)}
-                    size="md"
-                    src={publicFileUrl(team.avatarFileId)}
-                  />
-                  <div className="team-card__identity">
-                    <h2>{team.name}</h2>
-                    <span className="secondary">@{team.slug}</span>
+              <Col xs={24} sm={12} lg={8} key={team.teamId}>
+                <Card hoverable style={{ borderRadius: 14, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <Space size={12}>
+                        <Avatar
+                          alt={`${team.name}头像`}
+                          label={team.name.slice(0, 1)}
+                          size="md"
+                          src={publicFileUrl(team.avatarFileId)}
+                        />
+                        <div>
+                          <Title level={5} style={{ margin: 0, fontSize: 16 }}>{team.name}</Title>
+                          <Text type="secondary" style={{ fontSize: 12 }}>@{team.slug}</Text>
+                        </div>
+                      </Space>
+                      {isMember && <Tag color="green" icon={<CheckCircle2 size={12} />}>已加入</Tag>}
+                    </div>
+                    <Paragraph type="secondary" style={{ fontSize: 13, margin: "0 0 12px" }} ellipsis={{ rows: 2 }}>
+                      {team.summary || "这个团队还没有添加简介。"}
+                    </Paragraph>
+                    <Space size={12} style={{ fontSize: 12, color: "var(--text-tertiary, #94a3b8)", marginBottom: 16 }}>
+                      <span><BookOpen size={12} /> {team.articleCount} 文章</span>
+                      <span><Users size={12} /> {formatCount(Number(team.followerCount))} 关注</span>
+                      {team.category && <Tag style={{ margin: 0, fontSize: 11 }}>{team.category}</Tag>}
+                    </Space>
                   </div>
-                  {isMember && <span className="chip team-card__joined"><CheckCircle2 size={13} /> 已加入</span>}
-                </div>
-                <p className="team-card__summary">{team.summary || "这个团队还没有添加简介。"}</p>
-                <div className="team-card__meta">
-                  <span><BookOpen size={13} /> {team.articleCount} 篇公开文章</span>
-                  <span><Users size={13} /> {formatCount(Number(team.followerCount))} 位关注者</span>
-                  {team.category && <span className="chip">{team.category}</span>}
-                </div>
-                <footer className="team-card__actions">
-                  {isMember ? (
-                    <Link className="primary-button" href={`/teams/${team.slug}/workspace`}>
-                      <Sparkles size={14} /> 进入工作台
-                    </Link>
-                  ) : (
-                    <Link className="secondary-button" href={`/teams/${team.slug}`}>
-                      查看团队 <ArrowUpRight size={14} />
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    disabled={followBusy === team.teamId}
-                    onClick={() => toggleFollow(team)}
-                    title={following[team.teamId] ? "取消关注该团队" : "关注该团队"}
-                  >
-                    {followBusy === team.teamId ? <Loader2 className="animate-spin" size={14} /> : null}
-                    {following[team.teamId] ? "已关注" : "关注"}
-                  </button>
-                </footer>
-              </article>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--color-border, #e2e8f0)", paddingTop: 12 }}>
+                    {isMember ? (
+                      <Link href={`/teams/${team.slug}/workspace`}>
+                        <Button type="primary" size="small" icon={<Sparkles size={13} />}>
+                          工作台
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link href={`/teams/${team.slug}`}>
+                        <Button size="small" icon={<ArrowUpRight size={13} />}>
+                          查看团队
+                        </Button>
+                      </Link>
+                    )}
+                    <Button
+                      size="small"
+                      type={following[team.teamId] ? "default" : "dashed"}
+                      loading={followBusy === team.teamId}
+                      onClick={() => toggleFollow(team)}
+                    >
+                      {following[team.teamId] ? "已关注" : "关注"}
+                    </Button>
+                  </div>
+                </Card>
+              </Col>
             );
           })}
-        </section>
+        </Row>
       )}
     </div>
   );

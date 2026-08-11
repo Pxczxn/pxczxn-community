@@ -71,7 +71,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
                 WHERE at2.article_id = a.id
                   AND pt.slug = #{tagSlug}
                   AND pt.status = 'ACTIVE'
-                  AND pt.merged_into_tag_id IS NULL
+                  AND pt.merged_to_tag_id IS NULL
               ))
             ORDER BY a.published_at DESC, a.id DESC
             """)
@@ -97,7 +97,7 @@ public interface ArticleMapper extends BaseMapper<Article> {
                 WHERE at2.article_id = a.id
                   AND pt.slug = #{tagSlug}
                   AND pt.status = 'ACTIVE'
-                  AND pt.merged_into_tag_id IS NULL
+                  AND pt.merged_to_tag_id IS NULL
               ))
             <choose>
               <when test="sort == 'HOT'">ORDER BY ((1.0 * COALESCE(a.like_count, 0) + 2.5 * COALESCE(a.comment_count, 0) + 4.0 * COALESCE(a.favorite_count, 0) + 1) / POW(GREATEST(TIMESTAMPDIFF(MINUTE, a.published_at, NOW()) / 60.0, 0) + 2, 1.2)) DESC, a.published_at DESC, a.id DESC</when>

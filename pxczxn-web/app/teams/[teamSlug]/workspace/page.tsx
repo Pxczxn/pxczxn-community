@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import {
-  AlertCircle,
-  ArrowUpRight,
   BookOpen,
   Eye,
-  Inbox,
-  Loader2,
+  FileText,
   MessageSquare,
   PenLine,
   Send,
@@ -17,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Badge, Button, Card, Col, List, Row, Space, Statistic, Typography } from "@/components/ui/community-ui";
 import { communityApi, type TeamDashboard } from "../../../lib/community-api";
 import {
   activityText,
@@ -26,7 +24,10 @@ import {
   PUBLISH_STATUS_LABELS,
   TEAM_PERMISSIONS,
 } from "../../team-labels";
+import { TeamEmpty, TeamError, TeamLoading } from "../../team-ui";
 import { useWorkspace } from "./workspace-context";
+
+const { Text, Title } = Typography;
 
 export default function WorkspaceOverviewPage() {
   const { teamId, teamSlug } = useWorkspace();
@@ -37,157 +38,124 @@ export default function WorkspaceOverviewPage() {
   useEffect(() => {
     if (!teamId) return;
     let active = true;
-    communityApi.teamDashboard(teamId)
+    void communityApi.teamDashboard(teamId)
       .then((value) => { if (active) setDashboard(value); })
       .catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "概览加载失败"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [teamId]);
 
-  if (loading || !teamId) {
-    return <div className="series-loading surface" aria-live="polite"><Loader2 className="animate-spin" size={22} /> 正在加载团队概览…</div>;
-  }
-  if (error || !dashboard) {
-    return (
-      <section className="surface inline-feedback error" role="alert">
-        <AlertCircle size={20} />
-        <div><strong>概览暂时无法加载</strong><p>{error || "没有可用的团队数据"}</p></div>
-      </section>
-    );
-  }
+  if (loading || !teamId) return <TeamLoading label="正在加载团队概览…" />;
+  if (error || !dashboard) return <TeamError title="概览暂时无法加载" description={error || "没有可用的团队数据"} />;
 
   const { stats, todos, recentArticles, recentActivities, permissions } = dashboard;
   const hasReviewPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_SUBMISSIONS);
   const hasSeriesPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_SERIES);
   const hasMemberPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_MEMBERS);
   const hasSettingsPermission = hasTeamPermission(permissions, TEAM_PERMISSIONS.MANAGE_TEAM);
-
-  const todoItems: Array<{ label: string; count: number; href: string; show: boolean }> = [
-    { label: "待审核投稿", count: todos.pendingSubmissionCount, href: `submissions`, show: hasReviewPermission },
-    { label: "待修改投稿", count: todos.revisionRequiredCount, href: `submissions`, show: true },
-    { label: "待处理邀请", count: todos.pendingInvitationCount, href: `members`, show: hasMemberPermission },
-    { label: "待审核连载", count: todos.pendingSeriesReviewCount, href: `series`, show: hasSeriesPermission },
-    { label: "内容审核异常", count: todos.contentRiskCount, href: `content`, show: true },
-  ];
   const workspaceHref = (segment: string) => `/teams/${teamSlug}/workspace/${segment}`;
-  const visibleTodos = todoItems.filter((item) => item.show);
-  const todoTotal = visibleTodos.reduce((sum, item) => sum + item.count, 0);
+  const todoItems = [
+    { label: "待处理投稿", count: todos.pendingSubmissionCount, href: "submissions", visible: hasReviewPermission },
+    { label: "需修改投稿", count: todos.revisionRequiredCount, href: "submissions", visible: true },
+    { label: "待处理邀请", count: todos.pendingInvitationCount, href: "members", visible: hasMemberPermission },
+    { label: "待审核系列", count: todos.pendingSeriesReviewCount, href: "series", visible: hasSeriesPermission },
+    { label: "内容风险", count: todos.contentRiskCount, href: "content", visible: true },
+  ].filter((item) => item.visible);
+  const todoTotal = todoItems.reduce((total, item) => total + item.count, 0);
+  const statItems = [
+    { label: "文章", value: stats.publishedArticleCount, icon: FileText },
+    { label: "系列", value: stats.seriesCount, icon: BookOpen },
+    { label: "成员", value: stats.memberCount, icon: Users },
+    { label: "互动", value: stats.totalInteractionCount, icon: ThumbsUp },
+  ];
 
   return (
     <div className="workspace-overview">
-      <section className="workspace-quick surface">
+      <Card className="workspace-quick" bordered={false}>
         <div className="workspace-quick__copy">
-          <span className="eyebrow">快捷操作</span>
-          <p>开始一次团队协作。</p>
+          <Text type="secondary">团队工作台</Text>
+          <Title level={4}>把内容协作集中在这里</Title>
+          <Text type="secondary">管理团队文章、系列、投稿和成员协作。</Text>
         </div>
-        <div className="workspace-quick__actions">
-          <Link className="secondary-button" href={`/editor/new?blogId=${dashboard.team.blogId}`}><PenLine size={14} /> 写团队文章</Link>
-          <Link className="secondary-button" href={workspaceHref("submissions")}><Send size={14} /> 向团队投稿</Link>
-          {hasSeriesPermission && <Link className="ghost-button" href={workspaceHref("series")}><BookOpen size={14} /> 创建连载</Link>}
-          {hasMemberPermission && <Link className="ghost-button" href={workspaceHref("members")}><UserPlus size={14} /> 邀请成员</Link>}
-          {hasSettingsPermission && <Link className="ghost-button" href={workspaceHref("settings")}><Settings2 size={14} /> 编辑团队资料</Link>}
-        </div>
-      </section>
+        <Space wrap className="workspace-quick__actions">
+          <Link href={`/editor/new?blogId=${dashboard.team.blogId}`}><Button type="primary" icon={<PenLine size={15} />}>写团队文章</Button></Link>
+          <Link href={workspaceHref("submissions")}><Button icon={<Send size={15} />}>向团队投稿</Button></Link>
+          {hasSeriesPermission && <Link href={workspaceHref("series")}><Button icon={<BookOpen size={15} />}>创建系列</Button></Link>}
+          {hasMemberPermission && <Link href={workspaceHref("members")}><Button icon={<UserPlus size={15} />}>邀请成员</Button></Link>}
+          {hasSettingsPermission && <Link href={workspaceHref("settings")}><Button icon={<Settings2 size={15} />}>团队设置</Button></Link>}
+        </Space>
+      </Card>
 
-      <section className="workspace-stats" aria-label="团队数据统计">
-        {[
-          { label: "公开文章", value: stats.publishedArticleCount, icon: BookOpen },
-          { label: "草稿", value: stats.draftArticleCount, icon: PenLine },
-          { label: "审核中", value: stats.reviewingArticleCount, icon: Inbox },
-          { label: "连载", value: stats.seriesCount, icon: BookOpen },
-          { label: "成员", value: stats.memberCount, icon: Users },
-          { label: "关注者", value: stats.followerCount, icon: Users },
-          { label: "累计浏览", value: stats.totalViewCount, icon: Eye },
-          { label: "累计互动", value: stats.totalInteractionCount, icon: ThumbsUp },
-        ].map((item) => {
+      <Row className="workspace-stats" gutter={[16, 16]}>
+        {statItems.map((item) => {
           const Icon = item.icon;
           return (
-            <div className="surface workspace-stat" key={item.label}>
-              <Icon size={16} className="workspace-stat__icon" />
-              <strong>{formatCount(item.value)}</strong>
-              <span>{item.label}</span>
-            </div>
+            <Col xs={12} lg={6} key={item.label}>
+              <Card className="workspace-stat" bordered={false}>
+                <Icon className="workspace-stat__icon" size={20} aria-hidden="true" />
+                <Statistic title={item.label} value={item.value} formatter={(value) => formatCount(Number(value))} />
+              </Card>
+            </Col>
           );
         })}
-      </section>
+      </Row>
 
-      <div className="workspace-overview__columns">
-        <section className="surface workspace-panel">
-          <header className="workspace-panel__header">
-            <h2>最近文章</h2>
-            <Link className="ghost-button" href={workspaceHref("content")}>全部内容 <ArrowUpRight size={14} /></Link>
-          </header>
-          {recentArticles.length === 0 ? (
-            <p className="workspace-panel__empty">团队还没有文章，可以投稿或创建连载开始内容建设。</p>
-          ) : (
-            <ul className="workspace-article-list">
-              {recentArticles.map((article) => (
-                <li className="workspace-article-row" key={article.articleId}>
-                  <div className="workspace-article-row__copy">
-                    <strong>{article.title}</strong>
-                    <span>
-                      {PUBLISH_STATUS_LABELS[article.publishStatus] || article.publishStatus}
-                      {" · "}{article.authorDisplayName || "团队成员"}
-                      {" · "}更新于 {formatDateTime(article.updatedAt)}
-                    </span>
-                  </div>
-                  <div className="workspace-article-row__meta">
-                    <span title="浏览"><Eye size={12} /> {article.viewCount}</span>
-                    <span title="点赞"><ThumbsUp size={12} /> {article.likeCount}</span>
-                    <span title="评论"><MessageSquare size={12} /> {article.commentCount}</span>
-                    {article.publishStatus === "PUBLISHED" && article.slug ? (
-                      <Link className="ghost-button" href={`/articles/${article.articleId}`}>查看</Link>
-                    ) : (
-                      <Link className="ghost-button" href={`/editor/${article.articleId}`}>编辑</Link>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <aside className="workspace-overview__side">
-          <section className="surface workspace-panel">
-            <header className="workspace-panel__header">
-              <h2>待办事项</h2>
-              {todoTotal > 0 && <span className="badge badge--warn">{todoTotal}</span>}
-            </header>
-            {visibleTodos.every((item) => item.count === 0) ? (
-              <p className="workspace-panel__empty">没有待办事项，一切就绪。</p>
-            ) : (
-              <ul className="workspace-todo-list">
-                {visibleTodos.map((item) => (
-                  <li key={item.label}>
-                    <Link href={workspaceHref(item.href)}>
-                      <span className="workspace-todo-list__label">{item.label}</span>
-                      <strong>{item.count}</strong>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+      <Row className="workspace-overview__columns" gutter={[16, 16]}>
+        <Col xs={24} xl={15}>
+          <Card
+            className="workspace-panel"
+            title="最近文章"
+            extra={<Link href={workspaceHref("content")}><Button type="link">查看全部</Button></Link>}
+            bordered={false}
+          >
+            {recentArticles.length === 0 ? <TeamEmpty description="团队还没有文章，开始一次创作吧。" /> : (
+              <List
+                className="workspace-article-list"
+                dataSource={recentArticles}
+                renderItem={(article) => (
+                  <List.Item
+                    className="workspace-article-row"
+                    actions={[
+                      <Space className="workspace-article-row__meta" key="metrics" size={10}>
+                        <span><Eye size={13} /> {article.viewCount}</span>
+                        <span><ThumbsUp size={13} /> {article.likeCount}</span>
+                        <span><MessageSquare size={13} /> {article.commentCount}</span>
+                      </Space>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={<Link href={article.publishStatus === "PUBLISHED" && article.slug ? `/articles/${article.articleId}` : `/editor/${article.articleId}`}>{article.title}</Link>}
+                      description={`${PUBLISH_STATUS_LABELS[article.publishStatus] || article.publishStatus} · ${article.authorDisplayName || "团队成员"} · 更新于 ${formatDateTime(article.updatedAt)}`}
+                    />
+                  </List.Item>
+                )}
+              />
             )}
-          </section>
-
-          <section className="surface workspace-panel">
-            <header className="workspace-panel__header">
-              <h2>最近活动</h2>
-            </header>
-            {recentActivities.length === 0 ? (
-              <p className="workspace-panel__empty">还没有团队活动记录。</p>
-            ) : (
-              <ul className="workspace-activity-list">
-                {recentActivities.map((activity) => (
-                  <li key={activity.id}>
-                    <p>{activityText(activity.eventType, activity.actorDisplayName)}</p>
-                    <span>{formatDateTime(activity.occurredAt)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
-      </div>
+          </Card>
+        </Col>
+        <Col xs={24} xl={9}>
+          <Space className="workspace-overview__side" direction="vertical" size={16} style={{ width: "100%" }}>
+            <Card className="workspace-panel" title={<Space>团队待处理 <Badge count={todoTotal} showZero={false} /></Space>} bordered={false}>
+              {todoTotal === 0 ? <TeamEmpty description="没有待处理事项，一切就绪。" /> : (
+                <List
+                  className="workspace-todo-list"
+                  dataSource={todoItems}
+                  renderItem={(item) => <List.Item><Link href={workspaceHref(item.href)}>{item.label}<Badge count={item.count} showZero color={item.count > 0 ? "#ff4d4f" : "#d9d9d9"} /></Link></List.Item>}
+                />
+              )}
+            </Card>
+            <Card className="workspace-panel" title="协作动态" bordered={false}>
+              {recentActivities.length === 0 ? <TeamEmpty description="还没有团队活动记录。" /> : (
+                <List
+                  className="workspace-activity-list"
+                  dataSource={recentActivities}
+                  renderItem={(activity) => <List.Item><List.Item.Meta title={activityText(activity.eventType, activity.actorDisplayName)} description={formatDateTime(activity.occurredAt)} /></List.Item>}
+                />
+              )}
+            </Card>
+          </Space>
+        </Col>
+      </Row>
     </div>
   );
 }

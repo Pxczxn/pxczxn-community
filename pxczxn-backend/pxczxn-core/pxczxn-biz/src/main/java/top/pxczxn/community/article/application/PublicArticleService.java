@@ -249,7 +249,9 @@ public class PublicArticleService {
                 continue;
             }
             BlogSetting setting = settings.get(article.getBlogId());
-            BlogCategory category = categories.get(article.getCategoryId());
+            BlogCategory category = article.getCategoryId() == null
+                    ? null
+                    : categories.get(article.getCategoryId());
             records.add(new PublicArticleSummaryView(
                     article.getId(),
                     article.getTitle(),

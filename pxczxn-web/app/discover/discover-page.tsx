@@ -36,21 +36,26 @@ function timeLabel(value: string) {
   const distance = Date.now() - new Date(value).getTime();
   if (distance < 60_000) return "刚刚";
   if (distance < 3_600_000) return `${Math.max(1, Math.floor(distance / 60_000))} 分钟前`;
-  if (distance < 86_400_000) return `${Math.floor(distance / 3_600_000)} 小时前`;
+  if (distance < 86_400_000) return `${Math.floor(distance / 86_400_000)} 天前`;
   return `${Math.floor(distance / 86_400_000)} 天前`;
 }
 
 /* ─────────────────────── 1. DiscoverArticleCard ─────────────────────── */
 
-function DiscoverArticleCard({ item }: { item: PublicArticleSummary }) {
+function DiscoverArticleCard({ item, rank }: { item: PublicArticleSummary; rank?: number }) {
   const authorName = item.author.displayName || item.author.username;
   return (
     <article
       className="surface"
       style={{ borderRadius: 10, padding: 16, minWidth: 300, flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 10 }}
     >
-      {/* 作者 + 时间 */}
+      {/* 作者 + 时间 + 排名 */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {rank !== undefined && (
+          <span style={{ fontSize: 13, fontWeight: 700, color: rank <= 3 ? "var(--primary, #6366f1)" : "var(--text-tertiary)", minWidth: 22 }}>
+            #{rank}
+          </span>
+        )}
         <Avatar label={authorName.slice(0, 1)} size="sm" />
         <span style={{ fontSize: 13, fontWeight: 600 }}>{authorName}</span>
         <span className="muted" style={{ fontSize: 12 }}>· {timeLabel(item.publishedAt)}</span>
@@ -204,7 +209,13 @@ function SeriesExploreCard({ item }: { item: Series }) {
 
 /* ─────────────────────── 3. CreatorCard ─────────────────────── */
 
-function CreatorCard({ creator }: { creator: { name: string; username: string; articleCount: number } }) {
+function CreatorCard({
+  creator,
+  rank,
+}: {
+  creator: { name: string; username: string; articleCount: number };
+  rank?: number;
+}) {
   return (
     <Link
       href={`/blogs/${encodeURIComponent(creator.username)}`}
@@ -219,6 +230,11 @@ function CreatorCard({ creator }: { creator: { name: string; username: string; a
         color: "inherit",
       }}
     >
+      {rank !== undefined && (
+        <span style={{ fontSize: 13, fontWeight: 700, color: rank <= 3 ? "var(--primary, #6366f1)" : "var(--text-tertiary)", minWidth: 22 }}>
+          #{rank}
+        </span>
+      )}
       <Avatar label={creator.name.slice(0, 1)} size="md" />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -380,6 +396,13 @@ export default function DiscoverPage() {
     };
   }, []);
 
+  const handleTopicClick = useCallback(
+    (slug: string) => {
+      router.push(`/articles?tag=${encodeURIComponent(slug)}`);
+    },
+    [router],
+  );
+
   const creators = useMemo(() => {
     const seen = new Map<string, { name: string; username: string; articleCount: number }>();
     articles.forEach((article) => {
@@ -391,8 +414,20 @@ export default function DiscoverPage() {
         articleCount: (prev?.articleCount || 0) + 1,
       });
     });
+    if (seen.size < 5) {
+      moments.forEach((m) => {
+        const key = m.author.userId;
+        if (!seen.has(key)) {
+          seen.set(key, {
+            name: m.author.displayName || m.author.username,
+            username: m.author.username,
+            articleCount: 1,
+          });
+        }
+      });
+    }
     return [...seen.values()].slice(0, 5);
-  }, [articles]);
+  }, [articles, moments]);
 
   const handleSearch = useCallback(
     (e: React.FormEvent) => {
@@ -402,10 +437,17 @@ export default function DiscoverPage() {
     [searchInput, router],
   );
 
+  const isAllEmpty =
+    articles.length === 0 &&
+    tags.length === 0 &&
+    seriesList.length === 0 &&
+    moments.length === 0 &&
+    teams.length === 0;
+
   return (
     <>
       <UserTopbar title="发现" />
-      <main className="page-shell" style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
+      <main className="page-shell discover-editorial-mosaic" style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 20px" }}>
         {/* 紧凑标题 + 搜索 */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
@@ -445,114 +487,126 @@ export default function DiscoverPage() {
         {/* 主体内容 */}
         {!loading && !error && (
           <>
-            {/* ── 热门主题 ── */}
-            {tags.length > 0 && (
-              <section style={{ marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Flame size={18} style={{ color: "var(--primary)" }} /> 热门主题
-                  </h2>
-                  <Link href="/tags" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
-                </div>
-                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-                  {tags
-                    .slice()
-                    .sort((a, b) => b.usageCount - a.usageCount)
-                    .slice(0, 10)
-                    .map((tag) => (
-                      <Link
-                        key={tag.tagId}
-                        href={`/articles?tag=${encodeURIComponent(tag.slug)}`}
-                        className="chip"
-                        style={{ fontSize: 12, padding: "5px 12px", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", flexShrink: 0 }}
-                      >
-                        <Hash size={12} /> {tag.name} <span className="muted" style={{ fontSize: 11 }}>{tag.usageCount}</span>
-                      </Link>
-                    ))}
-                </div>
-              </section>
-            )}
+            {isAllEmpty ? (
+              <div className="surface" style={{ padding: 40, borderRadius: 12, marginTop: 24, textAlign: "center" }}>
+                <EmptyState
+                  title="暂无发现内容"
+                  description="社区尚未发布公开内容，点击顶部导航去其他频道逛逛吧。"
+                />
+              </div>
+            ) : (
+              <>
+                {/* ── 热门主题 ── */}
+                {tags.length > 0 && (
+                  <section style={{ marginBottom: 32 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Flame size={18} style={{ color: "var(--primary)" }} /> 热门主题
+                      </h2>
+                      <Link href="/tags" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                      {tags
+                        .slice()
+                        .sort((a, b) => b.usageCount - a.usageCount)
+                        .slice(0, 10)
+                        .map((tag) => (
+                          <Link
+                            key={tag.tagId}
+                            href={`/articles?tag=${encodeURIComponent(tag.slug)}`}
+                            onClick={() => handleTopicClick(tag.slug)}
+                            className="chip"
+                            style={{ fontSize: 12, padding: "5px 12px", textDecoration: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", flexShrink: 0 }}
+                          >
+                            <Hash size={12} /> {tag.name} <span className="muted" style={{ fontSize: 11 }}>{tag.usageCount}</span>
+                          </Link>
+                        ))}
+                    </div>
+                  </section>
+                )}
 
-            {/* ── 值得阅读 ── */}
-            {articles.length > 0 && (
-              <section style={{ marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Sparkles size={18} style={{ color: "var(--primary)" }} /> 值得阅读
-                  </h2>
-                  <Link href="/articles" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
-                </div>
-                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
-                  {articles.map((item) => (
-                    <DiscoverArticleCard item={item} key={item.articleId} />
-                  ))}
-                </div>
-              </section>
-            )}
+                {/* ── 值得阅读 ── */}
+                {articles.length > 0 && (
+                  <section style={{ marginBottom: 32 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Sparkles size={18} style={{ color: "var(--primary)" }} /> 值得阅读
+                      </h2>
+                      <Link href="/articles" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                    </div>
+                    <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                      {articles.map((item, idx) => (
+                        <DiscoverArticleCard item={item} rank={idx + 1} key={item.articleId} />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
-            {/* ── 正在连载 ── */}
-            {seriesList.length > 0 && (
-              <section style={{ marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Layers size={18} style={{ color: "var(--primary)" }} /> 正在连载
-                  </h2>
-                  <Link href="/series" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
-                </div>
-                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
-                  {seriesList.slice(0, 5).map((item) => (
-                    <SeriesExploreCard item={item} key={item.id} />
-                  ))}
-                </div>
-              </section>
-            )}
+                {/* ── 正在连载 ── */}
+                {seriesList.length > 0 && (
+                  <section style={{ marginBottom: 32 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Layers size={18} style={{ color: "var(--primary)" }} /> 正在连载
+                      </h2>
+                      <Link href="/series" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                    </div>
+                    <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                      {seriesList.slice(0, 5).map((item) => (
+                        <SeriesExploreCard item={item} key={item.id} />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
-            {/* ── 创作者 + 团队 并排 ── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
-              {/* 值得关注的创作者 */}
-              {creators.length > 0 && (
-                <section>
-                  <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Users size={18} style={{ color: "var(--primary)" }} /> 值得关注的创作者
-                  </h2>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {creators.map((creator) => (
-                      <CreatorCard creator={creator} key={creator.username} />
-                    ))}
-                  </div>
-                </section>
-              )}
+                {/* ── 创作者 + 团队 并排 ── */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
+                  {/* 值得关注的创作者 */}
+                  {creators.length > 0 && (
+                    <section>
+                      <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Users size={18} style={{ color: "var(--primary)" }} /> 值得关注的创作者
+                      </h2>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {creators.map((creator, idx) => (
+                          <CreatorCard creator={creator} rank={idx + 1} key={creator.username} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
-              {/* 公开团队 */}
-              {teams.length > 0 && (
-                <section>
-                  <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Users size={18} style={{ color: "var(--primary)" }} /> 公开团队
-                  </h2>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {teams.slice(0, 5).map((team) => (
-                      <ActiveTeamCard team={team} key={team.teamId} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
+                  {/* 公开团队 */}
+                  {teams.length > 0 && (
+                    <section>
+                      <h2 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Users size={18} style={{ color: "var(--primary)" }} /> 公开团队
+                      </h2>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {teams.slice(0, 5).map((team) => (
+                          <ActiveTeamCard team={team} key={team.teamId} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
 
-            {/* ── 正在发生的动态 ── */}
-            {moments.length > 0 && (
-              <section style={{ marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Orbit size={18} style={{ color: "var(--primary)" }} /> 正在发生的动态
-                  </h2>
-                  <Link href="/moments" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
-                </div>
-                <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
-                  {moments.map((item) => (
-                    <MomentPreviewCard item={item} key={item.momentId} />
-                  ))}
-                </div>
-              </section>
+                {/* ── 正在发生的动态 ── */}
+                {moments.length > 0 && (
+                  <section style={{ marginBottom: 32 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <Orbit size={18} style={{ color: "var(--primary)" }} /> 正在发生的动态
+                      </h2>
+                      <Link href="/moments" className="ghost-button" style={{ fontSize: 12 }}>查看更多 →</Link>
+                    </div>
+                    <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }}>
+                      {moments.map((item) => (
+                        <MomentPreviewCard item={item} key={item.momentId} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </>
             )}
           </>
         )}

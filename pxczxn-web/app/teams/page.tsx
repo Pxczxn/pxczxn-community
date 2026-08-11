@@ -26,7 +26,6 @@ function tabFromUrl(): TabKey | null {
   const value = new URLSearchParams(window.location.search).get("tab");
   return TAB_KEYS.includes(value as TabKey) ? (value as TabKey) : null;
 }
-
 export default function TeamsPage() {
   // 初始为 null,effect 中再读 localStorage,避免 SSR(无 window)与客户端首帧不一致导致 hydration 错误
   const [session, setSession] = useState<CommunitySession | null>(null);

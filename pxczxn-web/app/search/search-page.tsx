@@ -21,12 +21,19 @@ const labels: Record<UnifiedSearchResult["type"], string> = {
 };
 
 export function SearchPage() {
-  const [keyword, setKeyword] = useState(() => initialKeyword());
-  const [submittedKeyword, setSubmittedKeyword] = useState(() => initialKeyword());
+  const [keyword, setKeyword] = useState("");
+  const [submittedKeyword, setSubmittedKeyword] = useState("");
   const [type, setType] = useState<UnifiedSearchType>("ALL");
   const [page, setPage] = useState<UnifiedSearchPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loading = Boolean(submittedKeyword) && page === null && error === null;
+
+  useEffect(() => {
+    const nextKeyword = initialKeyword();
+    if (!nextKeyword) return;
+    setKeyword(nextKeyword);
+    setSubmittedKeyword(nextKeyword);
+  }, []);
 
   useEffect(() => {
     if (!submittedKeyword) return;

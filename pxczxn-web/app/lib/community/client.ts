@@ -1,9 +1,9 @@
 "use client";
 
-import type { CommunitySession } from "./session";
 import { readSession, saveSession } from "./session";
 
 const configuredApiBaseUrl =
+  process.env.COMMUNITY_API_BASE_URL?.trim() ||
   process.env.NEXT_PUBLIC_COMMUNITY_API_BASE_URL?.trim();
 const browserHostname =
   typeof window !== "undefined" ? window.location.hostname : "";
@@ -24,9 +24,11 @@ const inferredSameOriginApiBaseUrl =
   typeof window !== "undefined" && !isLocalBrowser
     ? window.location.origin
     : "";
+const inferredSsrApiBaseUrl =
+  typeof window === "undefined" ? "http://127.0.0.1:8849" : "";
 
 export const COMMUNITY_API_BASE_URL =
-  (configuredApiBaseUrl || inferredLocalApiBaseUrl || inferredSameOriginApiBaseUrl)
+  (configuredApiBaseUrl || inferredLocalApiBaseUrl || inferredSameOriginApiBaseUrl || inferredSsrApiBaseUrl)
     .replace(/\/+$/, "");
 
 export interface ApiResult<T> {

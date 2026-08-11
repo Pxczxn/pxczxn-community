@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { Button, Card, Empty, Space, Spin, Tag, Typography } from "@/components/ui/community-ui";
 import {
   AlertCircle,
   ArrowUpRight,
-  CalendarClock,
   Check,
   FileCheck2,
   Inbox,
-  Loader2,
   UserPlus,
   X,
 } from "lucide-react";
@@ -27,7 +26,8 @@ import {
   ROLE_LABELS,
 } from "./team-labels";
 
-/** “邀请与申请”Tab：收到的邀请 + 团队建立申请。 */
+const { Title, Paragraph, Text } = Typography;
+
 export function RequestsTab({
   invitations,
   application,
@@ -51,7 +51,6 @@ export function RequestsTab({
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
-  // 接受邀请后记录刚加入的团队,在邀请页就地展示“已加入”反馈与后续操作,不自动跳转。
   const [lastAccepted, setLastAccepted] = useState<{ teamName: string; teamSlug: string | null } | null>(null);
 
   const myTeamByTeamId = new Map((mine ?? []).map((team) => [team.teamId, team]));
@@ -99,168 +98,183 @@ export function RequestsTab({
 
   return (
     <div className="requests-tab">
-      {actionError && <p className="inline-feedback error" role="alert">{actionError}</p>}
+      {actionError && (
+        <Card style={{ borderRadius: 12, borderColor: "#ff4d4f", marginBottom: 16 }}>
+          <Text type="danger">{actionError}</Text>
+        </Card>
+      )}
+
+      {lastAccepted && (
+        <Card style={{ borderRadius: 12, borderColor: "#52c41a", marginBottom: 16 }}>
+          <Space align="center" size={12}>
+            <Check size={18} style={{ color: "#52c41a" }} />
+            <div>
+              <Text strong style={{ fontSize: 14 }}>你已加入 {lastAccepted.teamName}！</Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block" }}>
+                成员关系已建立。你可以进入工作台开始协作，或在“我的团队”中找到它。
+              </Text>
+            </div>
+            {lastAccepted.teamSlug && (
+              <Link href={`/teams/${lastAccepted.teamSlug}/workspace`}>
+                <Button type="primary" size="small" icon={<ArrowUpRight size={14} />}>
+                  进入工作台
+                </Button>
+              </Link>
+            )}
+          </Space>
+        </Card>
+      )}
+
       {loading && (
-        <div className="series-loading surface" aria-live="polite">
-          <Loader2 className="animate-spin" size={22} /> 正在加载邀请与申请…
+        <div style={{ textAlign: "center", padding: 60 }}>
+          <Spin tip="正在读取待处理事项…" />
         </div>
       )}
+
       {!loading && error && (
-        <section className="surface inline-feedback error" role="alert">
-          <AlertCircle size={20} />
-          <div>
-            <strong>邀请与申请暂时无法加载</strong>
-            <p>{error}</p>
-          </div>
-        </section>
+        <Card style={{ borderRadius: 12, borderColor: "#ff4d4f", marginBottom: 16 }}>
+          <Text type="danger">{error}</Text>
+        </Card>
       )}
 
       {!loading && !error && (
-        <div className="requests-tab__columns">
-          <section className="surface requests-panel">
-            <header className="requests-panel__header">
-              <span className="eyebrow"><Inbox size={15} /> 收到的邀请</span>
-              {invitations.filter(i => i.status === "PENDING").length > 0 && <span className="badge badge--warn">{invitations.filter(i => i.status === "PENDING").length} 条待处理</span>}
-            </header>
-
-            {lastAccepted && (
-              <div className="requests-panel__accepted">
-                <span className="requests-panel__accepted-icon"><Check size={16} /></span>
-                <div className="requests-panel__accepted-copy">
-                  <strong>已加入团队「{lastAccepted.teamName}」</strong>
-                  <p>快去工作台开始协作吧。</p>
-                </div>
-                <div className="requests-panel__accepted-actions">
-                  {lastAccepted.teamSlug && (
-                    <Link className="primary-button" href={`/teams/${encodeURIComponent(lastAccepted.teamSlug)}/workspace`}>
-                      进入团队工作台 <ArrowUpRight size={14} />
-                    </Link>
-                  )}
-                  {invitations.length > 0 ? (
-                    <button type="button" className="ghost-button" onClick={() => setLastAccepted(null)}>
-                      继续处理邀请
-                    </button>
-                  ) : (
-                    <button type="button" className="ghost-button" onClick={() => onSwitchTab("mine")}>
-                      查看我的团队
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {invitations.length === 0 && !lastAccepted && (
-              <p className="requests-panel__empty">暂时没有待处理的团队邀请。</p>
-            )}
-
-            {invitations.length > 0 && (
-              <ul className="requests-panel__list">
+        <Space direction="vertical" style={{ width: "100%" }} size={20}>
+          {/* 收到的邀请 */}
+          <Card
+            title={
+              <Space align="center">
+                <UserPlus size={18} style={{ color: "var(--primary, #1677ff)" }} />
+                <Text strong style={{ fontSize: 15 }}>收到的团队邀请 ({invitations.length})</Text>
+              </Space>
+            }
+            style={{ borderRadius: 14 }}
+          >
+            {invitations.length === 0 ? (
+              <Empty description="当前没有待处理的团队邀请。" style={{ margin: "20px 0" }} />
+            ) : (
+              <Space direction="vertical" style={{ width: "100%" }} size={12}>
                 {invitations.map((invitation) => {
-                  const name = invitation.teamName ?? `团队 #${invitation.teamId}`;
+                  const isPending = invitation.status === "PENDING";
+                  const isAccepted = invitation.status === "ACCEPTED";
+                  const isRejected = invitation.status === "REJECTED";
+                  const teamName = invitation.teamName ?? `团队 #${invitation.teamId}`;
+
                   return (
-                    <li className="request-row" key={invitation.id}>
-                      <Avatar
-                        alt={`${name}头像`}
-                        label={name.slice(0, 1)}
-                        size="sm"
-                        src={publicFileUrl(invitation.teamAvatarFileId)}
-                      />
-                      <div className="request-row__copy">
-                        <strong>{name}</strong>
-                        <span>
-                          {invitation.inviterDisplayName ?? invitation.inviterUsername ?? "未知用户"} 邀请你以「{ROLE_LABELS[invitation.roleCode] || invitation.roleCode}」身份加入
-                          · 有效期至 {formatDateTime(invitation.expiresAt)}
-                        </span>
+                    <Card size="small" key={invitation.id} style={{ borderRadius: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                        <Space size={12}>
+                          <Avatar
+                            alt={`${teamName}头像`}
+                            label={teamName.slice(0, 1)}
+                            size="md"
+                            src={publicFileUrl(invitation.teamAvatarFileId)}
+                          />
+                          <div>
+                            <Text strong style={{ fontSize: 14, display: "block" }}>{teamName}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              邀请你作为 <Tag color="blue" style={{ margin: "0 4px" }}>{ROLE_LABELS[invitation.roleCode] || invitation.roleCode}</Tag> 加入团队 · {formatDateTime(invitation.createdAt)}
+                            </Text>
+                          </div>
+                        </Space>
+                        {isPending && (
+                          <Space size={8}>
+                            <Button
+                              type="primary"
+                              size="small"
+                              loading={busy === invitation.id}
+                              icon={<Check size={13} />}
+                              onClick={() => respond(invitation, "accept")}
+                            >
+                              接受
+                            </Button>
+                            <Button
+                              size="small"
+                              danger
+                              loading={busy === invitation.id}
+                              icon={<X size={13} />}
+                              onClick={() => respond(invitation, "reject")}
+                            >
+                              拒绝
+                            </Button>
+                          </Space>
+                        )}
+                        {isAccepted && <Tag color="green">已接受</Tag>}
+                        {isRejected && <Tag color="default">已拒绝</Tag>}
                       </div>
-                      <div className="request-row__actions">
-                        <button
-                          type="button"
-                          className="primary-button"
-                          disabled={busy === invitation.id}
-                          onClick={() => respond(invitation, "accept")}
-                        >
-                          {busy === invitation.id ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
-                          接受
-                        </button>
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          disabled={busy === invitation.id}
-                          onClick={() => respond(invitation, "reject")}
-                        >
-                          <X size={14} /> 拒绝
-                        </button>
-                      </div>
-                    </li>
+                    </Card>
                   );
                 })}
-              </ul>
+              </Space>
             )}
-          </section>
+          </Card>
 
-          <section className="surface requests-panel">
-            <header className="requests-panel__header">
-              <span className="eyebrow"><FileCheck2 size={15} /> 团队建立申请</span>
-              <Link href="/team-applications" className="ghost-button">
-                查看详情 <ArrowUpRight size={14} />
-              </Link>
-            </header>
-
-            {!application ? (
-              <div className="requests-panel__empty">
-                <p>提交建队申请后，审核结果会显示在这里。</p>
-                <Link href="/team-applications" className="secondary-button" onClick={onRequireLogin}>
-                  <UserPlus size={15} /> 申请建立团队
+          {/* 团队建立申请 */}
+          <Card
+            title={
+              <Space align="center">
+                <FileCheck2 size={18} style={{ color: "var(--primary, #1677ff)" }} />
+                <Text strong style={{ fontSize: 15 }}>团队建立申请</Text>
+              </Space>
+            }
+            extra={
+              !application && (
+                <Link href="/team-applications">
+                  <Button type="primary" size="small" onClick={onRequireLogin}>
+                    新建申请
+                  </Button>
                 </Link>
-              </div>
+              )
+            }
+            style={{ borderRadius: 14 }}
+          >
+            {!application ? (
+              <Empty description="你还没有提交团队建立申请。" style={{ margin: "20px 0" }}>
+                <Link href="/team-applications">
+                  <Button type="primary" size="small" onClick={onRequireLogin}>
+                    申请建立团队
+                  </Button>
+                </Link>
+              </Empty>
             ) : (
-              <div className="application-card">
-                <div className="application-card__identity">
-                  <h3>{application.teamName}</h3>
-                  <span className="secondary">@{application.teamSlug}</span>
-                  <span className={`chip application-card__status is-${application.status.toLowerCase()}`}>
-                    {APPLICATION_STATUS_LABELS[application.status] || application.status}
-                  </span>
-                </div>
-                <p className="application-card__meta">
-                  <CalendarClock size={13} /> 提交于 {formatDateTime(application.createdAt)}
-                </p>
-                {application.reviewComment && (
-                  <p className="application-card__review">
-                    审核意见：{application.reviewComment}
-                  </p>
-                )}
-                <div className="application-card__actions">
+              <Card size="small" style={{ borderRadius: 10 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                  <div>
+                    <Space size={8} style={{ marginBottom: 6 }}>
+                      <Title level={5} style={{ margin: 0, fontSize: 15 }}>{application.teamName}</Title>
+                      <Text type="secondary" style={{ fontSize: 12 }}>@{application.teamSlug}</Text>
+                      <Tag color={application.status === "PENDING" ? "warning" : application.status === "APPROVED" ? "success" : "error"}>
+                        {APPLICATION_STATUS_LABELS[application.status] || application.status}
+                      </Tag>
+                    </Space>
+                    <Paragraph type="secondary" style={{ fontSize: 13, margin: "0 0 8px" }}>
+                      {application.description || "无申请描述"}
+                    </Paragraph>
+                    <Text type="secondary" style={{ fontSize: 11 }}>
+                      提交时间：{formatDateTime(application.createdAt)}
+                    </Text>
+                  </div>
                   {application.status === "PENDING" && (
-                    <button
-                      type="button"
-                      className="ghost-button"
-                      disabled={busy === `application-${application.id}`}
+                    <Button
+                      size="small"
+                      danger
+                      loading={busy === `application-${application.id}`}
                       onClick={cancelApplication}
                     >
                       撤回申请
-                    </button>
+                    </Button>
                   )}
-                  {application.status === "REJECTED" && (
-                    <Link href="/team-applications" className="secondary-button">
-                      修改后重新提交
+                  {approvedTeam && (
+                    <Link href={`/teams/${approvedTeam.slug}/workspace`}>
+                      <Button type="primary" size="small" icon={<ArrowUpRight size={14} />}>
+                        工作台
+                      </Button>
                     </Link>
                   )}
-                  {application.status === "APPROVED" && (
-                    <>
-                      <Link className="primary-button" href={approvedTeam ? `/teams/${approvedTeam.slug}/workspace` : "/teams"}>
-                        进入团队工作台
-                      </Link>
-                      <Link className="ghost-button" href={`/teams/${application.teamSlug}`}>
-                        访问团队主页 <ArrowUpRight size={14} />
-                      </Link>
-                    </>
-                  )}
                 </div>
-              </div>
+              </Card>
             )}
-          </section>
-        </div>
+          </Card>
+        </Space>
       )}
     </div>
   );

@@ -62,6 +62,19 @@ import type {
   BlogFollowRelationship,
   AccountEnforcementCase,
   AccountEnforcementAppeal,
+  ArticleVersionSummary,
+  ArticleVersionPage,
+  ArticleVersionDetail,
+  RestoreArticleVersionInput,
+  CreateCategoryInput,
+  CreateBlogCategoryInput,
+  UpdateCategoryInput,
+  UpdateBlogCategoryInput,
+  CreateFavoriteFolderInput,
+  UpdateFavoriteFolderInput,
+  UpdateFolderInput,
+  MomentDeletionResponse,
+  CommentModerationResponse,
 } from "./types";
 
 export const communityApi = {
@@ -210,6 +223,10 @@ export const communityApi = {
   },
   tags(keyword?: string) {
     const suffix = keyword ? `?keyword=${encodeURIComponent(keyword)}` : "";
+    return communityRequest<PlatformTag[]>(`/api/v1/tags${suffix}`, {}, false);
+  },
+  getHotTopics(limit?: number) {
+    const suffix = limit ? `?limit=${limit}` : "";
     return communityRequest<PlatformTag[]>(`/api/v1/tags${suffix}`, {}, false);
   },
   createArticle(input: Record<string, unknown>) {
@@ -597,4 +614,112 @@ export const communityApi = {
   sendChatMessage(recipientUserId: string, contentText: string) { return communityRequest<CommunityChatMessage>("/api/v1/chat/messages", { method: "POST", body: JSON.stringify({ recipientUserId, contentText }) }); },
   markChatRead(peerId: string) { return communityRequest<void>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}/read`, { method: "POST" }); },
   chatTicket() { return communityRequest<{ ticket: string; expiresInSeconds: number }>("/api/v1/chat/websocket-ticket", { method: "POST" }); },
+
+  // --- Article Deletion, Drafts & Versions ---
+  deleteArticle(articleId: string, expectedLockVersion: number) {
+    return communityRequest<void>(
+      `/api/v1/articles/${encodeURIComponent(articleId)}?expectedLockVersion=${expectedLockVersion}`,
+      { method: "DELETE" },
+    );
+  },
+
+  articleVersions(articleId: string, pageNum = 1, pageSize = 20) {
+    return communityRequest<ArticleVersionPage>(
+      `/api/v1/articles/${encodeURIComponent(articleId)}/versions?pageNum=${pageNum}&pageSize=${pageSize}`,
+    );
+  },
+
+  articleVersionDetail(articleId: string, versionId: string) {
+    return communityRequest<ArticleVersionDetail>(
+      `/api/v1/articles/${encodeURIComponent(articleId)}/versions/${encodeURIComponent(versionId)}`,
+    );
+  },
+
+  restoreArticleVersion(articleId: string, versionId: string, expectedLockVersion: number) {
+    return communityRequest<ArticleEditor>(
+      `/api/v1/articles/${encodeURIComponent(articleId)}/versions/${encodeURIComponent(versionId)}/restore`,
+      {
+        method: "POST",
+        body: JSON.stringify({ expectedLockVersion }),
+      },
+    );
+  },
+
+  // --- Blog Categories ---
+  publicBlogCategories(blogSlug: string) {
+    return communityRequest<BlogCategory[]>(
+      `/api/v1/public/blogs/${encodeURIComponent(blogSlug)}/categories`,
+      {},
+      false,
+    );
+  },
+
+  createCategory(input: CreateCategoryInput) {
+    return communityRequest<BlogCategory>("/api/v1/blogs/me/categories", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
+
+  updateCategory(categoryId: string, input: UpdateCategoryInput) {
+    return communityRequest<BlogCategory>(
+      `/api/v1/blogs/me/categories/${encodeURIComponent(categoryId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
+  },
+
+  deleteCategory(categoryId: string) {
+    return communityRequest<void>(
+      `/api/v1/blogs/me/categories/${encodeURIComponent(categoryId)}`,
+      { method: "DELETE" },
+    );
+  },
+
+  // --- Favorite Folders Management ---
+  updateFavoriteFolder(folderId: string, input: UpdateFavoriteFolderInput) {
+    return communityRequest<FavoriteFolder>(
+      `/api/v1/social/me/favorite-folders/${encodeURIComponent(folderId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      },
+    );
+  },
+
+  deleteFavoriteFolder(folderId: string) {
+    return communityRequest<void>(
+      `/api/v1/social/me/favorite-folders/${encodeURIComponent(folderId)}`,
+      { method: "DELETE" },
+    );
+  },
+
+  // --- Interactive Entity Deletions & Removal ---
+  deleteMoment(momentId: string, expectedLockVersion = 0) {
+    return communityRequest<MomentDeletionResponse>(
+      `/api/v1/moments/${encodeURIComponent(momentId)}?expectedLockVersion=${expectedLockVersion}`,
+      { method: "DELETE" },
+    );
+  },
+
+  deleteComment(commentId: string) {
+    return communityRequest<CommentModerationResponse>(
+      `/api/v1/comments/${encodeURIComponent(commentId)}`,
+      { method: "DELETE" },
+    );
+  },
+
+
+  // --- Invitation Cancellation ---
+  cancelCollaborationInvitation(invitationId: string, lockVersion = 0) {
+    return communityRequest<void>(
+      `/api/v1/articles/collaboration-invitations/${encodeURIComponent(invitationId)}/cancel`,
+      {
+        method: "POST",
+        body: JSON.stringify({ expectedLockVersion: lockVersion }),
+      },
+    );
+  },
 };

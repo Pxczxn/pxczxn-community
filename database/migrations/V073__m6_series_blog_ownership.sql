@@ -32,7 +32,7 @@ ALTER TABLE `series_article` RENAME INDEX `uk_team_series_article_order` TO `uk_
 ALTER TABLE `series_article` RENAME INDEX `idx_team_series_article_series` TO `idx_series_article_series`;
 
 -- 7. 修正注释
-ALTER TABLE `series` COMMENT = '博客文章系列及连载状态（个人博客与团队博客通用）';
-ALTER TABLE `series_article` COMMENT = '系列文章排序关系';
-ALTER TABLE `series` MODIFY COLUMN `blog_id` BIGINT UNSIGNED NOT NULL COMMENT '所属博客 ID（系列唯一归属事实）';
-ALTER TABLE `series_article` MODIFY COLUMN `blog_id` BIGINT UNSIGNED NOT NULL COMMENT '冗余的所属博客 ID，与 series.blog_id 一致，用于按博客直查章节';
+ALTER TABLE `series` COMMENT = 'Blog article series and serialization state';
+ALTER TABLE `series_article` COMMENT = 'Ordered article membership of a series';
+ALTER TABLE `series` MODIFY COLUMN `blog_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning blog ID';
+ALTER TABLE `series_article` MODIFY COLUMN `blog_id` BIGINT UNSIGNED NOT NULL COMMENT 'Owning blog ID copied from series';

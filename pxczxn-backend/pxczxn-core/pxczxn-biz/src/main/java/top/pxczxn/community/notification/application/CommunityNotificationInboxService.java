@@ -114,10 +114,11 @@ public class CommunityNotificationInboxService {
                     recipient.getNotificationId()
             );
             if (notification != null) {
+                Long senderUserId = notification.getSenderUserId();
                 records.add(toView(
                         notification,
                         recipient,
-                        senders.get(notification.getSenderUserId()),
+                        senderUserId == null ? null : senders.get(senderUserId),
                         userId
                 ));
             }

@@ -2,44 +2,28 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import {
-  AlertCircle,
-  ArrowUpRight,
-  Loader2,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
+import { Button, Card, Col, Descriptions, List, Pagination, Row, Space, Statistic, Tabs, Tag, Typography } from "@/components/ui/community-ui";
 import { Avatar, UserTopbar } from "../../components/prototype-ui";
-import {
-  communityApi,
-  publicFileUrl,
-  readSession,
-  type MyTeam,
-  type PublicArticlePage,
-  type TeamPortal,
-  type Series,
-} from "../../lib/community-api";
+import { communityApi, publicFileUrl, readSession, type MyTeam, type PublicArticlePage, type TeamPortal, type Series } from "../../lib/community-api";
 import { formatCount, ROLE_LABELS, SERIALIZATION_LABELS } from "../team-labels";
+import { TeamEmpty, TeamError, TeamLoading } from "../team-ui";
 
+const { Paragraph, Text, Title } = Typography;
 type PortalTab = "home" | "articles" | "series" | "members" | "about";
 const TABS: Array<{ key: PortalTab; label: string }> = [
-  { key: "home", label: "主页" },
-  { key: "articles", label: "文章" },
-  { key: "series", label: "连载" },
-  { key: "members", label: "成员" },
-  { key: "about", label: "关于" },
+  { key: "home", label: "主页" }, { key: "articles", label: "文章" }, { key: "series", label: "系列" }, { key: "members", label: "成员" }, { key: "about", label: "关于" },
 ];
 
 function tabFromUrl(): PortalTab {
   if (typeof window === "undefined") return "home";
   const value = new URLSearchParams(window.location.search).get("tab");
-  return TABS.some((item) => item.key === value) ? (value as PortalTab) : "home";
+  return TABS.some((item) => item.key === value) ? value as PortalTab : "home";
 }
 
 export default function TeamDetailPage() {
-  const params = useParams<{ teamSlug: string }>();
-  const slug = params.teamSlug;
+  const { teamSlug: slug } = useParams<{ teamSlug: string }>();
   const [team, setTeam] = useState<TeamPortal | null>(null);
   const [tab, setTab] = useState<PortalTab>("home");
   const [articles, setArticles] = useState<PublicArticlePage | null>(null);
@@ -55,42 +39,33 @@ export default function TeamDetailPage() {
     const timer = window.setTimeout(() => setTab(tabFromUrl()), 0);
     return () => window.clearTimeout(timer);
   }, []);
-
   useEffect(() => {
     let active = true;
     void communityApi.team(slug)
       .then(async (portal) => {
         if (!active) return;
         setTeam(portal);
-        const teamId = portal.team.teamId;
         const jobs: Array<Promise<unknown>> = [
           communityApi.publicArticles(slug, pageNum, 10).then((value) => { if (active) setArticles(value); }),
-          communityApi.teamPublicSeries(teamId).then((value) => { if (active) setSeries(value); }),
+          communityApi.teamPublicSeries(portal.team.teamId).then((value) => { if (active) setSeries(value); }),
         ];
-        if (readSession()) {
-          jobs.push(
-            communityApi.myTeams()
-              .then((value) => { if (active) setMine(value); })
-              .catch(() => { if (active) setMine(null); }),
-            communityApi.blogFollowRelationship(portal.team.blogId)
-              .then((value) => { if (active) setFollowing(value.following); })
-              .catch(() => undefined),
-          );
-        }
+        if (readSession()) jobs.push(
+          communityApi.myTeams().then((value) => { if (active) setMine(value); }).catch(() => { if (active) setMine(null); }),
+          communityApi.blogFollowRelationship(portal.team.blogId).then((value) => { if (active) setFollowing(value.following); }).catch(() => undefined),
+        );
         await Promise.all(jobs);
       })
-      .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : "加载失败");
-      })
+      .catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "加载失败"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [slug, pageNum]);
 
-  const isMember = useMemo(
-    () => Boolean(mine && team && mine.some((item) => item.teamId === team!.team.teamId)),
-    [mine, team],
-  );
-
+  const isMember = useMemo(() => Boolean(mine && team && mine.some((item) => item.teamId === team.team.teamId)), [mine, team]);
+  function selectTab(next: string) {
+    const target = next as PortalTab;
+    setTab(target);
+    window.history.replaceState(null, "", `/teams/${slug}?tab=${target}`);
+  }
   async function toggleFollow() {
     if (!team || !readSession()) {
       window.location.assign(`/login?returnTo=${encodeURIComponent(`/teams/${slug}`)}`);
@@ -102,279 +77,59 @@ export default function TeamDetailPage() {
       setFollowing((value) => !value);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "关注操作失败，请稍后重试");
-    } finally {
-      setFollowBusy(false);
-    }
+    } finally { setFollowBusy(false); }
   }
 
-  if (loading && !team) {
-    return (
-      <>
-        <UserTopbar title="团队" />
-        <main className="page-shell team-detail-loading">
-          <Loader2 aria-label="加载团队" className="animate-spin" />
-        </main>
-      </>
-    );
-  }
-
-  if (error && !team) {
-    return (
-      <>
-        <UserTopbar title="团队" />
-        <main className="page-shell team-detail-page">
-          <section className="surface inline-feedback error" role="alert">
-            <AlertCircle size={20} />
-            <div>
-              <strong>团队主页暂时无法打开</strong>
-              <p>{error}</p>
-              <Link className="secondary-button" href="/teams">返回团队列表</Link>
-            </div>
-          </section>
-        </main>
-      </>
-    );
-  }
-
+  if (loading && !team) return <><UserTopbar title="团队" /><main className="page-shell team-detail-page"><TeamLoading label="正在加载团队…" /></main></>;
+  if (error && !team) return <><UserTopbar title="团队" /><main className="page-shell team-detail-page"><TeamError title="团队主页暂时无法打开" description={error} extra={<Link href="/teams"><Button type="primary">返回团队列表</Button></Link>} /></main></>;
   if (!team) return null;
 
-  const teamAvatar = publicFileUrl(team.team.avatarFileId);
   const publicArticles = articles?.records ?? [];
-
-  function selectTab(next: PortalTab) {
-    setTab(next);
-    window.history.replaceState(null, "", `/teams/${slug}?tab=${next}`);
-  }
+  const tabContent = {
+    home: (
+      <Row className="team-detail-layout" gutter={[16, 16]}>
+        <Col xs={24} lg={16}><Card className="team-detail-articles" title="最新文章" bordered={false}>
+          {publicArticles.length === 0 ? <TeamEmpty description="暂无公开文章。" /> : <List dataSource={publicArticles.slice(0, 5)} renderItem={(article) => <List.Item><List.Item.Meta title={<Link href={`/articles/${article.articleId}`}>{article.title}</Link>} description={article.summary} /></List.Item>} />}
+        </Card></Col>
+        <Col xs={24} lg={8}><Card className="team-detail-members" title="核心成员" bordered={false}>
+          <List dataSource={team.members.slice(0, 8)} renderItem={(member) => { const name = member.displayName || member.username; return <List.Item><List.Item.Meta avatar={<Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} />} title={name} description={`@${member.username}`} /><Tag color="blue">{ROLE_LABELS[member.roleCode] || member.roleCode}</Tag></List.Item>; }} />
+          {team.members.length > 8 && <Button type="link" onClick={() => selectTab("members")}>查看全部 {team.members.length} 位成员</Button>}
+        </Card></Col>
+      </Row>
+    ),
+    articles: (
+      <Card className="team-portal-panel" title="团队文章" extra={<Text type="secondary">共 {articles?.total ?? 0} 篇公开文章</Text>} bordered={false}>
+        {publicArticles.length === 0 ? <TeamEmpty description="暂无公开文章。" /> : <List dataSource={publicArticles} renderItem={(article) => <List.Item><List.Item.Meta title={<Link href={`/articles/${article.articleId}`}>{article.title}</Link>} description={article.summary} /></List.Item>} />}
+        {(articles?.total ?? 0) > (articles?.pageSize ?? 10) && <Pagination className="team-portal-pagination" current={articles?.pageNum ?? 1} pageSize={articles?.pageSize ?? 10} total={articles?.total ?? 0} showSizeChanger={false} onChange={setPageNum} />}
+      </Card>
+    ),
+    series: (
+      <Card className="team-portal-panel" title="系列" extra={<Text type="secondary">仅展示公开且通过审核的系列</Text>} bordered={false}>
+        {series.length === 0 ? <TeamEmpty description="该团队还没有公开系列。" /> : <Row gutter={[16, 16]}>{series.map((item) => <Col xs={24} md={12} key={item.id}><Card className="team-portal-series-card" size="small" title={item.title} extra={<Tag>{SERIALIZATION_LABELS[item.serializationStatus] || item.serializationStatus}</Tag>}><Paragraph type="secondary">{item.summary || "暂无简介"}</Paragraph><Text type="secondary">{item.chapterCount} 章</Text>{item.chapterCount > 0 && <Link href={`/series/${item.id}`}><Button type="link" icon={<ArrowUpRight size={14} />}>查看系列</Button></Link>}</Card></Col>)}</Row>}
+      </Card>
+    ),
+    members: (
+      <Card className="team-portal-panel" title="团队成员" extra={<Text type="secondary">共 {team.members.length} 位成员</Text>} bordered={false}>
+        {team.settings.publicMembers ? <List grid={{ gutter: 16, xs: 1, sm: 2, lg: 3 }} dataSource={team.members} renderItem={(member) => { const name = member.displayName || member.username; return <List.Item><Card size="small"><Space><Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} /><span><Text strong>{name}</Text><Text type="secondary" style={{ display: "block" }}>@{member.username}</Text></span></Space><Tag color="blue" style={{ float: "right" }}>{ROLE_LABELS[member.roleCode] || member.roleCode}</Tag></Card></List.Item>; }} /> : <TeamEmpty description="该团队未公开成员列表。" />}
+      </Card>
+    ),
+    about: (
+      <Row className="team-detail-layout" gutter={[16, 16]}>
+        <Col xs={24} lg={16}><Card className="team-portal-panel" title="团队介绍" bordered={false}><Descriptions column={1} items={[{ key: "summary", label: "简介", children: team.team.summary || "这个团队还没有添加简介。" }, ...(team.settings.contentDirection ? [{ key: "direction", label: "内容方向", children: team.settings.contentDirection }] : []), ...(team.settings.submissionGuideline ? [{ key: "guideline", label: "投稿说明", children: team.settings.submissionGuideline }] : []), ...(team.settings.contactInfo ? [{ key: "contact", label: "联系方式", children: team.settings.contactInfo }] : [])]} /></Card></Col>
+        <Col xs={24} lg={8}><Card className="team-portal-panel" title="团队数据" bordered={false}><Row gutter={[12, 16]}>{[{ title: "公开文章", value: team.team.articleCount }, { title: "成员", value: team.members.length }, { title: "关注者", value: Number(team.team.followerCount) }, { title: "公开系列", value: series.length }].map((item) => <Col span={12} key={item.title}><Statistic title={item.title} value={item.value} formatter={(value) => formatCount(Number(value))} /></Col>)}</Row><Paragraph type="secondary" style={{ marginTop: 20 }}>{team.settings.allowSubmissions ? "本团队开放外部投稿，欢迎分享你的文章。" : "本团队暂未开放外部投稿，仅团队成员可以投稿。"}</Paragraph></Card></Col>
+      </Row>
+    ),
+  } satisfies Record<PortalTab, ReactNode>;
 
   return (
-    <>
-      <UserTopbar title="团队" />
-      <main className="page-shell team-detail-page" data-team-theme={team.settings.theme || "default"}>
-        <section className="surface team-detail-hero">
-          <Avatar
-            alt={`${team.team.name}头像`}
-            label={team.team.name.slice(0, 1)}
-            size="lg"
-            src={teamAvatar}
-          />
-          <div className="team-detail-hero__copy">
-            <span className="eyebrow"><Users size={15} /> 团队空间</span>
-            <h1>{team.team.name}</h1>
-            <p className="secondary">@{team.team.slug}</p>
-            <p>{team.team.summary || "这个团队还没有简介。"}</p>
-            <p className="muted">
-              由 {team.ownerDisplayName || "团队成员"} 维护 · {team.team.articleCount} 篇文章 · {team.team.followerCount} 位关注者
-            </p>
-            {team.settings.category && <span className="chip">{team.settings.category}</span>}
-          </div>
-          <div className="team-detail-hero__actions">
-            {isMember && (
-              <Link className="primary-button" href={`/teams/${slug}/workspace`}>
-                <Sparkles size={15} /> 进入工作台
-              </Link>
-            )}
-            <button type="button" className={following ? "ghost-button" : "secondary-button"} disabled={followBusy} onClick={() => void toggleFollow()}>
-              {following ? "已关注" : "关注团队"}
-            </button>
-          </div>
-        </section>
-
-        <nav className="team-portal-tabs" role="tablist" aria-label="团队主页页签">
-          {TABS.map((item) => (
-            <button
-              type="button"
-              role="tab"
-              key={item.key}
-              aria-selected={tab === item.key}
-              className={tab === item.key ? "active" : ""}
-              onClick={() => selectTab(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {tab === "home" && (
-          <div className="team-detail-layout">
-            <section className="team-detail-articles">
-              <h2>最新文章</h2>
-              {publicArticles.map((article) => (
-                <Link
-                  className="surface team-detail-article"
-                  href={`/articles/${article.articleId}`}
-                  key={article.articleId}
-                >
-                  <strong>{article.title}</strong>
-                  <p className="secondary">{article.summary}</p>
-                </Link>
-              ))}
-              {publicArticles.length === 0 && <p className="secondary">暂无公开文章。</p>}
-            </section>
-            <aside className="surface team-detail-members">
-              <h2>核心成员</h2>
-              {team.members.slice(0, 8).map((member) => {
-                const name = member.displayName || member.username;
-                return (
-                  <div className="team-member-row" key={member.userId}>
-                    <Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} />
-                    <div className="team-member-copy">
-                      <strong>{name}</strong>
-                      <span>@{member.username}</span>
-                    </div>
-                    <span className="chip team-member-role">{ROLE_LABELS[member.roleCode] || member.roleCode}</span>
-                  </div>
-                );
-              })}
-              {team.members.length > 8 && (
-                <button type="button" className="ghost-button" onClick={() => selectTab("members")}>
-                  查看全部 {team.members.length} 位成员 <ArrowUpRight size={14} />
-                </button>
-              )}
-            </aside>
-          </div>
-        )}
-
-        {tab === "articles" && (
-          <section className="surface team-portal-panel">
-            <header className="workspace-panel__header">
-              <h2>团队文章</h2>
-              <span className="secondary">共 {articles?.total ?? 0} 篇公开文章</span>
-            </header>
-            {publicArticles.length === 0 ? (
-              <p className="workspace-panel__empty">暂无公开文章。</p>
-            ) : (
-              <div className="team-portal-article-list">
-                {publicArticles.map((article) => (
-                  <Link className="team-portal-article" href={`/articles/${article.articleId}`} key={article.articleId}>
-                    <strong>{article.title}</strong>
-                    <p className="secondary">{article.summary}</p>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {(() => {
-              const currentPage = articles?.pageNum ?? 1;
-              const pageSize = articles?.pageSize ?? 10;
-              const total = articles?.total ?? 0;
-              const hasPrev = currentPage > 1;
-              const hasNext = currentPage * pageSize < total;
-              if (!hasPrev && !hasNext) return null;
-              return (
-                <div className="team-portal-pagination">
-                  <button type="button" className="ghost-button" disabled={!hasPrev} onClick={() => setPageNum((value) => value - 1)}>
-                    上一页
-                  </button>
-                  <span className="secondary">第 {currentPage} 页 / 共 {total} 篇</span>
-                  <button type="button" className="ghost-button" disabled={!hasNext} onClick={() => setPageNum((value) => value + 1)}>
-                    下一页
-                  </button>
-                </div>
-              );
-            })()}
-          </section>
-        )}
-
-        {tab === "series" && (
-          <section className="surface team-portal-panel">
-            <header className="workspace-panel__header">
-              <h2>连载</h2>
-              <span className="secondary">仅展示公开且通过审核的连载</span>
-            </header>
-            {series.length === 0 ? (
-              <p className="workspace-panel__empty">该团队还没有公开连载。</p>
-            ) : (
-              <div className="team-portal-series-grid">
-                {series.map((item) => (
-                  <div className="surface team-portal-series-card" key={item.id}>
-                    <h3>{item.title}</h3>
-                    <p className="secondary">{item.summary || "暂无简介"}</p>
-                    <p className="muted">
-                      {SERIALIZATION_LABELS[item.serializationStatus] || item.serializationStatus} · {item.chapterCount} 章
-                    </p>
-                    {item.chapterCount > 0 && (
-                      <Link className="ghost-button" href={`/series/${item.id}`}>
-                        查看连载 <ArrowUpRight size={14} />
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {tab === "members" && (
-          <section className="surface team-portal-panel">
-            {team.settings.publicMembers ? (
-              <>
-                <header className="workspace-panel__header">
-                  <h2>团队成员</h2>
-                  <span className="secondary">共 {team.members.length} 位成员</span>
-                </header>
-                <div className="team-portal-member-grid">
-                  {team.members.map((member) => {
-                    const name = member.displayName || member.username;
-                    return (
-                      <div className="team-member-row" key={member.userId}>
-                        <Avatar alt={name} label={name.slice(0, 1)} size="sm" src={publicFileUrl(member.avatarFileId)} />
-                        <div className="team-member-copy">
-                          <strong>{name}</strong>
-                          <span>@{member.username}</span>
-                        </div>
-                        <span className="chip team-member-role">{ROLE_LABELS[member.roleCode] || member.roleCode}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <p className="workspace-panel__empty">该团队未公开成员列表。</p>
-            )}
-          </section>
-        )}
-
-        {tab === "about" && (
-          <div className="team-detail-layout">
-            <section className="surface team-portal-panel">
-              <h2>团队介绍</h2>
-              <p>{team.team.summary || "这个团队还没有添加简介。"}</p>
-              {team.settings.contentDirection && (
-                <>
-                  <h3>内容方向</h3>
-                  <p>{team.settings.contentDirection}</p>
-                </>
-              )}
-              {team.settings.submissionGuideline && (
-                <>
-                  <h3>投稿说明</h3>
-                  <p>{team.settings.submissionGuideline}</p>
-                </>
-              )}
-              {team.settings.contactInfo && (
-                <>
-                  <h3>联系方式</h3>
-                  <p>{team.settings.contactInfo}</p>
-                </>
-              )}
-            </section>
-            <aside className="surface team-portal-panel">
-              <h2>团队数据</h2>
-              <div className="team-portal-about-stats">
-                <div><strong>{team.team.articleCount}</strong><span>公开文章</span></div>
-                <div><strong>{team.members.length}</strong><span>团队成员</span></div>
-                <div><strong>{formatCount(Number(team.team.followerCount))}</strong><span>关注者</span></div>
-                <div><strong>{series.length}</strong><span>公开连载</span></div>
-              </div>
-              <p className="muted">
-                团队文章保留真实作者归属。
-                {team.settings.allowSubmissions
-                  ? "本团队开放外部投稿，欢迎投稿你的文章。"
-                  : "本团队暂未开放外部投稿，仅团队成员可以投稿。"}
-              </p>
-            </aside>
-          </div>
-        )}
-      </main>
-    </>
+    <><UserTopbar title="团队" /><main className="page-shell team-detail-page prototype-team-portal" data-team-theme={team.settings.theme || "default"}>
+      <Card className="team-detail-hero" bordered={false}>
+        <Avatar alt={`${team.team.name}头像`} label={team.team.name.slice(0, 1)} size="lg" src={publicFileUrl(team.team.avatarFileId)} />
+        <div className="team-detail-hero__copy"><Space size={8} wrap><Title level={2}>{team.team.name}</Title>{team.settings.category && <Tag color="blue">{team.settings.category}</Tag>}</Space><Text type="secondary">@{team.team.slug}</Text><Paragraph>{team.team.summary || "这个团队还没有添加简介。"}</Paragraph><Text type="secondary">由 {team.ownerDisplayName || "团队成员"} 维护 · {team.team.articleCount} 篇文章 · {formatCount(Number(team.team.followerCount))} 位关注者</Text></div>
+        <Space className="team-detail-hero__actions" wrap>{isMember && <Link href={`/teams/${slug}/workspace`}><Button type="primary" icon={<Sparkles size={15} />}>进入工作台</Button></Link>}<Button loading={followBusy} onClick={() => void toggleFollow()}>{following ? "已关注" : "关注团队"}</Button></Space>
+      </Card>
+      <Card className="team-portal-tabs" bordered={false} bodyStyle={{ paddingBlock: 0 }}><Tabs activeKey={tab} onChange={selectTab} items={TABS.map((item) => ({ key: item.key, label: item.label }))} /></Card>
+      {tabContent[tab]}
+    </main></>
   );
 }

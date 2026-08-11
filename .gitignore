@@ -33,7 +33,7 @@ pxczxn-backend/pxczxn-starter/src/main/resources/static/
 coverage/
 playwright-report/
 test-results/
-
+.superpowers/
 work/
 outputs/
 
@@ -80,6 +80,9 @@ deploy/monitoring/alertmanager.yml
 
 database/data/
 database/backup/
+web-1/
+stitch_temp/
+
 
 # ============================================================
 # 压缩包 / 工具分发包
@@ -120,6 +123,7 @@ ai-output/
 
 # 开发资料目录 — 默认忽略，仅对项目流程必要文件单独放行
 docs/
+Untitled
 
 # ============================================================
 # 文档 — 只提交仓库根目录 README.md

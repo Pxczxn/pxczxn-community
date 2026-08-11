@@ -70,7 +70,6 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-
 export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: string }) {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [selected, setSelected] = useState<Moment | null>(null);
@@ -110,12 +109,16 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
   /** 加载热门话题（平台标签，按使用量倒序） */
   const loadHotTags = useCallback(async () => {
     try {
-      const tags = await communityApi.tags();
+      const tags = await communityApi.getHotTopics();
       setHotTopics(tags.slice(0, 8));
     } catch {
       // 静默降级，不阻塞主流程
     }
   }, []);
+
+  const handleRefreshTopics = useCallback(() => {
+    void loadHotTags();
+  }, [loadHotTags]);
 
   /** 公共流筛选项：仅在 recommended / latest 时下发到后端 */
   const publicFeedFilter = useMemo<MomentFeedFilter | undefined>(() => {
@@ -378,20 +381,20 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                 <TrendingUp size={15} />
                 热门话题
               </h4>
-              <button type="button">换一换</button>
+              <button type="button" onClick={handleRefreshTopics}>换一换</button>
             </div>
             <ul className="moments-sidebar__topic-list">
               {hotTopics.slice(0, 5).map((t) => (
                 <li key={t.tagId}>
-                  <button type="button">
+                  <Link href={`/articles?tag=${encodeURIComponent(t.slug)}`} style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", width: "100%" }}>
                     <Hash size={14} />
                     <span className="topic-tag">{t.name}</span>
                     <span className="topic-count">{formatCount(t.usageCount)}讨论</span>
-                  </button>
+                  </Link>
                 </li>
               ))}
             </ul>
-            <button className="moments-sidebar__more-btn" type="button">查看全部话题</button>
+            <Link className="moments-sidebar__more-btn" href="/tags">查看全部话题</Link>
           </section>
         </aside>
 
@@ -569,15 +572,15 @@ export function MomentsCommunityPage({ initialMomentId }: { initialMomentId?: st
                 <TrendingUp size={15} />
                 热门话题
               </h3>
-              <a href="#">更多 ›</a>
+              <Link href="/tags">更多 ›</Link>
             </header>
             <div className="moments-topics-grid">
               {hotTopics.slice(0, 4).map((t) => (
-                <a key={t.tagId} href="#" className="moments-topic-pill">
+                <Link key={t.tagId} href={`/articles?tag=${encodeURIComponent(t.slug)}`} className="moments-topic-pill">
                   <Hash size={12} />
                   {t.name}
                   <span>{formatCount(t.usageCount)}讨论</span>
-                </a>
+                </Link>
               ))}
             </div>
           </section>
