@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import top.pxczxn.community.shared.auth.CommunityAuth;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CommunityPreferenceServiceImpl implements CommunityPreferenceService {
 
@@ -57,12 +59,22 @@ public class CommunityPreferenceServiceImpl implements CommunityPreferenceServic
         if (serialized.length() > MAX_SETTINGS_BYTES) {
             throw new BusinessException(400, "偏好设置过大");
         }
-        if (preferenceMapper.update(null, Wrappers.<CommunityUserPreference>update()
-                .eq("user_id", userId)
-                .set("settings_json", serialized)) != 1) {
+        if (updateSettings(userId, serialized) != 1) {
             throw new BusinessException(409, "偏好设置已发生变化，请重试");
         }
         return new CommunityPreferenceSettings(normalized);
+    }
+
+    private int updateSettings(Long userId, String serialized) {
+        try {
+            return preferenceMapper.update(null, Wrappers.<CommunityUserPreference>update()
+                    .eq("user_id", userId)
+                    .set("settings_json", serialized));
+        } catch (RuntimeException exception) {
+            log.error("event=community_preference_update_failed error_type={}",
+                    exception.getClass().getSimpleName(), exception);
+            throw exception;
+        }
     }
 
     private Long requireActorId() {
