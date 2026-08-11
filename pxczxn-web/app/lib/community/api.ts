@@ -1,4 +1,5 @@
-import { communityRequest } from "./client";
+import { COMMUNITY_API_BASE_URL, CommunityApiError, communityRequest } from "./client";
+import { readSession } from "./session";
 import type { CommunitySession } from "./session";
 import type { CommunityFile } from "./files";
 import type {
@@ -81,6 +82,17 @@ import type {
 } from "./types";
 
 export const communityApi = {
+  async downloadDataExport() {
+    const session = readSession();
+    if (!session) throw new CommunityApiError("请先登录后继续操作", 401, 401);
+    const response = await fetch(`${COMMUNITY_API_BASE_URL}/api/v1/account/export`, {
+      headers: { [session.tokenName || "pxczxn-community-token"]: session.tokenValue },
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) throw new CommunityApiError(`导出失败 (HTTP ${response.status})`, response.status, response.status);
+    return { blob: await response.blob(), filename: response.headers.get("content-disposition")?.match(/filename\*=UTF-8''([^;]+)/)?.[1] || "community-data.zip" };
+  },
   checkUsername(username: string) {
     return communityRequest<{ available: boolean }>(
       `/api/v1/auth/check-username?username=${encodeURIComponent(username)}`,

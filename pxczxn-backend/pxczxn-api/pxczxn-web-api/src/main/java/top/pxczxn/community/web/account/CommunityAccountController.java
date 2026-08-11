@@ -12,9 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.CommunityPreferenceService;
 import top.pxczxn.community.user.application.CommunityPreferenceSettings;
+import top.pxczxn.community.user.application.CommunityDataExport;
+import top.pxczxn.community.user.application.CommunityDataExportService;
 import top.pxczxn.community.user.application.CurrentCommunityUser;
 
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,6 +30,7 @@ public class CommunityAccountController {
 
     private final CommunitySessionService sessionService;
     private final CommunityPreferenceService preferenceService;
+    private final CommunityDataExportService dataExportService;
 
     @GetMapping("/me")
     public Result<CurrentCommunityUserView> me() {
@@ -45,6 +53,16 @@ public class CommunityAccountController {
             @RequestBody CommunityPreferenceUpdateRequest request
     ) {
         return Result.ok(preferenceService.update(request.settings()));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export() {
+        CommunityDataExport data = dataExportService.exportMine();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(data.filename(), StandardCharsets.UTF_8).build().toString())
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .contentLength(data.content().length)
+                .body(data.content());
     }
 
     private static CurrentCommunityUserView toView(CurrentCommunityUser current) {

@@ -387,7 +387,7 @@ export const SettingsView: React.FC = () => {
   }));
 
   // ================= 8. DATA & ACCOUNT LIFECYCLE =================
-  const exportAvailable = false;
+  const [exportingData, setExportingData] = useState(false);
   const accountLifecycleAvailable = false;
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
 
@@ -440,6 +440,21 @@ export const SettingsView: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch { /* Keep the inputs available when the password change is rejected. */ }
+  };
+
+  const handleDataExport = async () => {
+    setExportingData(true);
+    try {
+      const { blob, filename } = await communityApi.downloadDataExport();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = decodeURIComponent(filename);
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingData(false);
+    }
   };
 
   const handleAddKeyword = () => {
@@ -1625,11 +1640,12 @@ export const SettingsView: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      disabled={!exportAvailable}
+                      onClick={() => void handleDataExport()}
+                      disabled={exportingData}
                       className="px-3 py-1.5 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold rounded-xl text-xs shrink-0 flex items-center gap-1.5"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>NOT AVAILABLE</span>
+                      {exportingData ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      <span>{exportingData ? '打包生成中...' : '立即打包导出'}</span>
                     </button>
                   </div>
                 </div>

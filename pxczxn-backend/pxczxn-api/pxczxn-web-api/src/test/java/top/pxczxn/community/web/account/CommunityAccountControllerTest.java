@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.CommunityPreferenceService;
 import top.pxczxn.community.user.application.CommunityPreferenceSettings;
+import top.pxczxn.community.user.application.CommunityDataExportService;
 import top.pxczxn.community.user.application.CurrentCommunityUser;
 
 import java.util.Map;
@@ -18,13 +19,15 @@ class CommunityAccountControllerTest {
 
     private CommunitySessionService sessionService;
     private CommunityPreferenceService preferenceService;
+    private CommunityDataExportService dataExportService;
     private CommunityAccountController controller;
 
     @BeforeEach
     void setUp() {
         sessionService = mock(CommunitySessionService.class);
         preferenceService = mock(CommunityPreferenceService.class);
-        controller = new CommunityAccountController(sessionService, preferenceService);
+        dataExportService = mock(CommunityDataExportService.class);
+        controller = new CommunityAccountController(sessionService, preferenceService, dataExportService);
     }
 
     @Test
