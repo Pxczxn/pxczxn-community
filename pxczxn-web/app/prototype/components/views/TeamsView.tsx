@@ -59,6 +59,14 @@ export const TeamsView: React.FC = () => {
     } catch { /* Preserve form input when the API rejects the request. */ }
   };
 
+  const handleInvitation = async (invitationId: string, action: 'accept' | 'reject') => {
+    try {
+      if (action === 'accept') await communityApi.acceptTeamInvitation(invitationId);
+      else await communityApi.rejectTeamInvitation(invitationId);
+      setInvitations((current) => current.filter((item) => item.id !== invitationId));
+    } catch { /* Keep the invitation visible if the server rejects the action. */ }
+  };
+
   return (
     <div className={`max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
 
@@ -239,6 +247,20 @@ export const TeamsView: React.FC = () => {
       {activeTab === 'APPLICATIONS' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-4">
           <h2 className="text-xs font-bold text-slate-900 dark:text-white">待处理的团队邀请</h2>
+          {application && (
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl text-xs text-indigo-800 dark:text-indigo-200">
+              建队申请：{application.teamName} · {application.status}
+            </div>
+          )}
+          {invitations.map((invitation) => (
+            <div key={invitation.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between text-xs">
+              <span>{invitation.teamName || `团队 #${invitation.teamId}`} · {invitation.roleCode}</span>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => handleInvitation(invitation.id, 'accept')} className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-semibold">接受邀请</button>
+                <button onClick={() => handleInvitation(invitation.id, 'reject')} className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg">拒绝</button>
+              </div>
+            </div>
+          ))}
           <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">
               <Building2 className="w-4 h-4 text-purple-500" />
