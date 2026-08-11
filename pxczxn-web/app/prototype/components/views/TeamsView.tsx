@@ -3,8 +3,9 @@
  * 核心原则：提供三大 Tab (我的团队 / 发现团队 / 邀请与申请)，并支持直接发起建队申请或进入私有 Workspace。
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type TeamApplication, type TeamInvitation } from '../../../lib/community-api';
 import { Team } from '../../types';
 import {
   Users,
@@ -30,16 +31,32 @@ export const TeamsView: React.FC = () => {
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamDesc, setNewTeamDesc] = useState('');
   const [newTeamCategory, setNewTeamCategory] = useState('技术研发');
+  const [application, setApplication] = useState<TeamApplication | null>(null);
+  const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
+
+  useEffect(() => {
+    Promise.all([communityApi.myTeamApplication(), communityApi.myTeamInvitations()])
+      .then(([currentApplication, currentInvitations]) => {
+        setApplication(currentApplication);
+        setInvitations(currentInvitations.filter((item) => item.status === 'PENDING'));
+      })
+      .catch(() => {
+        setApplication(null);
+        setInvitations([]);
+      });
+  }, []);
 
   const myTeams = teams.filter((t) => t.myRole !== undefined);
 
-  const handleCreateTeamSubmit = (e: React.FormEvent) => {
+  const handleCreateTeamSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamName.trim()) return;
-    alert(`建队申请已提交！名称: ${newTeamName}。请等待平台审核团队资格。`);
-    setNewTeamName('');
-    setNewTeamDesc('');
-    setShowCreateModal(false);
+    const slug = `team-${Date.now().toString(36)}`;
+    try {
+      const created = await communityApi.submitTeamApplication({ teamName: newTeamName.trim(), teamSlug: slug, description: newTeamDesc.trim() || undefined });
+      setApplication(created);
+      setNewTeamName(''); setNewTeamDesc(''); setShowCreateModal(false);
+    } catch { /* Preserve form input when the API rejects the request. */ }
   };
 
   return (
