@@ -76,69 +76,69 @@ export const MomentsView: React.FC = () => {
     <div className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>
 
       {/* Three Column Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
 
         {/* Left Nav Column (25% width) */}
         <div className="lg:col-span-3 sticky top-16 self-start space-y-2">
 
           {/* Feed Filter Tabs */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-2 shadow-xs">
-            <h2 className="text-xs font-bold text-slate-900 dark:text-white mb-1 pb-1 border-b border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 lg:p-4 shadow-xs">
+            <h2 className="text-xs lg:text-base font-bold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-emerald-500" />
               <span>动态 Feed 导航</span>
             </h2>
 
-            <div className="space-y-0.5 text-xs font-medium">
+            <div className="space-y-1 text-xs lg:text-sm font-medium">
               <button
                 onClick={() => setActiveTab('RECOMMENDED')}
-                className={`w-full text-left px-2 py-1 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`w-full text-left px-2 py-1.5 lg:px-3 lg:py-2 rounded-lg flex items-center space-x-2 transition-colors ${
                   activeTab === 'RECOMMENDED'
                     ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <Sparkles className="w-4 h-4 shrink-0" />
                 <span>精选推荐</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('FOLLOWING')}
-                className={`w-full text-left px-2 py-1 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`w-full text-left px-2 py-1.5 lg:px-3 lg:py-2 rounded-lg flex items-center space-x-2 transition-colors ${
                   activeTab === 'FOLLOWING'
                     ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                <UserCheck className="w-4 h-4 shrink-0" />
                 <span>关注更新</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('LATEST')}
-                className={`w-full text-left px-2 py-1 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`w-full text-left px-2 py-1.5 lg:px-3 lg:py-2 rounded-lg flex items-center space-x-2 transition-colors ${
                   activeTab === 'LATEST'
                     ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300 font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <Clock className="w-4 h-4 shrink-0" />
                 <span>最新发布</span>
               </button>
             </div>
           </div>
 
           {/* Hot Topics Wrapped */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-xs space-y-2">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 lg:p-4 shadow-xs space-y-2 lg:space-y-3">
+            <h3 className="text-xs lg:text-base font-bold text-slate-900 dark:text-white pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-amber-500" />
                 <span>社区讨论热榜</span>
               </span>
               <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-full font-mono font-bold">
                 TOP
               </span>
             </h3>
-            <div className="space-y-1.5 text-xs">
+            <div className="space-y-1.5 text-xs lg:text-sm">
               {[
                 { tag: '#星语V2.1发布讨论', heat: '421 热度', rank: '1', color: 'bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300' },
                 { tag: '#React19服务端Actions', heat: '289 热度', rank: '2', color: 'bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300' },
@@ -146,7 +146,7 @@ export const MomentsView: React.FC = () => {
               ].map((item) => (
                 <div
                   key={item.tag}
-                  className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800/80 cursor-pointer flex items-center justify-between transition-all"
+                  className="p-2 lg:p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800/80 cursor-pointer flex items-center justify-between transition-all"
                 >
                   <div className="flex items-center space-x-1.5 min-w-0 pr-1">
                     <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-bold ${item.color}`}>
@@ -168,21 +168,21 @@ export const MomentsView: React.FC = () => {
         <div className="lg:col-span-5 space-y-3">
 
           {/* Moment Publisher Box */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
-            <div className="flex items-center space-x-2.5 mb-2.5">
-              <img src={user?.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 lg:p-5 shadow-xs">
+            <div className="flex items-center space-x-3 mb-3">
+              <img src={user?.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+              <span className="text-xs lg:text-sm font-semibold text-slate-800 dark:text-slate-200">
                 发布轻量想法或关联文章
               </span>
             </div>
 
-            <form onSubmit={handlePublish} className="space-y-2">
+            <form onSubmit={handlePublish} className="space-y-3">
               <textarea
                 value={newMomentText}
                 onChange={(e) => setNewMomentText(e.target.value)}
                 placeholder="此刻在思考什么？写下短文本或分享外部链接..."
-                rows={2}
-                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-all resize-none"
+                rows={3}
+                className="w-full p-3 text-xs lg:text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-all resize-none"
               />
 
               {momentType === 'LINK' && (
@@ -191,7 +191,7 @@ export const MomentsView: React.FC = () => {
                   placeholder="https:// 外部链接 URL..."
                   value={linkInput}
                   onChange={(e) => setLinkInput(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+                  className="w-full px-3 py-2 text-xs lg:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
                 />
               )}
 
@@ -200,29 +200,29 @@ export const MomentsView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setMomentType(momentType === 'LINK' ? 'TEXT' : 'LINK')}
-                    className={`p-1.5 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                    className={`p-2 rounded-lg text-xs lg:text-sm hover:bg-slate-100 dark:hover:bg-slate-800 ${
                       momentType === 'LINK' ? 'text-emerald-500 font-bold' : ''
                     }`}
                     title="添加链接"
                   >
-                    <Link2 className="w-3.5 h-3.5" />
+                    <Link2 className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => navigateTo('/articles')}
-                    className="p-1.5 rounded-lg text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="p-2 rounded-lg text-xs lg:text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
                     title="关联文章"
                   >
-                    <FileText className="w-3.5 h-3.5" />
+                    <FileText className="w-4 h-4" />
                   </button>
                 </div>
 
                 <button
                   type="submit"
                   disabled={!newMomentText.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-colors flex items-center space-x-1"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs lg:text-sm font-semibold disabled:opacity-50 transition-colors flex items-center space-x-2"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-4 h-4" />
                   <span>发布动态</span>
                 </button>
               </div>
@@ -230,7 +230,7 @@ export const MomentsView: React.FC = () => {
           </div>
 
           {/* Timeline Stream */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <AnimatePresence mode="popLayout">
               {moments.map((mom) => {
                 const isSelected = activeMomentId === mom.id;
@@ -243,23 +243,23 @@ export const MomentsView: React.FC = () => {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     onClick={() => setActiveMomentId(mom.id)}
-                    className={`bg-white dark:bg-slate-900 border rounded-2xl p-3.5 shadow-xs transition-all cursor-pointer ${
+                    className={`bg-white dark:bg-slate-900 border rounded-2xl p-4 lg:p-5 shadow-xs transition-all cursor-pointer ${
                       isSelected
                         ? 'border-emerald-500 ring-2 ring-emerald-500/10'
                         : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <img src={mom.author.avatar} alt="" className="w-6 h-6 rounded-full" />
+                      <div className="flex items-center space-x-3">
+                        <img src={mom.author.avatar} alt="" className="w-8 h-8 rounded-full" />
                         <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white">{mom.author.displayName}</span>
-                          <span className="text-[10px] text-slate-400 ml-2">{mom.createdAt}</span>
+                          <span className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white">{mom.author.displayName}</span>
+                          <span className="text-[10px] lg:text-xs text-slate-400 ml-2">{mom.createdAt}</span>
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs lg:text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                       {mom.textContent}
                     </p>
 
@@ -270,7 +270,7 @@ export const MomentsView: React.FC = () => {
                           e.stopPropagation();
                           if (mom.articleId) navigateTo('/articles/:id', { id: mom.articleId });
                         }}
-                        className="mt-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center space-x-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                        className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center space-x-2 text-xs lg:text-sm text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                       >
                         <FileText className="w-4 h-4 shrink-0" />
                         <span className="font-semibold line-clamp-1">{mom.articleTitle}</span>
@@ -278,7 +278,7 @@ export const MomentsView: React.FC = () => {
                     )}
 
                     {/* Interactions Footer Wrapped */}
-                    <div className="flex items-center justify-between p-1 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 mt-3 text-xs">
+                    <div className="flex items-center justify-between p-1.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/60 dark:border-slate-700/60 mt-4 text-xs lg:text-sm">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.9 }}
@@ -286,13 +286,13 @@ export const MomentsView: React.FC = () => {
                           e.stopPropagation();
                           likeMoment(mom.id);
                         }}
-                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                           mom.isLiked
                             ? 'bg-rose-50 dark:bg-rose-950/80 text-rose-500 font-bold border border-rose-200 dark:border-rose-800'
                             : 'hover:bg-white dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        <Heart className={`w-3.5 h-3.5 ${mom.isLiked ? 'fill-rose-500' : ''}`} />
+                        <Heart className={`w-4 h-4 ${mom.isLiked ? 'fill-rose-500' : ''}`} />
                         <span>{mom.likesCount}</span>
                       </motion.button>
 
@@ -303,23 +303,23 @@ export const MomentsView: React.FC = () => {
                           e.stopPropagation();
                           favoriteMoment(mom.id);
                         }}
-                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                           mom.isFavorited
                             ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-800'
                             : 'hover:bg-white dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        <Bookmark className={`w-3.5 h-3.5 ${mom.isFavorited ? 'fill-amber-500' : ''}`} />
+                        <Bookmark className={`w-4 h-4 ${mom.isFavorited ? 'fill-amber-500' : ''}`} />
                         <span>{mom.favoritesCount}</span>
                       </motion.button>
 
-                      <button className="flex items-center space-x-1 px-2.5 py-1 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all cursor-pointer">
-                        <MessageCircle className="w-3.5 h-3.5" />
+                      <button className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all cursor-pointer">
+                        <MessageCircle className="w-4 h-4" />
                         <span>{mom.commentsCount}</span>
                       </button>
 
-                      <button className="p-1 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all cursor-pointer">
-                        <Share2 className="w-3.5 h-3.5" />
+                      <button className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-400 transition-all cursor-pointer">
+                        <Share2 className="w-4 h-4" />
                       </button>
                     </div>
                   </motion.div>
@@ -332,29 +332,29 @@ export const MomentsView: React.FC = () => {
 
         {/* Right Column: Active Moment Detail & Comments (4 cols) */}
         <div className="lg:col-span-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs sticky top-16 space-y-3">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 lg:p-5 shadow-xs sticky top-16 space-y-3 lg:space-y-4">
+            <h3 className="text-xs lg:text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span>动态详情与讨论</span>
               <span className="text-[10px] text-emerald-600 font-mono">ID: {activeMoment?.id}</span>
             </h3>
 
             {activeMoment && (
               <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <img src={activeMoment.author.avatar} alt="" className="w-7 h-7 rounded-full" />
+                  <div className="flex items-center space-x-3">
+                  <img src={activeMoment.author.avatar} alt="" className="w-8 h-8 rounded-full" />
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">{activeMoment.author.displayName}</h4>
+                    <h4 className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white">{activeMoment.author.displayName}</h4>
                     <p className="text-[10px] text-slate-400">@{activeMoment.author.username}</p>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+                <p className="text-xs lg:text-sm text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
                   {activeMoment.textContent}
                 </p>
 
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {momentComments.map((comment) => (
-                    <div key={comment.commentId} className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-2 text-xs">
+                    <div key={comment.commentId} className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-3 text-xs lg:text-sm">
                       <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
                         <span className="font-semibold text-slate-700 dark:text-slate-200">
                           {comment.author?.displayName || comment.author?.username || '社区用户'}
@@ -379,12 +379,12 @@ export const MomentsView: React.FC = () => {
                     placeholder="发表你的看法..."
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-emerald-500 rounded-xl"
+                    className="w-full px-3 py-2 text-xs lg:text-sm bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-emerald-500 rounded-xl"
                   />
                   <button
                     type="submit"
                     disabled={!commentInput.trim()}
-                    className="w-full py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-semibold disabled:opacity-50"
+                    className="w-full py-2 bg-emerald-600 text-white rounded-xl text-xs lg:text-sm font-semibold disabled:opacity-50"
                   >
                     发送评论
                   </button>
