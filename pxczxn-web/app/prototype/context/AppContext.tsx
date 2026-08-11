@@ -347,6 +347,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const savedTheme = window.localStorage.getItem('pxczxn-theme');
+      if (savedTheme === 'dark' || savedTheme === 'starlight') setThemeState(savedTheme);
+      if (savedTheme === 'starry') setThemeState('starlight');
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     void communityApi.discoverArticles().then((page) => {
@@ -416,6 +425,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (theme === 'dark' || theme === 'starlight') {
       root.classList.add('dark');
     }
+    root.dataset.theme = theme === 'starlight' ? 'starry' : theme;
+    window.localStorage.setItem('pxczxn-theme', theme === 'starlight' ? 'starry' : theme);
   }, [theme]);
 
   const setTheme = (mode: ThemeMode) => {
