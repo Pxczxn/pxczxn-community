@@ -2,8 +2,9 @@
  * 星语社区 (pxczxn-community V2.1) - 全局跨实体搜索 (Global Cross-Entity Search)
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type UnifiedSearchResult } from '../../../lib/community-api';
 import {
   Search,
   FileText,
@@ -18,6 +19,7 @@ export const SearchView: React.FC = () => {
   const { globalSearchQuery, setGlobalSearchQuery, articles, seriesList, moments, teams, navigateTo, isCompactViewport } = useApp();
 
   const [activeTab, setActiveTab] = useState<'ALL' | 'ARTICLES' | 'SERIES' | 'MOMENTS' | 'TEAMS'>('ALL');
+  const [remoteResults, setRemoteResults] = useState<UnifiedSearchResult[]>([]);
 
   const formatTabCount = (count: number) => {
     if (count > 999) return '999+';
@@ -25,6 +27,32 @@ export const SearchView: React.FC = () => {
   };
 
   const q = globalSearchQuery.toLowerCase().trim();
+
+  useEffect(() => {
+    if (!q) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      communityApi.search(q)
+        .then((page) => {
+          if (!cancelled) setRemoteResults(page.records);
+        })
+        .catch(() => {
+          if (!cancelled) setRemoteResults([]);
+        });
+    }, 220);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [q]);
+
+  const visibleRemoteResults = q ? remoteResults.filter((result) => (
+    activeTab === 'ALL'
+    || (activeTab === 'ARTICLES' && result.type === 'ARTICLE')
+    || (activeTab === 'SERIES' && result.type === 'SERIES')
+    || (activeTab === 'MOMENTS' && result.type === 'MOMENT')
+    || (activeTab === 'TEAMS' && result.type === 'BLOG')
+  )) : [];
 
   const matchedArticles = articles.filter(
     (a) => a.title.toLowerCase().includes(q) || a.summary.toLowerCase().includes(q) || a.tags.some((t) => t.toLowerCase().includes(q))
@@ -82,6 +110,28 @@ export const SearchView: React.FC = () => {
 
       {/* Search Results Display */}
       <div className="space-y-4">
+
+        {visibleRemoteResults.length > 0 && (
+          <div className="bg-white dark:bg-slate-900 border rounded-2xl p-4 space-y-2.5 text-xs">
+            <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Search className="w-4 h-4 text-indigo-500" />
+              <span>实时搜索结果</span>
+            </h2>
+            {visibleRemoteResults.map((result) => (
+              <div
+                key={`${result.type}-${result.targetId}`}
+                onClick={() => navigateTo(result.canonicalPath)}
+                className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl hover:border-indigo-300 border border-transparent transition-colors cursor-pointer flex justify-between items-center"
+              >
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white">{result.title}</h3>
+                  <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{result.excerptHighlightHtml}</p>
+                </div>
+                <button className="text-indigo-600 font-semibold shrink-0 ml-3">查看</button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* ARTICLES */}
         {(activeTab === 'ALL' || activeTab === 'ARTICLES') && matchedArticles.length > 0 && (
