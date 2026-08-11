@@ -193,3 +193,10 @@ test("does not present unsupported security features as active services", async 
   assert.match(settings, /NOT AVAILABLE/);
   assert.doesNotMatch(settings, /sk-••/);
 });
+
+test("does not simulate account export as a completed backend operation", async () => {
+  const settings = await source("app/prototype/components/views/SettingsView.tsx");
+
+  assert.doesNotMatch(settings, /setTimeout\(\(\) => setExportingData/);
+  assert.match(settings, /NOT AVAILABLE/);
+});

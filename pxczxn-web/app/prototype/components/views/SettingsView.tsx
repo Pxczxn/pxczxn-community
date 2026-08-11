@@ -387,7 +387,7 @@ export const SettingsView: React.FC = () => {
   }));
 
   // ================= 8. DATA & ACCOUNT LIFECYCLE =================
-  const [exportingData, setExportingData] = useState(false);
+  const exportAvailable = false;
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
 
   // Feedback State
@@ -1624,15 +1624,11 @@ export const SettingsView: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setExportingData(true);
-                        setTimeout(() => setExportingData(false), 2000);
-                      }}
-                      disabled={exportingData}
+                      disabled={!exportAvailable}
                       className="px-3 py-1.5 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold rounded-xl text-xs shrink-0 flex items-center gap-1.5"
                     >
-                      {exportingData ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                      <span>{exportingData ? '打包生成中...' : '立即打包导出'}</span>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>NOT AVAILABLE</span>
                     </button>
                   </div>
                 </div>
