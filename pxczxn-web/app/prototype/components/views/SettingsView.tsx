@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
-import { communityApi, type CommunityBlock } from '../../../lib/community-api';
+import { communityApi, publicFileUrl, type CommunityBlock } from '../../../lib/community-api';
 import {
   User,
   Globe,
@@ -56,6 +56,7 @@ import {
 
 export const SettingsView: React.FC = () => {
   const { user, setUser, theme, setTheme, isCompactViewport, navigateTo } = useApp();
+  const userId = user?.id;
 
   // 8 Main Navigation Tabs
   type TabType =
@@ -84,6 +85,14 @@ export const SettingsView: React.FC = () => {
   const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop');
   const [coverImage, setCoverImage] = useState('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop');
 
+  const persistBlogImage = async (file: File, field: 'avatarFileId' | 'backgroundFileId') => {
+    const uploaded = await communityApi.uploadFile(file);
+    const blog = await communityApi.updateMyBlog({ [field]: uploaded.fileId });
+    const imageUrl = publicFileUrl(field === 'avatarFileId' ? blog.avatarFileId : blog.backgroundFileId);
+    if (field === 'avatarFileId') setAvatar(imageUrl || '');
+    else setCoverImage(imageUrl || '');
+  };
+
   // 本地文件上传处理函数
   const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,6 +108,7 @@ export const SettingsView: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+      void persistBlogImage(file, 'avatarFileId').catch(() => undefined);
     }
   };
 
@@ -117,6 +127,7 @@ export const SettingsView: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+      void persistBlogImage(file, 'avatarFileId').catch(() => undefined);
     }
   };
 
@@ -134,6 +145,7 @@ export const SettingsView: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+      void persistBlogImage(file, 'backgroundFileId').catch(() => undefined);
     }
   };
 
@@ -152,6 +164,7 @@ export const SettingsView: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+      void persistBlogImage(file, 'backgroundFileId').catch(() => undefined);
     }
   };
 
@@ -209,6 +222,33 @@ export const SettingsView: React.FC = () => {
   const [whoCanMention, setWhoCanMention] = useState<'ALL' | 'FOLLOWING' | 'NONE'>('ALL');
   const [allowSearchIndex, setAllowSearchIndex] = useState(true);
   const [allowRecommendation, setAllowRecommendation] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void communityApi.likeListPrivacy()
+      .then(({ visibility }) => {
+        if (!cancelled) {
+          if (visibility === 'FOLLOWERS_ONLY') setLikesPrivacy('FOLLOWERS');
+          else if (visibility === 'MUTUAL_ONLY') setLikesPrivacy('MUTUAL');
+          else if (visibility === 'PUBLIC' || visibility === 'PRIVATE') setLikesPrivacy(visibility);
+        }
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  const updateLikesPrivacy = (next: 'PUBLIC' | 'FOLLOWERS' | 'MUTUAL' | 'PRIVATE') => {
+    const previous = likesPrivacy;
+    setLikesPrivacy(next);
+    const visibility = next === 'FOLLOWERS'
+      ? 'FOLLOWERS_ONLY'
+      : next === 'MUTUAL'
+        ? 'MUTUAL_ONLY'
+        : next;
+    void communityApi.updateLikeListPrivacy(visibility)
+      .catch(() => setLikesPrivacy(previous));
+  };
 
   // ================= 5. APPEARANCE STATE =================
   const [fontSize, setFontSize] = useState<'SMALL' | 'MEDIUM' | 'LARGE'>('MEDIUM');
@@ -1016,7 +1056,7 @@ export const SettingsView: React.FC = () => {
                       <label className="block font-semibold text-slate-800 dark:text-slate-200">谁能看我的喜欢列表</label>
                       <select
                         value={likesPrivacy}
-                        onChange={(e) => setLikesPrivacy(e.target.value as any)}
+                        onChange={(e) => updateLikesPrivacy(e.target.value as 'PUBLIC' | 'FOLLOWERS' | 'MUTUAL' | 'PRIVATE')}
                         className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
                       >
                         <option value="PUBLIC">所有人公开</option>

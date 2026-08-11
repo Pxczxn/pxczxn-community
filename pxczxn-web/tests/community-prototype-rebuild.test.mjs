@@ -109,6 +109,9 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(settings, /communityApi\.updateProfile/);
   assert.match(settings, /communityApi\.updateMyBlog/);
   assert.match(settings, /communityApi\.updateBlogSettings/);
+  assert.match(settings, /communityApi\.likeListPrivacy/);
+  assert.match(settings, /communityApi\.updateLikeListPrivacy/);
+  assert.match(settings, /communityApi\.uploadFile/);
   assert.match(search, /communityApi\.search/);
   assert.match(articleDetail, /communityApi\.comments/);
   assert.match(articleDetail, /communityApi\.createComment/);
@@ -149,4 +152,19 @@ test("registers creator persistence mappers required by connected creator action
   );
 
   assert.match(application, /"top\.pxczxn\.community\.creator\.persistence"/);
+});
+
+test("does not seed community runtime state from prototype mock data", async () => {
+  const context = await source("app/prototype/context/AppContext.tsx");
+
+  assert.doesNotMatch(context, /from ['"]\.\.\/data\/mockData['"]/);
+  assert.doesNotMatch(context, /useState<Article\[\]>\(mockArticles\)/);
+});
+
+test("derives the blog portal from live community content instead of a static blog list", async () => {
+  const blogs = await source("app/prototype/components/views/BlogsView.tsx");
+
+  assert.doesNotMatch(blogs, /const blogsList = \[/);
+  assert.match(blogs, /useMemo/);
+  assert.match(blogs, /teams/);
 });

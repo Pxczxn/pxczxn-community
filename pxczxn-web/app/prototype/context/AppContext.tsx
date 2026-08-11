@@ -32,17 +32,6 @@ import {
   IdeaItem,
   RoutePath,
 } from '../types';
-import {
-  currentUser,
-  mockArticles,
-  mockMoments,
-  mockSeries,
-  mockTeams,
-  mockNotifications,
-  mockConversations,
-  mockChatMessages,
-  mockIdeas,
-} from '../data/mockData';
 
 interface AppContextType {
   // Navigation & Viewport
@@ -240,7 +229,19 @@ function toPrototypeTeam(team: TeamSummary): Team {
     seriesCount: 0,
     followersCount: Number(team.followerCount) || 0,
     pendingSubmissionsCount: 0,
-    owner: currentUser,
+    owner: {
+      id: '',
+      username: '',
+      displayName: '',
+      avatar: '',
+      bio: '',
+      blogSlug: '',
+      followersCount: 0,
+      followingCount: 0,
+      articlesCount: 0,
+      seriesCount: 0,
+      role: 'USER',
+    },
     contentDirection: '',
     allowSubmissions: false,
   };
@@ -334,15 +335,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isLoggedIn = user !== null;
 
   // Data States
-  const [articles, setArticles] = useState<Article[]>(mockArticles);
-  const [moments, setMoments] = useState<Moment[]>(mockMoments);
-  const [seriesList, setSeriesList] = useState<Series[]>(mockSeries);
-  const [teams, setTeams] = useState<Team[]>(mockTeams);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
-  const [conversations, setConversations] = useState<ChatConversation[]>(mockConversations);
-  const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(mockChatMessages);
-  const [ideas, setIdeas] = useState<IdeaItem[]>(mockIdeas);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const [seriesList, setSeriesList] = useState<Series[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [ideas, setIdeas] = useState<IdeaItem[]>([]);
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
 
   useEffect(() => {
@@ -432,7 +433,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleLogin = () => {
-    setUser((prev) => (prev ? null : currentUser));
+    if (user) {
+      void communityApi.logout().catch(() => undefined);
+      setUser(null);
+      return;
+    }
+    router.push('/login');
   };
 
   // Article Actions

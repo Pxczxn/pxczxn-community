@@ -2,7 +2,7 @@
  * 星语社区 (pxczxn-community V2.1) - 专栏博客 Portal (Blogs View)
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Globe,
@@ -18,49 +18,49 @@ import {
 } from 'lucide-react';
 
 export const BlogsView: React.FC = () => {
-  const { articles, navigateTo, isCompactViewport } = useApp();
+  const { articles, teams, navigateTo, isCompactViewport } = useApp();
 
   const [searchFilter, setSearchFilter] = useState('');
 
-  // Individual & Team Blogs mock list
-  const blogsList = [
-    {
-      id: 'b-1',
-      slug: 'pxczxn-blog',
-      title: '星语客的技术干货专栏',
-      owner: '星语客',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      description: '专注 React 19、TypeScript 核心系统与微前端架构演进。',
-      articlesCount: 42,
-      followersCount: 1280,
-      isTeam: false,
-      tags: ['React', 'TypeScript', '系统架构'],
-    },
-    {
-      id: 'b-2',
-      slug: 'starry-core-dev',
-      title: '星语 Core 团队官方专栏',
-      owner: '星语 Core 团队',
-      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
-      description: '星语社区核心开发团队的架构设计与技术演进实践。',
-      articlesCount: 18,
-      followersCount: 3420,
+  const blogsList = useMemo(() => {
+    const personalBlogs = new Map<string, {
+      id: string; slug: string; title: string; avatar: string; description: string;
+      articlesCount: number; followersCount: number; isTeam: boolean; tags: string[];
+    }>();
+    for (const article of articles) {
+      const slug = article.author.blogSlug;
+      if (!slug) continue;
+      const existing = personalBlogs.get(slug);
+      if (existing) {
+        existing.articlesCount += 1;
+        existing.tags = [...new Set([...existing.tags, ...article.tags])].slice(0, 4);
+      } else {
+        personalBlogs.set(slug, {
+          id: `personal-${slug}`,
+          slug,
+          title: article.author.blogName || `${article.author.displayName} 的专栏`,
+          avatar: article.author.avatar,
+          description: article.author.bio,
+          articlesCount: 1,
+          followersCount: article.author.followersCount,
+          isTeam: false,
+          tags: article.tags.slice(0, 4),
+        });
+      }
+    }
+    const teamBlogs = teams.map((team) => ({
+      id: team.id,
+      slug: team.slug,
+      title: team.name,
+      avatar: team.avatar,
+      description: team.description,
+      articlesCount: team.articlesCount,
+      followersCount: team.followersCount,
       isTeam: true,
-      tags: ['官方团队', '系统演进', '工程化'],
-    },
-    {
-      id: 'b-3',
-      slug: 'ai-native-architecture',
-      title: 'AI 原生应用与 Agent 探索专栏',
-      owner: '智语探索家',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      description: '探索大模型 Agent 架构、RAG 向量检索与多模态交互实践。',
-      articlesCount: 25,
-      followersCount: 890,
-      isTeam: false,
-      tags: ['LLM', 'Agent', 'AI 原生'],
-    },
-  ];
+      tags: team.category ? [team.category] : [],
+    }));
+    return [...personalBlogs.values(), ...teamBlogs];
+  }, [articles, teams]);
 
   const filteredBlogs = blogsList.filter(
     (b) =>
