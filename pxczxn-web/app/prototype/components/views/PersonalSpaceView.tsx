@@ -3,8 +3,9 @@
  * 高度集成的个人知识资产、创作产出、阅读进度指针、收藏夹管理与社交关系中心
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type FavoriteContent, type LikedContent, type SocialCounts, type SocialProfile, type TeamSubmission } from '../../../lib/community-api';
 import {
   User,
   FileText,
@@ -46,13 +47,18 @@ export const PersonalSpaceView: React.FC = () => {
   };
 
   // Favorites folder state
-  const [selectedFolder, setSelectedFolder] = useState<string>('DEFAULT');
-  const [folders, setFolders] = useState([
-    { id: 'DEFAULT', name: '默认收藏夹', count: 12, isPrivate: false },
-    { id: 'FRONTEND', name: '前端架构与 React 19', count: 8, isPrivate: false },
-    { id: 'AI_AGENT', name: 'AI Agent & LLM 实战', count: 6, isPrivate: false },
-    { id: 'PERF', name: '高性能网络与 WebAssembly', count: 4, isPrivate: true },
-  ]);
+  const [selectedFolder, setSelectedFolder] = useState<string>('');
+  const [folders, setFolders] = useState<Array<{ id: string; name: string; count: number; isPrivate: boolean }>>([]);
+  const [favoriteItems, setFavoriteItems] = useState<FavoriteContent[]>([]);
+  const [likedItems, setLikedItems] = useState<LikedContent[]>([]);
+  const [socialCounts, setSocialCounts] = useState<SocialCounts>({ following: 0, followers: 0, mutual: 0 });
+  const [socialProfiles, setSocialProfiles] = useState<SocialProfile[]>([]);
+  const [readingSeries, setReadingSeries] = useState<Array<{
+    id: string;
+    title: string;
+    readingProgress?: { lastReadChapterTitle: string; progressPercentage: number };
+  }>>([]);
+  const [teamSubmissions, setTeamSubmissions] = useState<TeamSubmission[]>([]);
   const [newFolderName, setNewFolderName] = useState('');
   const [showAddFolder, setShowAddFolder] = useState(false);
 
@@ -64,86 +70,79 @@ export const PersonalSpaceView: React.FC = () => {
   const [socialTab, setSocialTab] = useState<'FOLLOWING' | 'FOLLOWERS' | 'TEAMS'>('FOLLOWING');
   const [socialSearch, setSocialSearch] = useState('');
 
-  const socialUsersData = [
-    {
-      id: 'u1',
-      name: '前端匠人',
-      handle: '@fe-craftsman',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      bio: '专注 Web 性能调优、微前端与 React 19 最佳实践探索',
-      role: '星语核心研发组',
-      articlesCount: 34,
-      followersCount: 2420,
-      isMutual: true,
-      online: true,
-      category: 'FOLLOWING',
-    },
-    {
-      id: 'u2',
-      name: '智语探索家',
-      handle: '@ai-explorer',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      bio: '大模型 Agent 架构演进与 LLM 多模态工具链落地',
-      role: 'AI 前沿小组',
-      articlesCount: 52,
-      followersCount: 5890,
-      isMutual: false,
-      online: false,
-      category: 'FOLLOWING',
-    },
-    {
-      id: 'u3',
-      name: '架构师老张',
-      handle: '@arch-zhang',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-      bio: '高并发高可用分布式架构、Kubernetes 与云原生实践',
-      role: '社区签约作者',
-      articlesCount: 19,
-      followersCount: 1840,
-      isMutual: true,
-      online: true,
-      category: 'FOLLOWING',
-    },
-    {
-      id: 'u4',
-      name: '云端极客',
-      handle: '@cloud-geek',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      bio: 'Serverless 架构、Edge Computing 与 TypeScript 深度挖掘',
-      role: '前端专家',
-      articlesCount: 27,
-      followersCount: 1210,
-      isMutual: false,
-      online: true,
-      category: 'FOLLOWERS',
-    },
-    {
-      id: 'u5',
-      name: '算法漫游者',
-      handle: '@algo-wanderer',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150',
-      bio: '图算法、高频交易系统设计与 C++ 高性能计算',
-      role: '算法工程师',
-      articlesCount: 15,
-      followersCount: 940,
-      isMutual: false,
-      online: false,
-      category: 'FOLLOWERS',
-    },
-    {
-      id: 'u6',
-      name: '星辰追光者',
-      handle: '@starlight-chaser',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
-      bio: 'UI/UX 交互设计、设计系统 Token 化与 Tailwind CSS 实战',
-      role: '体验设计师',
-      articlesCount: 12,
-      followersCount: 3100,
-      isMutual: true,
-      online: true,
-      category: 'TEAMS',
-    },
-  ];
+  const activeFolderId = selectedFolder || folders.find((folder) => !folder.isPrivate)?.id || folders[0]?.id || '';
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      communityApi.favoriteFolders(),
+      communityApi.myLikes(),
+      communityApi.socialCounts(),
+      communityApi.myFollowing(),
+      communityApi.myFollowers(),
+      communityApi.myReadingSeries(),
+      communityApi.myTeamSubmissions(),
+    ]).then(([favoriteFolders, likes, counts, following, followers, reading, submissions]) => {
+      if (cancelled) return;
+      setFolders(favoriteFolders.map((folder) => ({
+        id: folder.folderId,
+        name: folder.name,
+        count: folder.itemCount,
+        isPrivate: folder.visibility === 'PRIVATE',
+      })));
+      setLikedItems(likes.records);
+      setSocialCounts(counts);
+      setSocialProfiles([...following.records, ...followers.records.filter((profile) => !following.records.some((item) => item.userId === profile.userId))]);
+      setReadingSeries(reading.map((series) => {
+        const lastRead = series.chapters.find((chapter) => chapter.articleId === series.viewerLastReadArticleId);
+        return {
+          id: series.id,
+          title: series.title,
+          readingProgress: {
+            lastReadChapterTitle: lastRead?.title || '从头开始阅读',
+            progressPercentage: series.chapterCount ? Math.round((series.viewerReadChapterCount / series.chapterCount) * 100) : 0,
+          },
+        };
+      }));
+      setTeamSubmissions(submissions);
+    }).catch(() => {
+      if (!cancelled) {
+        setFolders([]);
+        setLikedItems([]);
+        setSocialProfiles([]);
+        setReadingSeries([]);
+        setTeamSubmissions([]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!activeFolderId) return;
+    let cancelled = false;
+    communityApi.favoriteItems(activeFolderId)
+      .then((page) => {
+        if (!cancelled) setFavoriteItems(page.records);
+      })
+      .catch(() => {
+        if (!cancelled) setFavoriteItems([]);
+      });
+    return () => { cancelled = true; };
+  }, [activeFolderId]);
+
+  const socialUsersData = socialProfiles.map((profile) => ({
+    id: profile.userId,
+    name: profile.displayName || profile.username,
+    handle: `@${profile.username}`,
+    avatar: user?.avatar || '',
+    bio: profile.bio || '这位创作者暂未填写简介。',
+    role: profile.blogName || '社区创作者',
+    articlesCount: 0,
+    followersCount: 0,
+    isMutual: profile.mutual,
+    online: false,
+    category: profile.following ? 'FOLLOWING' : 'FOLLOWERS',
+  }));
 
   const filteredSocialUsers = socialUsersData.filter((u) => {
     const matchesTab =
@@ -160,12 +159,16 @@ export const PersonalSpaceView: React.FC = () => {
   });
 
   // Handle Add Folder
-  const handleAddFolder = (e: React.FormEvent) => {
+  const handleAddFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
-    setFolders([...folders, { id: Date.now().toString(), name: newFolderName.trim(), count: 0, isPrivate: false }]);
-    setNewFolderName('');
-    setShowAddFolder(false);
+    try {
+      const folder = await communityApi.createFavoriteFolder({ name: newFolderName.trim() });
+      setFolders((current) => [...current, { id: folder.folderId, name: folder.name, count: folder.itemCount, isPrivate: folder.visibility === 'PRIVATE' }]);
+      setSelectedFolder(folder.folderId);
+      setNewFolderName('');
+      setShowAddFolder(false);
+    } catch { /* Keep the input visible when the server rejects the folder. */ }
   };
 
   const myArticles = articles.filter((a) => a.author.username === user?.username || true);
@@ -229,7 +232,7 @@ export const PersonalSpaceView: React.FC = () => {
               className="text-center px-2 py-0.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors group cursor-pointer"
             >
               <div className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                {(user?.followingCount || 342).toLocaleString()}
+                {socialCounts.following.toLocaleString()}
               </div>
               <div className="text-[10px] text-slate-400 font-medium">关注</div>
             </button>
@@ -244,7 +247,7 @@ export const PersonalSpaceView: React.FC = () => {
               className="text-center px-2 py-0.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors group cursor-pointer"
             >
               <div className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                {(user?.followersCount || 1280).toLocaleString()}
+                {socialCounts.followers.toLocaleString()}
               </div>
               <div className="text-[10px] text-slate-400 font-medium">粉丝</div>
             </button>
@@ -259,7 +262,7 @@ export const PersonalSpaceView: React.FC = () => {
               className="text-center px-2 py-0.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors group cursor-pointer"
             >
               <div className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                86
+                {socialCounts.mutual}
               </div>
               <div className="text-[10px] text-slate-400 font-medium">互关</div>
             </button>
@@ -304,7 +307,7 @@ export const PersonalSpaceView: React.FC = () => {
           { key: 'FAVORITES', label: '知识收藏夹', icon: <Bookmark className="w-3.5 h-3.5" /> },
           { key: 'LIKES', label: '赞赏与喜欢', icon: <Heart className="w-3.5 h-3.5" /> },
           { key: 'READING', label: '阅读指针', icon: <Clock className="w-3.5 h-3.5" /> },
-          { key: 'SOCIAL', label: `社交关系 (${formatTabCount((user?.followersCount || 1280) + (user?.followingCount || 342))})`, icon: <Users className="w-3.5 h-3.5" /> },
+          { key: 'SOCIAL', label: `社交关系 (${formatTabCount(socialCounts.followers + socialCounts.following)})`, icon: <Users className="w-3.5 h-3.5" /> },
           { key: 'SUBMISSIONS', label: '团队投稿', icon: <Send className="w-3.5 h-3.5" /> },
         ].map((t) => (
           <button
@@ -394,7 +397,7 @@ export const PersonalSpaceView: React.FC = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  {seriesList.map((ser) => (
+                  {readingSeries.map((ser) => (
                     <div
                       key={ser.id}
                       className="p-3 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex items-center justify-between gap-3"
@@ -673,7 +676,7 @@ export const PersonalSpaceView: React.FC = () => {
                   key={f.id}
                   onClick={() => setSelectedFolder(f.id)}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left font-semibold transition-all ${
-                    selectedFolder === f.id
+                    activeFolderId === f.id
                       ? 'bg-indigo-600 text-white shadow-2xs'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
@@ -693,35 +696,35 @@ export const PersonalSpaceView: React.FC = () => {
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <h2 className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 <Bookmark className="w-4 h-4 text-indigo-500" />
-                <span>{folders.find((f) => f.id === selectedFolder)?.name || '默认收藏夹'} 中的文档</span>
+                <span>{folders.find((f) => f.id === activeFolderId)?.name || '默认收藏夹'} 中的文档</span>
               </h2>
-              <span className="text-slate-400 text-[11px]">共 12 篇沉淀</span>
+              <span className="text-slate-400 text-[11px]">共 {favoriteItems.length} 篇沉淀</span>
             </div>
 
             <div className="space-y-2.5">
-              {articles.map((art) => (
+              {favoriteItems.map((art) => (
                 <div
-                  key={art.id}
+                  key={art.favoriteItemId}
                   className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between gap-3 hover:border-indigo-300 border border-transparent transition-colors"
                 >
                   <div className="space-y-1">
                     <h3
-                      onClick={() => navigateTo('/articles/:id', { id: art.id })}
+                      onClick={() => navigateTo('/articles/:id', { id: art.targetId })}
                       className="font-bold text-slate-900 dark:text-white hover:text-indigo-600 cursor-pointer"
                     >
                       {art.title}
                     </h3>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{art.summary}</p>
+                    <p className="text-[11px] text-slate-500 line-clamp-1">{art.excerpt || '暂无摘要'}</p>
                     <div className="flex items-center space-x-2 text-[10px] text-slate-400">
-                      <span>原作者: {art.author.displayName}</span>
+                      <span>收藏于 {art.favoritedAt}</span>
                       <span>•</span>
-                      <span>收藏于 2026-08-08</span>
+                      <span>{art.targetType}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-2 shrink-0">
                     <button
-                      onClick={() => navigateTo('/articles/:id', { id: art.id })}
+                      onClick={() => navigateTo('/articles/:id', { id: art.targetId })}
                       className="px-3 py-1 bg-indigo-600 text-white font-bold rounded-lg"
                     >
                       阅读
@@ -744,15 +747,15 @@ export const PersonalSpaceView: React.FC = () => {
           </h2>
 
           <div className="space-y-2.5">
-            {articles.map((art) => (
-              <div key={art.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex justify-between items-center">
+              {likedItems.map((art) => (
+              <div key={art.likeId} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex justify-between items-center">
                 <div className="space-y-1">
-                  <h3 className="font-bold text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600" onClick={() => navigateTo('/articles/:id', { id: art.id })}>
+                  <h3 className="font-bold text-slate-900 dark:text-white cursor-pointer hover:text-indigo-600" onClick={() => navigateTo('/articles/:id', { id: art.targetId })}>
                     {art.title}
                   </h3>
-                  <p className="text-slate-500 text-[11px]">{art.summary}</p>
+                  <p className="text-slate-500 text-[11px]">{art.excerpt || '暂无摘要'}</p>
                 </div>
-                <button onClick={() => navigateTo('/articles/:id', { id: art.id })} className="text-indigo-600 font-bold shrink-0">
+                <button onClick={() => navigateTo('/articles/:id', { id: art.targetId })} className="text-indigo-600 font-bold shrink-0">
                   访问原文
                 </button>
               </div>
@@ -773,7 +776,7 @@ export const PersonalSpaceView: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {seriesList.map((ser) => (
+            {readingSeries.map((ser) => (
               <div key={ser.id} className="p-3.5 border rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center space-x-2">
@@ -815,7 +818,7 @@ export const PersonalSpaceView: React.FC = () => {
                 </span>
                 <Users className={`w-4 h-4 ${socialTab === 'FOLLOWING' ? 'text-indigo-200' : 'text-indigo-500'}`} />
               </div>
-              <div className="text-xl font-extrabold tracking-tight">{(user?.followingCount || 342).toLocaleString()} <span className="text-xs font-normal opacity-80">人</span></div>
+              <div className="text-xl font-extrabold tracking-tight">{socialCounts.following.toLocaleString()} <span className="text-xs font-normal opacity-80">人</span></div>
               <p className={`text-[10px] mt-1 line-clamp-1 ${socialTab === 'FOLLOWING' ? 'text-indigo-100/90' : 'text-slate-400'}`}>
                 订阅的技术作者与专栏团队
               </p>
@@ -835,7 +838,7 @@ export const PersonalSpaceView: React.FC = () => {
                 </span>
                 <Users className={`w-4 h-4 ${socialTab === 'FOLLOWERS' ? 'text-indigo-200' : 'text-purple-500'}`} />
               </div>
-              <div className="text-xl font-extrabold tracking-tight">{(user?.followersCount || 1280).toLocaleString()} <span className="text-xs font-normal opacity-80">人</span></div>
+              <div className="text-xl font-extrabold tracking-tight">{socialCounts.followers.toLocaleString()} <span className="text-xs font-normal opacity-80">人</span></div>
               <p className={`text-[10px] mt-1 line-clamp-1 ${socialTab === 'FOLLOWERS' ? 'text-indigo-100/90' : 'text-slate-400'}`}>
                 支持并追更作品的社区同行
               </p>
@@ -855,7 +858,7 @@ export const PersonalSpaceView: React.FC = () => {
                 </span>
                 <Sparkles className={`w-4 h-4 ${socialTab === 'TEAMS' ? 'text-amber-200' : 'text-amber-500'}`} />
               </div>
-              <div className="text-xl font-extrabold tracking-tight">86 <span className="text-xs font-normal opacity-80">互关 / 1,622 总计</span></div>
+              <div className="text-xl font-extrabold tracking-tight">{socialCounts.mutual} <span className="text-xs font-normal opacity-80">互关</span></div>
               <p className={`text-[10px] mt-1 line-clamp-1 ${socialTab === 'TEAMS' ? 'text-indigo-100/90' : 'text-slate-400'}`}>
                 深度双向互动与联合专栏伙伴
               </p>
@@ -875,9 +878,9 @@ export const PersonalSpaceView: React.FC = () => {
                   {socialTab === 'TEAMS' && '互相关注与协同伙伴'}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500 font-mono">
-                  {socialTab === 'FOLLOWING' && `${user?.followingCount || 342} 位`}
-                  {socialTab === 'FOLLOWERS' && `${user?.followersCount || 1280} 位`}
-                  {socialTab === 'TEAMS' && '86 位伙伴'}
+                  {socialTab === 'FOLLOWING' && `${socialCounts.following} 位`}
+                  {socialTab === 'FOLLOWERS' && `${socialCounts.followers} 位`}
+                  {socialTab === 'TEAMS' && `${socialCounts.mutual} 位伙伴`}
                 </span>
               </div>
 
@@ -965,7 +968,7 @@ export const PersonalSpaceView: React.FC = () => {
 
             {/* Pagination Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400">
-              <span>显示 1 - {filteredSocialUsers.length} 项 / 共 {socialTab === 'FOLLOWING' ? 342 : socialTab === 'FOLLOWERS' ? 1280 : 86} 位关系成员</span>
+              <span>显示 1 - {filteredSocialUsers.length} 项 / 共 {socialTab === 'FOLLOWING' ? socialCounts.following : socialTab === 'FOLLOWERS' ? socialCounts.followers : socialCounts.mutual} 位关系成员</span>
               <div className="flex items-center space-x-1">
                 <button disabled className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-300 dark:text-slate-600 cursor-not-allowed">
                   上一页
@@ -994,7 +997,21 @@ export const PersonalSpaceView: React.FC = () => {
           </h2>
 
           <div className="space-y-2.5">
-            {[
+            {teamSubmissions.map((sub) => (
+              <div key={sub.id} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-900 dark:text-white">{sub.sourceArticleTitle}</span>
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded-md text-[10px]">{sub.status}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">提交时间：{sub.createdAt}</p>
+                </div>
+                <button onClick={() => navigateTo('/teams')} className="text-indigo-600 font-bold">查看专栏</button>
+              </div>
+            ))}
+            {teamSubmissions.length === 0 && <p className="py-4 text-center text-slate-400">暂无团队投稿记录</p>}
+            {false && (
+            [
               { title: 'React 19 & Next.js 16 全栈实战指南', team: '星语核心研发组', status: 'APPROVED', time: '2026-08-09' },
               { title: '星语社区 V2.1 架构演进：从单体博客到多端协作知识矩阵', team: '星语核心研发组', status: 'APPROVED', time: '2026-08-08' },
             ].map((sub, idx) => (
@@ -1010,7 +1027,8 @@ export const PersonalSpaceView: React.FC = () => {
                 </div>
                 <button onClick={() => navigateTo('/teams')} className="text-indigo-600 font-bold">查看专栏</button>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
       )}

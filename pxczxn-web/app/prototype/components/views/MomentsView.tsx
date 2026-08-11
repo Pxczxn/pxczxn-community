@@ -3,10 +3,10 @@
  * 核心原则：三栏社交 Timeline 骨架 (Left Nav + Center Feed & Publisher + Right Active Detail)
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
-import { communityApi } from '../../../lib/community-api';
+import { communityApi, type CommunityComment } from '../../../lib/community-api';
 import { Moment } from '../../types';
 import {
   MessageSquare,
@@ -35,8 +35,22 @@ export const MomentsView: React.FC = () => {
   const [linkInput, setLinkInput] = useState('');
   const [activeMomentId, setActiveMomentId] = useState<string>(moments[0]?.id || '');
   const [commentInput, setCommentInput] = useState('');
+  const [momentComments, setMomentComments] = useState<CommunityComment[]>([]);
 
   const activeMoment = moments.find((m) => m.id === activeMomentId) || moments[0];
+
+  useEffect(() => {
+    if (!activeMoment?.id) return;
+    let cancelled = false;
+    communityApi.comments('MOMENT', activeMoment.id)
+      .then((page) => {
+        if (!cancelled) setMomentComments(page.records.map((thread) => thread.root));
+      })
+      .catch(() => {
+        if (!cancelled) setMomentComments([]);
+      });
+    return () => { cancelled = true; };
+  }, [activeMoment?.id]);
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +64,8 @@ export const MomentsView: React.FC = () => {
     event.preventDefault();
     if (!activeMoment || !commentInput.trim()) return;
     try {
-      await communityApi.createComment('MOMENT', activeMoment.id, commentInput.trim());
+      const comment = await communityApi.createComment('MOMENT', activeMoment.id, commentInput.trim());
+      setMomentComments((current) => [comment, ...current]);
       setCommentInput('');
     } catch { /* Preserve the draft when the API rejects the comment. */ }
   };
@@ -334,6 +349,23 @@ export const MomentsView: React.FC = () => {
                 <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
                   {activeMoment.textContent}
                 </p>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {momentComments.map((comment) => (
+                    <div key={comment.commentId} className="rounded-xl bg-slate-50 dark:bg-slate-800/40 p-2 text-xs">
+                      <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200">
+                          {comment.author?.displayName || comment.author?.username || '社区用户'}
+                        </span>
+                        <span>{comment.createdAt}</span>
+                      </div>
+                      <p className="mt-1 text-slate-600 dark:text-slate-300">{comment.contentText}</p>
+                    </div>
+                  ))}
+                  {momentComments.length === 0 && (
+                    <p className="py-2 text-center text-[11px] text-slate-400">暂时还没有评论</p>
+                  )}
+                </div>
 
                 {/* Comment Input */}
                 <form

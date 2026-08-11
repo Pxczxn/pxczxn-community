@@ -261,16 +261,6 @@ export const TeamsView: React.FC = () => {
               </div>
             </div>
           ))}
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2">
-              <Building2 className="w-4 h-4 text-purple-500" />
-              <span>【云原生架构探索队】邀请你加入并担任 <strong className="font-bold text-indigo-600">EDITOR (编辑)</strong></span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-semibold">接受邀请</button>
-              <button className="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg">拒绝</button>
-            </div>
-          </div>
         </div>
       )}
 

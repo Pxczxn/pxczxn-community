@@ -86,13 +86,17 @@ test("does not keep supported community actions as prototype-only state", async 
 });
 
 test("connects chat selection and team submission actions to their persisted APIs", async () => {
-  const [chat, teamDetail, workspace, settings, search, articleDetail, api] = await Promise.all([
+  const [chat, teamDetail, workspace, settings, search, articleDetail, moments, personalSpace, governance, editor, api] = await Promise.all([
     source("app/prototype/components/views/ChatView.tsx"),
     source("app/prototype/components/views/TeamDetailView.tsx"),
     source("app/prototype/components/views/TeamWorkspaceView.tsx"),
     source("app/prototype/components/views/SettingsView.tsx"),
     source("app/prototype/components/views/SearchView.tsx"),
     source("app/prototype/components/views/ArticleDetailView.tsx"),
+    source("app/prototype/components/views/MomentsView.tsx"),
+    source("app/prototype/components/views/PersonalSpaceView.tsx"),
+    source("app/prototype/components/views/GovernanceView.tsx"),
+    source("app/prototype/components/views/EditorView.tsx"),
     source("app/lib/community/api.ts"),
   ]);
 
@@ -107,6 +111,25 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(search, /communityApi\.search/);
   assert.match(articleDetail, /communityApi\.comments/);
   assert.match(articleDetail, /communityApi\.createComment/);
+  assert.match(moments, /communityApi\.comments\('MOMENT', activeMoment\.id\)/);
+  assert.match(moments, /setMomentComments/);
+  for (const apiCall of [
+    "communityApi.favoriteFolders",
+    "communityApi.favoriteItems",
+    "communityApi.myLikes",
+    "communityApi.socialCounts",
+    "communityApi.myFollowing",
+    "communityApi.myFollowers",
+    "communityApi.myReadingSeries",
+    "communityApi.myTeamSubmissions",
+  ]) {
+    assert.match(personalSpace, new RegExp(apiCall.replaceAll(".", "\\.")));
+  }
+  assert.match(governance, /communityApi\.createReport/);
+  assert.match(editor, /saveArticleDraft/);
+  assert.match(settings, /communityApi\.myBlocks/);
+  assert.match(settings, /communityApi\.removeBlock/);
+  assert.match(settings, /communityApi\.changePassword/);
   assert.match(api, /updateProfile\(input: \{ displayName: string; bio: string \| null \}\)/);
 });
 

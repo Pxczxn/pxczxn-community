@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type CommunityReport } from '../../../lib/community-api';
 import {
   ShieldAlert,
   ShieldCheck,
@@ -21,19 +22,27 @@ export const GovernanceView: React.FC = () => {
   const { isCompactViewport } = useApp();
 
   const [reportType, setReportType] = useState('SPAM');
+  const [reportTargetType, setReportTargetType] = useState<CommunityReport['targetType']>('ARTICLE');
   const [reportTarget, setReportTarget] = useState('');
   const [reportDetail, setReportDetail] = useState('');
   const [submittedReport, setSubmittedReport] = useState(false);
 
-  const handleSubmitReport = (e: React.FormEvent) => {
+  const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportTarget.trim()) return;
-    setSubmittedReport(true);
-    setTimeout(() => {
-      setSubmittedReport(false);
+    try {
+      await communityApi.createReport({
+        targetType: reportTargetType,
+        targetId: reportTarget.trim(),
+        reasonCode: reportType,
+        description: reportDetail.trim() || undefined,
+      });
+      setSubmittedReport(true);
       setReportTarget('');
       setReportDetail('');
-    }, 3000);
+    } catch {
+      setSubmittedReport(false);
+    }
   };
 
   return (
@@ -96,6 +105,23 @@ export const GovernanceView: React.FC = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmitReport} className="space-y-3 max-w-lg">
+            <div>
+              <label className="block text-slate-500 mb-1">举报对象类型</label>
+              <select
+                value={reportTargetType}
+                onChange={(e) => setReportTargetType(e.target.value as CommunityReport['targetType'])}
+                className="w-full p-2 bg-slate-100 dark:bg-slate-800 border rounded-xl"
+              >
+                <option value="ARTICLE">文章</option>
+                <option value="MOMENT">动态</option>
+                <option value="COMMENT">评论</option>
+                <option value="BLOG">博客</option>
+                <option value="USER">用户</option>
+                <option value="TEAM">团队</option>
+                <option value="CHAT">私信</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-slate-500 mb-1">举报类型</label>
               <select

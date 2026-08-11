@@ -88,11 +88,18 @@ interface AppContextType {
   sendChatMessage: (peerId: string, text: string) => void;
   addIdea: (title: string, content: string, tags: string[]) => void;
   addArticle: (newArticle: Partial<Article>) => Promise<string | null>;
+  saveArticleDraft: (newArticle: Partial<Article>, existing?: ArticleDraftState) => Promise<ArticleDraftState | null>;
 
   // Quick Search
   globalSearchQuery: string;
   setGlobalSearchQuery: (query: string) => void;
   triggerSearch: (query: string) => void;
+}
+
+interface ArticleDraftState {
+  articleId: string;
+  slug: string;
+  lockVersion: number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -623,6 +630,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const saveArticleDraft = async (newArticle: Partial<Article>, existing?: ArticleDraftState): Promise<ArticleDraftState | null> => {
+    if (!user) return null;
+    const title = newArticle.title?.trim();
+    const markdownContent = newArticle.content?.trim();
+    if (!title || !markdownContent) return null;
+    const draftPayload = {
+      title,
+      summary: newArticle.summary?.trim() || markdownContent.slice(0, 160),
+      contentMode: 'MARKDOWN',
+      markdownContent,
+      visibility: 'PRIVATE',
+      publishMethod: 'PLATFORM_REVIEW',
+      tagIds: [],
+      contentFileIds: [],
+    };
+    try {
+      if (existing) {
+        const saved = await communityApi.saveArticle(existing.articleId, {
+          ...draftPayload,
+          slug: existing.slug,
+          expectedLockVersion: existing.lockVersion,
+        }, true);
+        return { articleId: saved.articleId, slug: saved.slug, lockVersion: saved.lockVersion };
+      }
+      const created = await communityApi.createArticle(draftPayload);
+      const saved = await communityApi.saveArticle(created.articleId, {
+        ...draftPayload,
+        slug: created.slug,
+        expectedLockVersion: created.lockVersion,
+      }, true);
+      return { articleId: saved.articleId, slug: saved.slug, lockVersion: saved.lockVersion };
+    } catch {
+      return null;
+    }
+  };
+
   // Search
   const triggerSearch = (query: string) => {
     setGlobalSearchQuery(query);
@@ -669,6 +712,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         sendChatMessage,
         addIdea,
         addArticle,
+        saveArticleDraft,
         globalSearchQuery,
         setGlobalSearchQuery,
         triggerSearch,

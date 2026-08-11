@@ -3,10 +3,10 @@
  * 8大核心导航模块：账号资料 | 安全设置 | 通知矩阵 | 隐私权限 | 外观设计 | 使用偏好 | 屏蔽静音 | 数据与账号
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
-import { communityApi } from '../../../lib/community-api';
+import { communityApi, type CommunityBlock } from '../../../lib/community-api';
 import {
   User,
   Globe,
@@ -228,10 +228,28 @@ export const SettingsView: React.FC = () => {
   const [keywords, setKeywords] = useState<string[]>(['加密货币', '低俗垃圾', '纯营销']);
   const [newKeywordInput, setNewKeywordInput] = useState('');
 
-  const [blockedUsers, setBlockedUsers] = useState([
-    { id: 'b1', name: '广告推销员', handle: '@spammer99', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100', date: '2026-07-20' },
-    { id: 'b2', name: '违规搬运账号', handle: '@reposter_bot', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100', date: '2026-08-02' },
-  ]);
+  const [blocks, setBlocks] = useState<CommunityBlock[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    communityApi.myBlocks()
+      .then((items) => {
+        if (!cancelled) setBlocks(items);
+      })
+      .catch(() => {
+        if (!cancelled) setBlocks([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const blockedUsers = blocks.filter((block) => block.targetType === 'USER').map((block) => ({
+    id: block.id,
+    targetId: block.targetId,
+    name: `用户 ${block.targetId.slice(0, 8)}`,
+    handle: `@${block.targetId}`,
+    avatar: user?.avatar || '',
+    date: block.createdAt,
+  }));
 
   // ================= 8. DATA & ACCOUNT LIFECYCLE =================
   const [exportingData, setExportingData] = useState(false);
@@ -268,6 +286,16 @@ export const SettingsView: React.FC = () => {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || newPassword !== confirmPassword) return;
+    try {
+      await communityApi.changePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch { /* Keep the inputs available when the password change is rejected. */ }
+  };
+
   const handleAddKeyword = () => {
     if (newKeywordInput.trim() && !keywords.includes(newKeywordInput.trim())) {
       setKeywords([...keywords, newKeywordInput.trim()]);
@@ -279,8 +307,11 @@ export const SettingsView: React.FC = () => {
     setKeywords(keywords.filter((k) => k !== word));
   };
 
-  const handleUnblockUser = (id: string) => {
-    setBlockedUsers(blockedUsers.filter((u) => u.id !== id));
+  const handleUnblockUser = async (targetId: string) => {
+    try {
+      await communityApi.removeBlock('USER', targetId);
+      setBlocks((current) => current.filter((block) => !(block.targetType === 'USER' && block.targetId === targetId)));
+    } catch { /* Keep the block visible when the server rejects the change. */ }
   };
 
   const handleLogoutSession = (id: string) => {
@@ -724,6 +755,14 @@ export const SettingsView: React.FC = () => {
                       />
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handlePasswordChange}
+                    disabled={!currentPassword || !newPassword || newPassword !== confirmPassword}
+                    className="px-3 py-1.5 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-lg text-xs font-semibold disabled:opacity-50"
+                  >
+                    更新密码
+                  </button>
                 </div>
 
                 {/* Active Device Sessions List */}
@@ -1345,7 +1384,7 @@ export const SettingsView: React.FC = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleUnblockUser(u.id)}
+                            onClick={() => handleUnblockUser(u.targetId)}
                             className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-rose-50 text-slate-600 dark:text-slate-300 hover:text-rose-600 text-[11px] font-semibold rounded-lg transition-all"
                           >
                             解除屏蔽

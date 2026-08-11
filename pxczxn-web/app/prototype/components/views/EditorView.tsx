@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi } from '../../../lib/community-api';
 import {
   FileText,
   Eye,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const EditorView: React.FC = () => {
-  const { seriesList, teams, addArticle, navigateTo, isCompactViewport } = useApp();
+  const { seriesList, teams, addArticle, saveArticleDraft, navigateTo, isCompactViewport } = useApp();
 
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
@@ -46,6 +47,7 @@ export const EditorView: React.FC = () => {
   const [coAuthorsList, setCoAuthorsList] = useState<string[]>([]);
   const [editorMode, setEditorMode] = useState<'SPLIT' | 'EDIT' | 'PREVIEW'>('SPLIT');
   const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVED'>('IDLE');
+  const [draftState, setDraftState] = useState<{ articleId: string; slug: string; lockVersion: number } | undefined>();
 
   const handleAddCoAuthor = () => {
     if (coAuthorName.trim() && !coAuthorsList.includes(coAuthorName.trim())) {
@@ -58,19 +60,50 @@ export const EditorView: React.FC = () => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
 
-    const articleId = await addArticle({
+    const articleInput = {
       title: title.trim(),
       summary: summary.trim() || content.slice(0, 100),
       content: content.trim(),
       tags: tagsText.split(',').map((t) => t.trim()).filter(Boolean),
-    });
+    };
+
+    let articleId: string | null;
+    if (draftState) {
+      try {
+        const saved = await communityApi.saveArticle(draftState.articleId, {
+          title: articleInput.title,
+          slug: draftState.slug,
+          summary: articleInput.summary,
+          contentMode: 'MARKDOWN',
+          markdownContent: articleInput.content,
+          visibility: 'PUBLIC',
+          publishMethod: 'PLATFORM_REVIEW',
+          tagIds: [],
+          contentFileIds: [],
+          expectedLockVersion: draftState.lockVersion,
+        });
+        await communityApi.submitReview(saved.articleId, saved.lockVersion);
+        articleId = saved.articleId;
+      } catch {
+        articleId = null;
+      }
+    } else {
+      articleId = await addArticle(articleInput);
+    }
 
     if (articleId) navigateTo('/articles/:id', { id: articleId });
   };
 
-  const handleSaveSnapshot = () => {
+  const handleSaveSnapshot = async () => {
+    const savedDraft = await saveArticleDraft({
+      title: title.trim(),
+      summary: summary.trim() || content.slice(0, 100),
+      content: content.trim(),
+      tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
+    }, draftState);
+    if (!savedDraft) return;
+    setDraftState(savedDraft);
     setSaveStatus('SAVED');
-    setTimeout(() => setSaveStatus('IDLE'), 2000);
   };
 
   return (
