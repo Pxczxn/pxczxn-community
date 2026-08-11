@@ -264,6 +264,16 @@ export const SettingsView: React.FC = () => {
       const [account, blog] = await Promise.all([
         communityApi.updateProfile({ displayName, bio }),
         communityApi.updateMyBlog({ name: blogName, summary: blogSummary }),
+        communityApi.updateBlogSettings({
+          commentScope: {
+            EVERYONE: 'ALL_LOGGED_IN',
+            MEMBERS_ONLY: 'FOLLOWERS_ONLY',
+            CLOSED: 'DISABLED',
+          }[defaultCommentScope],
+          defaultVisibility: defaultPostVisibility === 'TEAM_ONLY' ? 'PRIVATE' : defaultPostVisibility,
+          allowRepost: allowRepost ? 'ALLOW' : 'DISALLOW',
+          themeKey: theme === 'starlight' ? 'starry' : theme,
+        }),
       ]);
       setUser({
         ...user,

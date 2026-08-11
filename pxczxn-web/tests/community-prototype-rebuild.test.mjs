@@ -108,6 +108,7 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(workspace, /communityApi\.updateTeamSettings/);
   assert.match(settings, /communityApi\.updateProfile/);
   assert.match(settings, /communityApi\.updateMyBlog/);
+  assert.match(settings, /communityApi\.updateBlogSettings/);
   assert.match(search, /communityApi\.search/);
   assert.match(articleDetail, /communityApi\.comments/);
   assert.match(articleDetail, /communityApi\.createComment/);
@@ -139,4 +140,13 @@ test("formats IPv6 localhost as a valid backend URL", async () => {
   assert.match(client, /hostname\.replace\(\/\^\\\[\|\\\]\$\/g, ""\)/);
   assert.match(client, /browserHostname\.includes\(":"\)/);
   assert.match(client, /\$\{browserHostForUrl\}:8849/);
+});
+
+test("registers creator persistence mappers required by connected creator actions", async () => {
+  const application = await readFile(
+    new URL("../../pxczxn-backend/pxczxn-starter/src/main/java/top/pxczxn/community/PxczxnCommunityApplication.java", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(application, /"top\.pxczxn\.community\.creator\.persistence"/);
 });
