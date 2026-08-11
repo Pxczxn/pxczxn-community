@@ -225,7 +225,7 @@ export function AuthPanel() {
         </TabsContent>
 
         <TabsContent className="auth-tab-content" value="register">
-          <form className="auth-form" onSubmit={submit}>
+          <form className="auth-form auth-form--register" onSubmit={submit}>
             <div className="auth-field">
               <label htmlFor="register-name">昵称</label>
               <Input
