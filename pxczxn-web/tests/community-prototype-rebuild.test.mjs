@@ -86,12 +86,13 @@ test("does not keep supported community actions as prototype-only state", async 
 });
 
 test("connects chat selection and team submission actions to their persisted APIs", async () => {
-  const [chat, teamDetail, workspace, settings, search, api] = await Promise.all([
+  const [chat, teamDetail, workspace, settings, search, articleDetail, api] = await Promise.all([
     source("app/prototype/components/views/ChatView.tsx"),
     source("app/prototype/components/views/TeamDetailView.tsx"),
     source("app/prototype/components/views/TeamWorkspaceView.tsx"),
     source("app/prototype/components/views/SettingsView.tsx"),
     source("app/prototype/components/views/SearchView.tsx"),
+    source("app/prototype/components/views/ArticleDetailView.tsx"),
     source("app/lib/community/api.ts"),
   ]);
 
@@ -104,6 +105,8 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(settings, /communityApi\.updateProfile/);
   assert.match(settings, /communityApi\.updateMyBlog/);
   assert.match(search, /communityApi\.search/);
+  assert.match(articleDetail, /communityApi\.comments/);
+  assert.match(articleDetail, /communityApi\.createComment/);
   assert.match(api, /updateProfile\(input: \{ displayName: string; bio: string \| null \}\)/);
 });
 

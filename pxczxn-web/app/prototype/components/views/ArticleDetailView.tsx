@@ -3,8 +3,9 @@
  * 完整包含 TOC 大纲、系列章节上下文、共创署名、互动操作与评论区
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type CommunityComment } from '../../../lib/community-api';
 import {
   ArrowLeft,
   Heart,
@@ -28,15 +29,38 @@ export const ArticleDetailView: React.FC = () => {
   const article = articles.find((a) => a.id === articleId) || articles[0];
 
   const [commentText, setCommentText] = useState('');
-  const [comments, setComments] = useState([
-    { id: 'c1', author: '前端匠人', text: '分析得非常深，首屏 600-700px 视口适配对于开发体验提升巨大！', time: '1小时前' },
-  ]);
+  const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; time: string }>>([]);
 
-  const handleSendComment = (e: React.FormEvent) => {
+  const toDisplayComment = (comment: CommunityComment) => ({
+    id: comment.commentId,
+    author: comment.author?.displayName || comment.author?.username || '社区用户',
+    text: comment.contentText || '',
+    time: comment.createdAt,
+  });
+
+  useEffect(() => {
+    if (!article?.id) return;
+    let cancelled = false;
+    communityApi.comments('ARTICLE', article.id)
+      .then((page) => {
+        if (!cancelled) setComments(page.records.map((thread) => toDisplayComment(thread.root)));
+      })
+      .catch(() => {
+        if (!cancelled) setComments([]);
+      });
+    return () => { cancelled = true; };
+  }, [article?.id]);
+
+  const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    setComments([{ id: `c-${Date.now()}`, author: '星语客', text: commentText.trim(), time: '刚刚' }, ...comments]);
-    setCommentText('');
+    try {
+      const comment = await communityApi.createComment('ARTICLE', article.id, commentText.trim());
+      setComments((current) => [toDisplayComment(comment), ...current]);
+      setCommentText('');
+    } catch {
+      // Preserve the draft when the server rejects the comment.
+    }
   };
 
   return (
