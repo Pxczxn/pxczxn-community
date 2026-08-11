@@ -339,7 +339,7 @@ export function SettingsPanel() {
             </div>
             <div className="security-item">
               <dt>绑定邮箱</dt>
-              <dd>{currentUser?.email || "xiaoming.dev@example.com"}</dd>
+              <dd>{currentUser?.email || "未绑定"}</dd>
             </div>
             <div className="security-item">
               <dt>用户名</dt>
