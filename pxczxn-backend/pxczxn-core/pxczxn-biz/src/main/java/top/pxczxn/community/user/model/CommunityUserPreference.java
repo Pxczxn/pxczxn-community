@@ -17,4 +17,6 @@ public class CommunityUserPreference {
     private Long userId;
 
     private String likesVisibility;
+
+    private String settingsJson;
 }

@@ -3,6 +3,7 @@ import type { CommunitySession } from "./session";
 import type { CommunityFile } from "./files";
 import type {
   CurrentCommunityUser,
+  CommunityPreferenceSettings,
   BlogSettings,
   PersonalBlog,
   PublicBlog,
@@ -138,6 +139,15 @@ export const communityApi = {
     return communityRequest<CurrentCommunityUser>("/api/v1/account/me", {
       method: "PATCH",
       body: JSON.stringify(input),
+    });
+  },
+  preferences() {
+    return communityRequest<CommunityPreferenceSettings>("/api/v1/account/preferences");
+  },
+  updatePreferences(settings: Record<string, unknown>) {
+    return communityRequest<CommunityPreferenceSettings>("/api/v1/account/preferences", {
+      method: "PATCH",
+      body: JSON.stringify({ settings }),
     });
   },
   changePassword(currentPassword: string, newPassword: string) {

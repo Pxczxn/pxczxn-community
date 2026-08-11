@@ -9,6 +9,7 @@ export type { CommunityFile } from "./files";
 // All domain types
 export type {
   CurrentCommunityUser,
+  CommunityPreferenceSettings,
   BlogSettings,
   PersonalBlog,
   PublicBlog,

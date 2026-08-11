@@ -18,6 +18,7 @@ export type {
   CommunitySession,
   CommunityFile,
   CurrentCommunityUser,
+  CommunityPreferenceSettings,
   BlogSettings,
   PersonalBlog,
   PublicBlog,

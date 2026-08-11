@@ -212,7 +212,7 @@ export const SettingsView: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [apiKey, setApiKey] = useState('sk-••••••••••••••••••••');
+  const [apiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
   const [enable2FA, setEnable2FA] = useState(false);
@@ -304,6 +304,61 @@ export const SettingsView: React.FC = () => {
   const [newKeywordInput, setNewKeywordInput] = useState('');
 
   const [blocks, setBlocks] = useState<CommunityBlock[]>([]);
+  const [preferencesReady, setPreferencesReady] = useState(false);
+
+  useEffect(() => {
+    if (!userId) {
+      setPreferencesReady(false);
+      return;
+    }
+    let cancelled = false;
+    const stringValue = (value: unknown, fallback: string) => typeof value === 'string' ? value : fallback;
+    const booleanValue = (value: unknown, fallback: boolean) => typeof value === 'boolean' ? value : fallback;
+    void communityApi.preferences().then(({ settings }) => {
+      if (cancelled) return;
+      setDndMode(booleanValue(settings.dndMode, true));
+      setEmailFrequency(stringValue(settings.emailFrequency, 'WEEKLY') as typeof emailFrequency);
+      if (settings.notificationMatrix && typeof settings.notificationMatrix === 'object' && !Array.isArray(settings.notificationMatrix)) {
+        setNotifMatrix(settings.notificationMatrix as typeof notifMatrix);
+      }
+      setBookmarksPrivacy(stringValue(settings.bookmarksPrivacy, 'PRIVATE') as typeof bookmarksPrivacy);
+      setFollowingPrivacy(stringValue(settings.followingPrivacy, 'PUBLIC') as typeof followingPrivacy);
+      setReadingStatusPrivacy(stringValue(settings.readingStatusPrivacy, 'MUTUAL') as typeof readingStatusPrivacy);
+      setWhoCanMessage(stringValue(settings.whoCanMessage, 'MUTUAL') as typeof whoCanMessage);
+      setWhoCanMention(stringValue(settings.whoCanMention, 'ALL') as typeof whoCanMention);
+      setAllowSearchIndex(booleanValue(settings.allowSearchIndex, true));
+      setAllowRecommendation(booleanValue(settings.allowRecommendation, true));
+      setFontSize(stringValue(settings.fontSize, 'MEDIUM') as typeof fontSize);
+      setUiDensity(stringValue(settings.uiDensity, 'STANDARD') as typeof uiDensity);
+      setCodeTheme(stringValue(settings.codeTheme, 'ONE_DARK') as typeof codeTheme);
+      setReduceMotion(booleanValue(settings.reduceMotion, false));
+      setDefaultHomeFeed(stringValue(settings.defaultHomeFeed, 'RECOMMEND') as typeof defaultHomeFeed);
+      setDefaultArticleSort(stringValue(settings.defaultArticleSort, 'HOT') as typeof defaultArticleSort);
+      setDefaultPostVisibility(stringValue(settings.defaultPostVisibility, 'PUBLIC') as typeof defaultPostVisibility);
+      setDefaultCommentScope(stringValue(settings.defaultCommentScope, 'EVERYONE') as typeof defaultCommentScope);
+      setAllowRepost(booleanValue(settings.allowRepost, true));
+      setKeywords(Array.isArray(settings.mutedKeywords) ? settings.mutedKeywords.filter((item): item is string => typeof item === 'string') : []);
+      setPreferencesReady(true);
+    }).catch(() => {
+      if (!cancelled) setPreferencesReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || !preferencesReady) return;
+    const timer = window.setTimeout(() => {
+      void communityApi.updatePreferences({
+        dndMode, emailFrequency, notificationMatrix: notifMatrix,
+        bookmarksPrivacy, followingPrivacy, readingStatusPrivacy,
+        whoCanMessage, whoCanMention, allowSearchIndex, allowRecommendation,
+        fontSize, uiDensity, codeTheme, reduceMotion,
+        defaultHomeFeed, defaultArticleSort, defaultPostVisibility,
+        defaultCommentScope, allowRepost, mutedKeywords: keywords,
+      }).catch(() => undefined);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [allowRecommendation, allowRepost, allowSearchIndex, bookmarksPrivacy, codeTheme, defaultArticleSort, defaultCommentScope, defaultHomeFeed, defaultPostVisibility, dndMode, emailFrequency, fontSize, followingPrivacy, keywords, notifMatrix, preferencesReady, readingStatusPrivacy, reduceMotion, uiDensity, userId, whoCanMention, whoCanMessage]);
 
   useEffect(() => {
     let cancelled = false;

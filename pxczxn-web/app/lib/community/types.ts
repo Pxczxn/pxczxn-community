@@ -13,6 +13,10 @@ export interface CurrentCommunityUser {
   blogSlug: string | null;
 }
 
+export interface CommunityPreferenceSettings {
+  settings: Record<string, unknown>;
+}
+
 export interface BlogSettings {
   commentScope: string;
   defaultVisibility: string;

@@ -112,6 +112,10 @@ test("connects chat selection and team submission actions to their persisted API
   assert.match(settings, /communityApi\.likeListPrivacy/);
   assert.match(settings, /communityApi\.updateLikeListPrivacy/);
   assert.match(settings, /communityApi\.uploadFile/);
+  assert.match(settings, /communityApi\.preferences/);
+  assert.match(settings, /communityApi\.updatePreferences/);
+  assert.match(api, /preferences\(\)/);
+  assert.match(api, /updatePreferences\(settings: Record<string, unknown>\)/);
   assert.match(search, /communityApi\.search/);
   assert.match(articleDetail, /communityApi\.comments/);
   assert.match(articleDetail, /communityApi\.createComment/);
