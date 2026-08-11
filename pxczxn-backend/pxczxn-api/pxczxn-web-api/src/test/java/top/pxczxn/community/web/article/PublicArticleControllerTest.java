@@ -8,6 +8,7 @@ import top.pxczxn.community.article.application.PublicArticleCategoryView;
 import top.pxczxn.community.article.application.PublicArticleDetailView;
 import top.pxczxn.community.article.application.PublicArticlePageView;
 import top.pxczxn.community.article.application.PublicArticleQuery;
+import top.pxczxn.community.article.application.PublicDiscoveryQuery;
 import top.pxczxn.community.article.application.PublicArticleSeoView;
 import top.pxczxn.community.article.application.PublicArticleService;
 import top.pxczxn.community.article.application.PublicArticleSummaryView;
@@ -107,16 +108,16 @@ class PublicArticleControllerTest {
 
     @Test
     void discoverMapsGlobalPublicTimelineContract() {
-        when(service.discover(new PublicArticleQuery(null, 2, 10)))
+        when(service.discover(new PublicDiscoveryQuery(null, null, null, 2, 10)))
                 .thenReturn(new PublicArticlePageView(List.of(), 0, 2, 10));
 
-        var result = controller.discover(2, 10);
+        var result = controller.discover(null, null, 2, 10);
 
         assertThat(result.getCode()).isEqualTo(200);
         assertThat(result.getData().records()).isEmpty();
         assertThat(result.getData().pageNum()).isEqualTo(2);
         assertThat(result.getData().pageSize()).isEqualTo(10);
-        verify(service).discover(new PublicArticleQuery(null, 2, 10));
+        verify(service).discover(new PublicDiscoveryQuery(null, null, null, 2, 10));
     }
 
     @Test
