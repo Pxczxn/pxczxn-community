@@ -134,6 +134,12 @@ export const communityApi = {
   me() {
     return communityRequest<CurrentCommunityUser>("/api/v1/account/me");
   },
+  updateProfile(input: { displayName: string; bio: string | null }) {
+    return communityRequest<CurrentCommunityUser>("/api/v1/account/me", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  },
   changePassword(currentPassword: string, newPassword: string) {
     return communityRequest<void>("/api/v1/account/password", {
       method: "POST",

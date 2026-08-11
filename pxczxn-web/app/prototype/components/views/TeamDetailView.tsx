@@ -2,8 +2,9 @@
  * 星语社区 (pxczxn-community V2.1) - 团队公开主页 (Team Public Homepage)
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type SubmittableArticle } from '../../../lib/community-api';
 import {
   Users,
   BookOpen,
@@ -25,19 +26,33 @@ export const TeamDetailView: React.FC = () => {
   const team = teams.find((t) => t.slug === slug) || teams[0];
 
   const [activeTab, setActiveTab] = useState<'ARTICLES' | 'SERIES' | 'MEMBERS' | 'SUBMIT'>('ARTICLES');
-  const [submissionTitle, setSubmissionTitle] = useState('');
+  const [submittableArticles, setSubmittableArticles] = useState<SubmittableArticle[]>([]);
+  const [selectedArticleId, setSelectedArticleId] = useState('');
   const [submissionComment, setSubmissionComment] = useState('');
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
-  const handleSubmitToTeam = (e: React.FormEvent) => {
+  useEffect(() => {
+    communityApi.submittableArticles()
+      .then((items) => {
+        setSubmittableArticles(items);
+        setSelectedArticleId((current) => current || items[0]?.articleId || '');
+      })
+      .catch(() => setSubmittableArticles([]));
+  }, []);
+
+  const handleSubmitToTeam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submissionTitle.trim()) return;
-    setSubmittedSuccess(true);
-    setTimeout(() => {
-      setSubmittedSuccess(false);
-      setSubmissionTitle('');
+    if (!selectedArticleId || !team?.id) return;
+    try {
+      await communityApi.createTeamSubmission({
+        sourceArticleId: selectedArticleId,
+        targetTeamId: team.id,
+      });
+      setSubmittedSuccess(true);
       setSubmissionComment('');
-    }, 3000);
+    } catch {
+      setSubmittedSuccess(false);
+    }
   };
 
   return (
@@ -192,13 +207,17 @@ export const TeamDetailView: React.FC = () => {
             <form onSubmit={handleSubmitToTeam} className="space-y-3 max-w-lg">
               <div>
                 <label className="block text-slate-500 mb-1">选择已发布文章标题或手动填写</label>
-                <input
-                  type="text"
-                  placeholder="文章标题或草稿链接..."
-                  value={submissionTitle}
-                  onChange={(e) => setSubmissionTitle(e.target.value)}
+                <select
+                  value={selectedArticleId}
+                  onChange={(e) => setSelectedArticleId(e.target.value)}
                   className="w-full p-2 bg-slate-100 dark:bg-slate-800 border rounded-xl"
-                />
+                >
+                  {submittableArticles.length === 0 ? (
+                    <option value="">暂无可投稿的文章</option>
+                  ) : submittableArticles.map((article) => (
+                    <option key={article.articleId} value={article.articleId}>{article.title}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-slate-500 mb-1">附言 / 审核备注</label>
@@ -210,7 +229,7 @@ export const TeamDetailView: React.FC = () => {
                   className="w-full p-2 bg-slate-100 dark:bg-slate-800 border rounded-xl"
                 />
               </div>
-              <button type="submit" disabled={!submissionTitle.trim()} className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-xl disabled:opacity-50">
+              <button type="submit" disabled={!selectedArticleId} className="px-4 py-1.5 bg-indigo-600 text-white font-bold rounded-xl disabled:opacity-50">
                 提交审核
               </button>
             </form>

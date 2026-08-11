@@ -85,6 +85,25 @@ test("does not keep supported community actions as prototype-only state", async 
   assert.doesNotMatch(context, /Simulated reply/);
 });
 
+test("connects chat selection and team submission actions to their persisted APIs", async () => {
+  const [chat, teamDetail, workspace, settings, api] = await Promise.all([
+    source("app/prototype/components/views/ChatView.tsx"),
+    source("app/prototype/components/views/TeamDetailView.tsx"),
+    source("app/prototype/components/views/TeamWorkspaceView.tsx"),
+    source("app/prototype/components/views/SettingsView.tsx"),
+    source("app/lib/community/api.ts"),
+  ]);
+
+  assert.match(chat, /selectedPeerId \|\| activeConversationId/);
+  assert.match(teamDetail, /communityApi\.submittableArticles/);
+  assert.match(teamDetail, /communityApi\.createTeamSubmission/);
+  assert.match(workspace, /communityApi\.teamSubmissions/);
+  assert.match(workspace, /communityApi\.decideTeamSubmission/);
+  assert.match(settings, /communityApi\.updateProfile/);
+  assert.match(settings, /communityApi\.updateMyBlog/);
+  assert.match(api, /updateProfile\(input: \{ displayName: string; bio: string \| null \}\)/);
+});
+
 test("formats IPv6 localhost as a valid backend URL", async () => {
   const client = await source("app/lib/community/client.ts");
 

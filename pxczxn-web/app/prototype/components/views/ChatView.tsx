@@ -21,9 +21,11 @@ import {
 export const ChatView: React.FC = () => {
   const { conversations, activeConversationId, selectConversation, chatMessages, sendChatMessage, user, isCompactViewport } = useApp();
 
-  const [activePeerId, setActivePeerId] = useState<string>(activeConversationId);
+  const [selectedPeerId, setSelectedPeerId] = useState<string>('');
   const [inputText, setInputText] = useState<string>('');
   const [showMobileChat, setShowMobileChat] = useState<boolean>(false);
+
+  const activePeerId = selectedPeerId || activeConversationId;
 
   const activeConv = conversations.find((c) => c.peerUser.id === activePeerId) || conversations[0];
   const messages = chatMessages.filter(
@@ -38,7 +40,7 @@ export const ChatView: React.FC = () => {
   };
 
   const handleSelectPeer = (peerId: string) => {
-    setActivePeerId(peerId);
+    setSelectedPeerId(peerId);
     selectConversation(peerId);
     setShowMobileChat(true);
   };

@@ -237,6 +237,29 @@ public class CommunitySessionServiceImpl implements CommunitySessionService {
         );
     }
 
+    @Override
+    @Transactional
+    public CurrentCommunityUser updateProfile(String displayName, String bio) {
+        Long userId = communityAuth.getLoginUserId();
+        CommunityUser user = userMapper.selectById(userId);
+        if (user == null) {
+            communityAuth.logout();
+            throw new BusinessException(401, "登录用户不存在");
+        }
+        String normalizedName = Normalizer.normalize(displayName == null ? "" : displayName.trim(), Normalizer.Form.NFKC);
+        if (normalizedName.isBlank() || normalizedName.length() > 80) {
+            throw new BusinessException(400, "显示名称不能为空且不能超过 80 个字符");
+        }
+        String normalizedBio = bio == null ? null : Normalizer.normalize(bio.trim(), Normalizer.Form.NFKC);
+        if (normalizedBio != null && normalizedBio.length() > 1000) {
+            throw new BusinessException(400, "个人简介不能超过 1000 个字符");
+        }
+        user.setDisplayName(normalizedName);
+        user.setBio(normalizedBio);
+        updateRequired(userMapper.updateById(user), "更新个人资料");
+        return getCurrentUser();
+    }
+
     private static void assertLoginAllowed(CommunityUser user) {
         switch (user.getStatus()) {
             case "NORMAL", "LIMITED", "FROZEN" -> {

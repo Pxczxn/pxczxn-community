@@ -3,8 +3,9 @@
  * 具备 6 大核心板块：概览 Overview / 内容 Content / 系列 Series / 投稿 Submissions / 成员 Members / 设置 Settings
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type TeamSubmission } from '../../../lib/community-api';
 import {
   Users,
   LayoutDashboard,
@@ -35,7 +36,8 @@ export const TeamWorkspaceView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CONTENT' | 'SERIES' | 'SUBMISSIONS' | 'MEMBERS' | 'SETTINGS'>('OVERVIEW');
 
   // Local state for submissions
-  const [submissionsList, setSubmissionsList] = useState([
+  type WorkspaceSubmission = TeamSubmission & { author: string; submittedAt: string };
+  const [submissionsList, setSubmissionsList] = useState<WorkspaceSubmission[]>([]); /*
     {
       id: 'sub-101',
       title: 'React 19 异步组件与 Server Actions 在高并发社区中的最佳实践',
@@ -52,12 +54,30 @@ export const TeamWorkspaceView: React.FC = () => {
       status: 'APPROVED',
       comment: '审核通过：内容符合团队技术方向。',
     },
-  ]);
+  ]); */
 
-  const handleAuditSubmission = (id: string, status: 'APPROVED' | 'REJECTED') => {
-    setSubmissionsList((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status } : s))
-    );
+  useEffect(() => {
+    if (!team?.id) return;
+    communityApi.teamSubmissions(team.id)
+      .then((items) => setSubmissionsList(items.map((item) => ({
+        ...item,
+        author: item.submittedByUserId,
+        submittedAt: item.createdAt,
+      }))))
+      .catch(() => setSubmissionsList([]));
+  }, [team?.id]);
+
+  const handleAuditSubmission = async (submission: TeamSubmission, action: 'approve' | 'revision') => {
+    try {
+      const updated = await communityApi.decideTeamSubmission(submission.id, action, submission.lockVersion);
+      setSubmissionsList((prev) => prev.map((item) => item.id === updated.id ? {
+        ...updated,
+        author: updated.submittedByUserId,
+        submittedAt: updated.createdAt,
+      } : item));
+    } catch {
+      // Keep the persisted value visible when the server rejects a stale or unauthorized action.
+    }
   };
 
   return (
@@ -150,7 +170,7 @@ export const TeamWorkspaceView: React.FC = () => {
             </div>
             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5">
               <p className="text-[11px] text-slate-400">待处理投稿</p>
-              <p className="text-lg font-black text-rose-500 mt-0.5">{submissionsList.filter((s) => s.status === 'PENDING').length}</p>
+              <p className="text-lg font-black text-rose-500 mt-0.5">{submissionsList.filter((s) => s.status === 'TEAM_PENDING').length}</p>
             </div>
           </div>
 
@@ -215,9 +235,9 @@ export const TeamWorkspaceView: React.FC = () => {
               <div key={sub.id} className="p-3 border border-slate-100 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row justify-between gap-2 text-xs">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900 dark:text-white">{sub.title}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{sub.sourceArticleTitle}</span>
                     <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                      sub.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                      sub.status === 'TEAM_PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
                     }`}>
                       {sub.status}
                     </span>
@@ -225,12 +245,12 @@ export const TeamWorkspaceView: React.FC = () => {
                   <p className="text-[10px] text-slate-400 mt-0.5">投稿人：{sub.author} · 时间：{sub.submittedAt}</p>
                 </div>
 
-                {sub.status === 'PENDING' && (
+                {sub.status === 'TEAM_PENDING' && (
                   <div className="flex items-center space-x-2">
-                    <button onClick={() => handleAuditSubmission(sub.id, 'APPROVED')} className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold">
+                    <button onClick={() => handleAuditSubmission(sub, 'approve')} className="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold">
                       通过
                     </button>
-                    <button onClick={() => handleAuditSubmission(sub.id, 'REJECTED')} className="px-3 py-1 bg-rose-600 text-white rounded-lg font-bold">
+                    <button onClick={() => handleAuditSubmission(sub, 'revision')} className="px-3 py-1 bg-rose-600 text-white rounded-lg font-bold">
                       退回修改
                     </button>
                   </div>

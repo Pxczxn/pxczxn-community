@@ -8,6 +8,8 @@ public interface CommunitySessionService {
 
     CurrentCommunityUser getCurrentUser();
 
+    CurrentCommunityUser updateProfile(String displayName, String bio);
+
     String forcePasswordReset(Long userId);
 
     void changePassword(String currentPassword, String newPassword);

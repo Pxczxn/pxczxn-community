@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
+import { communityApi } from '../../../lib/community-api';
 import {
   User,
   Globe,
@@ -239,18 +240,22 @@ export const SettingsView: React.FC = () => {
   // Feedback State
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
+      const [account, blog] = await Promise.all([
+        communityApi.updateProfile({ displayName, bio }),
+        communityApi.updateMyBlog({ name: blogName, summary: blogSummary }),
+      ]);
       setUser({
         ...user,
-        displayName,
-        bio,
+        displayName: account.displayName || user.displayName,
+        bio: account.bio || '',
         location,
         website,
         avatar,
-        blogName,
-        blogSlug,
+        blogName: blog.name,
+        blogSlug: blog.slug,
       });
     }
     setIsSaved(true);

@@ -1,11 +1,13 @@
 package top.pxczxn.community.web.account;
 
+import jakarta.validation.Valid;
 import top.pxczxn.platform.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import top.pxczxn.community.user.application.CommunitySessionService;
 import top.pxczxn.community.user.application.CurrentCommunityUser;
@@ -20,7 +22,16 @@ public class CommunityAccountController {
     @GetMapping("/me")
     public Result<CurrentCommunityUserView> me() {
         CurrentCommunityUser current = sessionService.getCurrentUser();
-        return Result.ok(new CurrentCommunityUserView(
+        return Result.ok(toView(current));
+    }
+
+    @PatchMapping("/me")
+    public Result<CurrentCommunityUserView> updateProfile(@Valid @RequestBody CommunityProfileUpdateRequest request) {
+        return Result.ok(toView(sessionService.updateProfile(request.displayName(), request.bio())));
+    }
+
+    private static CurrentCommunityUserView toView(CurrentCommunityUser current) {
+        return new CurrentCommunityUserView(
                 current.userId().toString(),
                 current.username(),
                 current.displayName(),
@@ -33,7 +44,7 @@ public class CommunityAccountController {
                 stringId(current.personalBlogId()),
                 current.blogName(),
                 current.blogSlug()
-        ));
+        );
     }
 
     @PostMapping("/password")
