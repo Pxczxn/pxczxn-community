@@ -54,6 +54,17 @@ import {
   Tv,
 } from 'lucide-react';
 
+type ManagedSession = {
+  id: string;
+  device: string;
+  os: string;
+  browser: string;
+  ip: string;
+  location: string;
+  lastActive: string;
+  current: boolean;
+};
+
 export const SettingsView: React.FC = () => {
   const { user, setUser, theme, setTheme, isCompactViewport, navigateTo } = useApp();
   const userId = user?.id;
@@ -72,18 +83,41 @@ export const SettingsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('ACCOUNT');
 
   // ================= 1. ACCOUNT & PROFILE STATE =================
-  const [displayName, setDisplayName] = useState(user?.displayName || '破星辰只寻你');
-  const [username] = useState(user?.username || 'pxczxn');
-  const [bio, setBio] = useState(user?.bio || '专注全栈架构、AI Agent 协同与知识沉淀体系建设');
-  const [blogName, setBlogName] = useState(user?.blogName || '破星辰的技术空间');
-  const [blogSummary, setBlogSummary] = useState('分享 TypeScript, React, Cloud Native 与 AI 实践探索');
-  const [blogSlug, setBlogSlug] = useState(user?.blogSlug || 'pxczxn');
-  const [location, setLocation] = useState(user?.location || '杭州 / 远程');
-  const [website, setWebsite] = useState(user?.website || 'https://pxczxn.community');
-  const [githubUrl, setGithubUrl] = useState('https://github.com/pxczxn');
-  const [bilibiliUrl, setBilibiliUrl] = useState('https://space.bilibili.com/10928371');
-  const [avatar, setAvatar] = useState(user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop');
-  const [coverImage, setCoverImage] = useState('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop');
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [username, setUsername] = useState(user?.username || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [blogName, setBlogName] = useState(user?.blogName || '');
+  const [blogSummary, setBlogSummary] = useState('');
+  const [blogSlug, setBlogSlug] = useState(user?.blogSlug || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [website, setWebsite] = useState(user?.website || '');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [bilibiliUrl, setBilibiliUrl] = useState('');
+  const [avatar, setAvatar] = useState(user?.avatar || '');
+  const [coverImage, setCoverImage] = useState('');
+
+  useEffect(() => {
+    if (!userId) return;
+    setDisplayName(user?.displayName || '');
+    setUsername(user?.username || '');
+    setBio(user?.bio || '');
+    setBlogName(user?.blogName || '');
+    setBlogSlug(user?.blogSlug || '');
+    setLocation(user?.location || '');
+    setWebsite(user?.website || '');
+    setAvatar(user?.avatar || '');
+
+    let cancelled = false;
+    void communityApi.myBlog().then((blog) => {
+      if (cancelled) return;
+      setBlogName(blog.name || '');
+      setBlogSlug(blog.slug || '');
+      setBlogSummary(blog.summary || '');
+      setAvatar(publicFileUrl(blog.avatarFileId) || user?.avatar || '');
+      setCoverImage(publicFileUrl(blog.backgroundFileId) || '');
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [userId, user?.avatar, user?.bio, user?.blogName, user?.blogSlug, user?.displayName, user?.location, user?.username, user?.website]);
 
   const persistBlogImage = async (file: File, field: 'avatarFileId' | 'backgroundFileId') => {
     const uploaded = await communityApi.uploadFile(file);
@@ -91,6 +125,12 @@ export const SettingsView: React.FC = () => {
     const imageUrl = publicFileUrl(field === 'avatarFileId' ? blog.avatarFileId : blog.backgroundFileId);
     if (field === 'avatarFileId') setAvatar(imageUrl || '');
     else setCoverImage(imageUrl || '');
+  };
+
+  const clearBlogImage = async (field: 'avatarFileId' | 'backgroundFileId') => {
+    await communityApi.updateMyBlog(field === 'avatarFileId' ? { clearAvatar: true } : { clearBackground: true });
+    if (field === 'avatarFileId') setAvatar('');
+    else setCoverImage('');
   };
 
   // 本地文件上传处理函数
@@ -177,12 +217,7 @@ export const SettingsView: React.FC = () => {
   const [copiedKey, setCopiedKey] = useState(false);
   const [enable2FA, setEnable2FA] = useState(false);
 
-  // Active Sessions Mock Data
-  const [sessions, setSessions] = useState([
-    { id: 's1', device: 'MacBook Pro (16-inch)', os: 'macOS Sonoma 14.5', browser: 'Chrome 127.0', ip: '221.226.41.12', location: '浙江 杭州', lastActive: '当前活跃设备', current: true },
-    { id: 's2', device: 'iPhone 15 Pro', os: 'iOS 17.5.1', browser: 'Safari Mobile', ip: '112.17.230.88', location: '浙江 杭州', lastActive: '2 小时前', current: false },
-    { id: 's3', device: 'Ubuntu Linux Server', os: 'Linux x86_64', browser: 'CLI SDK Agent', ip: '47.98.120.14', location: '上海', lastActive: '1 天前', current: false },
-  ]);
+  const [sessions, setSessions] = useState<ManagedSession[]>([]);
 
   // ================= 3. NOTIFICATION MATRIX STATE =================
   const [dndMode, setDndMode] = useState(true);
@@ -522,7 +557,7 @@ export const SettingsView: React.FC = () => {
                           </label>
                           <button
                             type="button"
-                            onClick={() => setAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop')}
+                            onClick={() => void clearBlogImage('avatarFileId').catch(() => undefined)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-lg text-[10px] transition-colors flex items-center gap-1"
                           >
                             <RotateCcw className="w-3 h-3" />
@@ -564,7 +599,7 @@ export const SettingsView: React.FC = () => {
                           </label>
                           <button
                             type="button"
-                            onClick={() => setCoverImage('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop')}
+                            onClick={() => void clearBlogImage('backgroundFileId').catch(() => undefined)}
                             className="px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded-lg text-[10px] transition-colors flex items-center gap-1"
                           >
                             <RotateCcw className="w-3 h-3" />

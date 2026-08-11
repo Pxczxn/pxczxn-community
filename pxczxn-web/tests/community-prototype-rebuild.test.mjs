@@ -155,10 +155,16 @@ test("registers creator persistence mappers required by connected creator action
 });
 
 test("does not seed community runtime state from prototype mock data", async () => {
-  const context = await source("app/prototype/context/AppContext.tsx");
+  const [context, settings] = await Promise.all([
+    source("app/prototype/context/AppContext.tsx"),
+    source("app/prototype/components/views/SettingsView.tsx"),
+  ]);
 
   assert.doesNotMatch(context, /from ['"]\.\.\/data\/mockData['"]/);
   assert.doesNotMatch(context, /useState<Article\[\]>\(mockArticles\)/);
+  assert.doesNotMatch(settings, /Active Sessions Mock Data/);
+  assert.doesNotMatch(settings, /useState\([^\n]*images\.unsplash\.com/);
+  assert.doesNotMatch(settings, /useState\([^\n]*pxczxn\.community/);
 });
 
 test("derives the blog portal from live community content instead of a static blog list", async () => {
