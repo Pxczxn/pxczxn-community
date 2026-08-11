@@ -3,8 +3,9 @@
  * 核心原则：只负责全站探索。采用 Asymmetric Editorial Mosaic 布局。
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { communityApi, type PlatformTag } from '../../../lib/community-api';
 import {
   Compass,
   Tag,
@@ -22,15 +23,19 @@ import {
 
 export const DiscoverView: React.FC = () => {
   const { articles, seriesList, teams, moments, navigateTo, isCompactViewport, likeArticle } = useApp();
+  const [hotTags, setHotTags] = useState<PlatformTag[]>([]);
 
-  const hotTags = [
-    { name: 'Java 21', count: 128 },
-    { name: 'React 19', count: 96 },
-    { name: 'Spring Boot 3.5', count: 85 },
-    { name: 'AI Agent', count: 142 },
-    { name: '云原生', count: 74 },
-    { name: '知识架构', count: 62 },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    void communityApi.getHotTopics(6)
+      .then((tags) => {
+        if (!cancelled) setHotTags(tags);
+      })
+      .catch(() => {
+        if (!cancelled) setHotTags([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const leadArticle = articles[0];
   const secondaryArticles = articles.slice(1, 3);
@@ -72,7 +77,7 @@ export const DiscoverView: React.FC = () => {
               className="flex items-center space-x-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/80 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-700 dark:text-slate-200 rounded-full text-xs font-medium transition-colors"
             >
               <span>#{tag.name}</span>
-              <span className="text-[10px] text-slate-400 font-mono">({tag.count})</span>
+              <span className="text-[10px] text-slate-400 font-mono">({tag.usageCount})</span>
             </button>
           ))}
         </div>

@@ -178,3 +178,10 @@ test("derives the blog portal from live community content instead of a static bl
   assert.match(blogs, /useMemo/);
   assert.match(blogs, /teams/);
 });
+
+test("loads discovery tags from the community API instead of prototype seed values", async () => {
+  const discover = await source("app/prototype/components/views/DiscoverView.tsx");
+
+  assert.doesNotMatch(discover, /const hotTags = \[/);
+  assert.match(discover, /communityApi\.getHotTopics/);
+});
