@@ -59,6 +59,8 @@ import type {
   TeamArticleBrief,
   TeamMemberView,
   CommunityChatMessage,
+  CommunityChatConversation,
+  CommunityCreatorIdea,
   BlogFollowRelationship,
   AccountEnforcementCase,
   AccountEnforcementAppeal,
@@ -611,9 +613,12 @@ export const communityApi = {
   },
   disbandTeam(teamId: string) { return communityRequest<void>(`/api/v1/teams/${encodeURIComponent(teamId)}/disband`, { method: "POST" }); },
   chatHistory(peerId: string) { return communityRequest<CommunityChatMessage[]>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}`); },
+  chatConversations(limit = 20) { return communityRequest<CommunityChatConversation[]>(`/api/v1/chat/conversations?limit=${limit}`); },
   sendChatMessage(recipientUserId: string, contentText: string) { return communityRequest<CommunityChatMessage>("/api/v1/chat/messages", { method: "POST", body: JSON.stringify({ recipientUserId, contentText }) }); },
   markChatRead(peerId: string) { return communityRequest<void>(`/api/v1/chat/messages/${encodeURIComponent(peerId)}/read`, { method: "POST" }); },
   chatTicket() { return communityRequest<{ ticket: string; expiresInSeconds: number }>("/api/v1/chat/websocket-ticket", { method: "POST" }); },
+  creatorIdeas() { return communityRequest<CommunityCreatorIdea[]>("/api/v1/creator/ideas"); },
+  createCreatorIdea(input: { title: string; content: string; tags: string[]; sourceType?: "MANUAL" | "ARTICLE" | "MOMENT" }) { return communityRequest<CommunityCreatorIdea>("/api/v1/creator/ideas", { method: "POST", body: JSON.stringify(input) }); },
 
   // --- Article Deletion, Drafts & Versions ---
   deleteArticle(articleId: string, expectedLockVersion: number) {

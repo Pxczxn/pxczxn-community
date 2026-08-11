@@ -75,6 +75,26 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<CommunityChatConversationView> conversations(Long actor, Integer limit) {
+        if (actor == null) {
+            throw new BusinessException(401, "Authentication is required");
+        }
+        int size = limit == null ? 20 : Math.max(1, Math.min(limit, 100));
+        return mapper.conversations(actor, size).stream()
+                .map(row -> new CommunityChatConversationView(
+                        row.peerUserId(),
+                        row.peerUsername(),
+                        row.peerDisplayName(),
+                        row.peerAvatarFileId(),
+                        row.lastMessage(),
+                        row.lastMessageAt(),
+                        row.unreadCount() == null ? 0 : row.unreadCount()
+                ))
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void markRead(Long actor, Long peer) {
         authorize(actor, peer);

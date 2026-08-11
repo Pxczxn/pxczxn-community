@@ -95,6 +95,8 @@ export type {
   Series,
   SeriesReaderState,
   CommunityChatMessage,
+  CommunityChatConversation,
+  CommunityCreatorIdea,
   ArticleSeriesContext,
   ArticleCollaboration,
   SubmitTeamApplicationInput,

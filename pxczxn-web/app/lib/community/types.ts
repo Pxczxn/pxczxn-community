@@ -719,6 +719,8 @@ export interface SeriesReaderState {
   chapterCount: number;
 }
 export interface CommunityChatMessage { id: string; senderUserId: string; recipientUserId: string; contentText: string; status: string; readAt: string | null; createdAt: string; }
+export interface CommunityChatConversation { peerUserId: string; peerUsername: string; peerDisplayName: string | null; peerAvatarFileId: string | null; lastMessage: string; lastMessageAt: string; unreadCount: number; }
+export interface CommunityCreatorIdea { id: string; title: string; content: string; tags: string[]; sourceType: "MANUAL" | "ARTICLE" | "MOMENT"; createdAt: string; }
 /** 单篇文章所属系列的上下文：用于文章页"上一篇 / 查看目录 / 下一篇"导航。文章不在任何公开系列时为 null。 */
 export interface ArticleSeriesContext {
   seriesId: string;
@@ -847,4 +849,3 @@ export interface CommentModerationResponse {
   affectedComments: number;
   targetCommentCount: number;
 }
-

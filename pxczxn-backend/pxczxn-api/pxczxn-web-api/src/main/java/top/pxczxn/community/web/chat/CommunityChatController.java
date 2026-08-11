@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import top.pxczxn.community.chat.application.CommunityChatMessageView;
+import top.pxczxn.community.chat.application.CommunityChatConversationView;
 import top.pxczxn.community.chat.application.CommunityChatService;
 import top.pxczxn.community.shared.auth.CommunityAuth;
 import top.pxczxn.platform.common.result.Result;
@@ -52,6 +53,15 @@ public class CommunityChatController {
         return Result.ok();
     }
 
+    @GetMapping("/conversations")
+    public Result<List<ConversationResponse>> conversations(
+            @RequestParam(required = false) Integer limit
+    ) {
+        return Result.ok(service.conversations(auth.getLoginUserId(), limit).stream()
+                .map(ConversationResponse::from)
+                .toList());
+    }
+
     public record SendRequest(
             @NotNull Long recipientUserId,
             @NotBlank String contentText
@@ -76,6 +86,28 @@ public class CommunityChatController {
                     view.status(),
                     view.readAt(),
                     view.createdAt()
+            );
+        }
+    }
+
+    public record ConversationResponse(
+            String peerUserId,
+            String peerUsername,
+            String peerDisplayName,
+            String peerAvatarFileId,
+            String lastMessage,
+            LocalDateTime lastMessageAt,
+            long unreadCount
+    ) {
+        static ConversationResponse from(CommunityChatConversationView view) {
+            return new ConversationResponse(
+                    view.peerUserId().toString(),
+                    view.peerUsername(),
+                    view.peerDisplayName(),
+                    view.peerAvatarFileId() == null ? null : view.peerAvatarFileId().toString(),
+                    view.lastMessage(),
+                    view.lastMessageAt(),
+                    view.unreadCount()
             );
         }
     }

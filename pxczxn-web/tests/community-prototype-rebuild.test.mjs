@@ -53,6 +53,38 @@ test("maps available content and interactions to the community API", async () =>
   }
 });
 
+test("does not keep supported community actions as prototype-only state", async () => {
+  const [context, api] = await Promise.all([
+    source("app/prototype/context/AppContext.tsx"),
+    source("app/lib/community/api.ts"),
+  ]);
+
+  for (const apiCall of [
+    "communityApi.publishMoment",
+    "communityApi.notifications",
+    "communityApi.readNotification",
+    "communityApi.readAllNotifications",
+    "communityApi.search",
+    "communityApi.myBlog",
+    "communityApi.creatorAnalytics",
+    "communityApi.chatConversations",
+    "communityApi.chatHistory",
+    "communityApi.sendChatMessage",
+    "communityApi.markChatRead",
+    "communityApi.setBlogFollow",
+    "communityApi.creatorIdeas",
+    "communityApi.createCreatorIdea",
+    "communityApi.createArticle",
+    "communityApi.saveArticle",
+    "communityApi.submitReview",
+  ]) {
+    assert.match(context, new RegExp(apiCall.replaceAll(".", "\\.")));
+  }
+
+  assert.match(api, /chatConversations\(limit = 20\)/);
+  assert.doesNotMatch(context, /Simulated reply/);
+});
+
 test("formats IPv6 localhost as a valid backend URL", async () => {
   const client = await source("app/lib/community/client.ts");
 

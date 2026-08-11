@@ -54,18 +54,18 @@ export const EditorView: React.FC = () => {
     }
   };
 
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
 
-    const published = addArticle({
+    const articleId = await addArticle({
       title: title.trim(),
       summary: summary.trim() || content.slice(0, 100),
       content: content.trim(),
       tags: tagsText.split(',').map((t) => t.trim()).filter(Boolean),
     });
 
-    navigateTo('/articles/:id', { id: published.id });
+    if (articleId) navigateTo('/articles/:id', { id: articleId });
   };
 
   const handleSaveSnapshot = () => {

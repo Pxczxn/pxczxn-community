@@ -8,5 +8,7 @@ public interface CommunityChatService {
 
     List<CommunityChatMessageView> history(Long actor, Long peer, Integer limit);
 
+    List<CommunityChatConversationView> conversations(Long actor, Integer limit);
+
     void markRead(Long actor, Long peer);
 }

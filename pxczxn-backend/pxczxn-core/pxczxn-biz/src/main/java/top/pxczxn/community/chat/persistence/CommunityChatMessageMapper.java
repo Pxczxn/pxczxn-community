@@ -14,6 +14,43 @@ import java.util.List;
 public interface CommunityChatMessageMapper extends BaseMapper<CommunityChatMessage> {
 
     @Select("""
+            SELECT peer.peer_user_id AS peerUserId,
+                   u.username AS peerUsername,
+                   u.display_name AS peerDisplayName,
+                   u.avatar_file_id AS peerAvatarFileId,
+                   m.content_text AS lastMessage,
+                   m.created_at AS lastMessageAt,
+                   COALESCE(unread.unread_count, 0) AS unreadCount
+            FROM community_chat_message m
+            JOIN (
+                SELECT CASE WHEN sender_user_id = #{actor} THEN recipient_user_id ELSE sender_user_id END AS peer_user_id,
+                       MAX(id) AS last_message_id
+                FROM community_chat_message
+                WHERE (sender_user_id = #{actor} OR recipient_user_id = #{actor})
+                  AND deleted_at IS NULL
+                  AND ((sender_user_id = #{actor} AND sender_deleted_at IS NULL)
+                    OR (recipient_user_id = #{actor} AND recipient_deleted_at IS NULL))
+                GROUP BY CASE WHEN sender_user_id = #{actor} THEN recipient_user_id ELSE sender_user_id END
+            ) peer ON peer.last_message_id = m.id
+            JOIN community_user u ON u.id = peer.peer_user_id
+            LEFT JOIN (
+                SELECT sender_user_id AS peer_user_id, COUNT(*) AS unread_count
+                FROM community_chat_message
+                WHERE recipient_user_id = #{actor}
+                  AND status = 'SENT'
+                  AND deleted_at IS NULL
+                  AND recipient_deleted_at IS NULL
+                GROUP BY sender_user_id
+            ) unread ON unread.peer_user_id = peer.peer_user_id
+            ORDER BY m.id DESC
+            LIMIT #{limit}
+            """)
+    List<CommunityChatConversationRow> conversations(
+            @Param("actor") Long actor,
+            @Param("limit") int limit
+    );
+
+    @Select("""
             SELECT * FROM community_chat_message
             WHERE ((sender_user_id = #{actor} AND recipient_user_id = #{peer})
                 OR (sender_user_id = #{peer} AND recipient_user_id = #{actor}))

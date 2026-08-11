@@ -19,9 +19,9 @@ import {
 } from 'lucide-react';
 
 export const ChatView: React.FC = () => {
-  const { conversations, activeConversationId, chatMessages, sendChatMessage, user, isCompactViewport } = useApp();
+  const { conversations, activeConversationId, selectConversation, chatMessages, sendChatMessage, user, isCompactViewport } = useApp();
 
-  const [activePeerId, setActivePeerId] = useState<string>('u-2');
+  const [activePeerId, setActivePeerId] = useState<string>(activeConversationId);
   const [inputText, setInputText] = useState<string>('');
   const [showMobileChat, setShowMobileChat] = useState<boolean>(false);
 
@@ -39,6 +39,7 @@ export const ChatView: React.FC = () => {
 
   const handleSelectPeer = (peerId: string) => {
     setActivePeerId(peerId);
+    selectConversation(peerId);
     setShowMobileChat(true);
   };
 

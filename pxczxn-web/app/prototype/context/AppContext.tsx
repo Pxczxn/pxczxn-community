@@ -9,6 +9,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   communityApi,
   publicFileUrl,
+  type CommunityChatConversation as ApiChatConversation,
+  type CommunityChatMessage as ApiChatMessage,
+  type CommunityCreatorIdea as ApiCreatorIdea,
+  type CommunityNotification as ApiNotification,
   type CurrentCommunityUser,
   type Moment as ApiMoment,
   type PublicArticleSummary,
@@ -66,6 +70,7 @@ interface AppContextType {
   notifications: NotificationItem[];
   conversations: ChatConversation[];
   activeConversationId: string;
+  selectConversation: (peerId: string) => void;
   chatMessages: ChatMessage[];
   ideas: IdeaItem[];
 
@@ -82,7 +87,7 @@ interface AppContextType {
   markAllConversationsRead: () => void;
   sendChatMessage: (peerId: string, text: string) => void;
   addIdea: (title: string, content: string, tags: string[]) => void;
-  addArticle: (newArticle: Partial<Article>) => Article;
+  addArticle: (newArticle: Partial<Article>) => Promise<string | null>;
 
   // Quick Search
   globalSearchQuery: string;
@@ -234,6 +239,50 @@ function toPrototypeTeam(team: TeamSummary): Team {
   };
 }
 
+function toPrototypeNotification(notification: ApiNotification): NotificationItem {
+  return {
+    id: notification.notificationId,
+    category: notification.category as NotificationItem['category'],
+    title: notification.title || notification.notificationType,
+    content: notification.content || '',
+    createdAt: notification.createdAt,
+    isRead: notification.status === 'READ',
+    sender: notification.sender ? {
+      id: notification.sender.userId,
+      username: notification.sender.username,
+      displayName: notification.sender.displayName || notification.sender.username,
+      avatar: publicFileUrl(notification.sender.avatarFileId) || '',
+      bio: '', blogSlug: '', followersCount: 0, followingCount: 0, articlesCount: 0, seriesCount: 0, role: 'USER',
+    } : undefined,
+    targetUrl: notification.canonicalPath || undefined,
+    type: notification.notificationType,
+  };
+}
+
+function toPrototypeConversation(conversation: ApiChatConversation): ChatConversation {
+  return {
+    id: conversation.peerUserId,
+    peerUser: {
+      id: conversation.peerUserId,
+      username: conversation.peerUsername,
+      displayName: conversation.peerDisplayName || conversation.peerUsername,
+      avatar: publicFileUrl(conversation.peerAvatarFileId) || '',
+      bio: '', blogSlug: '', followersCount: 0, followingCount: 0, articlesCount: 0, seriesCount: 0, role: 'USER',
+    },
+    lastMessage: conversation.lastMessage,
+    lastTime: conversation.lastMessageAt,
+    unreadCount: conversation.unreadCount,
+  };
+}
+
+function toPrototypeChatMessage(message: ApiChatMessage, currentUserId: string): ChatMessage {
+  return { id: message.id, senderId: message.senderUserId, receiverId: message.recipientUserId, text: message.contentText, timestamp: message.createdAt, isSelf: message.senderUserId === currentUserId };
+}
+
+function toPrototypeIdea(idea: ApiCreatorIdea): IdeaItem {
+  return { id: idea.id, title: idea.title, content: idea.content, tags: idea.tags, createdAt: idea.createdAt, sourceType: idea.sourceType };
+}
+
 function routeFromPathname(pathname: string): string {
   if (/^\/articles\/[^/]+/.test(pathname)) return '/articles/:id';
   if (/^\/moments\/[^/]+/.test(pathname)) return '/moments/:id';
@@ -273,7 +322,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   // User Auth
-  const [user, setUser] = useState<User | null>(currentUser);
+  const [user, setUser] = useState<User | null>(null);
+  const userId = user?.id;
   const isLoggedIn = user !== null;
 
   // Data States
@@ -315,6 +365,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    void Promise.all([
+      communityApi.notifications(),
+      communityApi.chatConversations(),
+      communityApi.myBlog(),
+      communityApi.creatorAnalytics(),
+      communityApi.creatorIdeas(),
+    ]).then(([notificationPage, chatConversations, , , creatorIdeas]) => {
+      if (!active) return;
+      setNotifications(notificationPage.records.map(toPrototypeNotification));
+      const nextConversations = chatConversations.map(toPrototypeConversation);
+      setConversations(nextConversations);
+      setActiveConversationId(nextConversations[0]?.id || '');
+      setIdeas(creatorIdeas.map(toPrototypeIdea));
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || !activeConversationId) return;
+    let active = true;
+    void communityApi.chatHistory(activeConversationId).then((history) => {
+      if (active) setChatMessages(history.map((message) => toPrototypeChatMessage(message, userId)));
+    }).catch(() => undefined);
+    void communityApi.markChatRead(activeConversationId).then(() => {
+      if (active) setConversations((prev) => prev.map((conversation) => conversation.peerUser.id === activeConversationId
+        ? { ...conversation, unreadCount: 0 }
+        : conversation));
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [activeConversationId, userId]);
 
   // Apply theme class to <html>
   useEffect(() => {
@@ -420,19 +504,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addMoment = (content: string, type: Moment['momentType'] = 'TEXT', linkUrl?: string) => {
     if (!user) return;
-    const newMom: Moment = {
-      id: `mom-${Date.now()}`,
-      author: user,
-      momentType: type,
-      textContent: content,
-      linkUrl,
-      createdAt: '刚刚',
-      likesCount: 0,
-      favoritesCount: 0,
-      commentsCount: 0,
-      visibility: 'PUBLIC',
-    };
-    setMoments([newMom, ...moments]);
+    void communityApi.publishMoment({ momentType: type, textContent: content, linkUrl, visibility: 'PUBLIC' })
+      .then((result) => setMoments((prev) => [toPrototypeMoment(result.moment), ...prev]))
+      .catch(() => undefined);
   };
 
   // Series Actions
@@ -461,129 +535,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Team Actions
   const toggleFollowTeam = (teamId: string) => {
-    setTeams((prev) =>
-      prev.map((t) => {
-        if (t.id === teamId) {
-          const isFollowing = !t.isFollowing;
-          return {
-            ...t,
-            isFollowing,
-            followersCount: isFollowing ? t.followersCount + 1 : t.followersCount - 1,
-          };
-        }
-        return t;
-      })
-    );
+    const target = teams.find((team) => team.id === teamId);
+    if (!target?.blogId) return;
+    void communityApi.setBlogFollow(target.blogId, !target.isFollowing).then((relationship) => {
+      setTeams((prev) => prev.map((team) => team.id === teamId
+        ? { ...team, isFollowing: relationship.following, followersCount: relationship.followerCount }
+        : team));
+    }).catch(() => undefined);
   };
 
   // Notifications
   const markNotificationRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    void communityApi.readNotification(id)
+      .then(() => setNotifications((prev) => prev.map((notification) => notification.id === id ? { ...notification, isRead: true } : notification)))
+      .catch(() => undefined);
   };
 
   const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    void communityApi.readAllNotifications()
+      .then(() => setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true }))))
+      .catch(() => undefined);
   };
 
   const markAllConversationsRead = () => {
-    setConversations((prev) => prev.map((c) => ({ ...c, unreadCount: 0 })));
+    void Promise.all(conversations.filter((conversation) => conversation.unreadCount > 0)
+      .map((conversation) => communityApi.markChatRead(conversation.peerUser.id)))
+      .then(() => setConversations((prev) => prev.map((conversation) => ({ ...conversation, unreadCount: 0 }))))
+      .catch(() => undefined);
+  };
+
+  const selectConversation = (peerId: string) => {
+    setActiveConversationId(peerId);
   };
 
   // Chat Actions
   const sendChatMessage = (peerId: string, text: string) => {
     if (!text.trim() || !user) return;
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      senderId: user.id,
-      receiverId: peerId,
-      text: text.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isSelf: true,
-    };
-    setChatMessages((prev) => [...prev, newMsg]);
-
-    // Update conversation last message
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.peerUser.id === peerId
-          ? {
-              ...c,
-              lastMessage: text.trim(),
-              lastTime: '刚刚',
-            }
-          : c
-      )
-    );
-
-    // Simulated reply after 1.5s
-    setTimeout(() => {
-      const replyMsg: ChatMessage = {
-        id: `msg-reply-${Date.now()}`,
-        senderId: peerId,
-        receiverId: user.id,
-        text: '收到！星语社区 V2.1 协同消息测试非常稳定~ 🚀',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSelf: false,
-      };
-      setChatMessages((prev) => [...prev, replyMsg]);
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.peerUser.id === peerId
-            ? {
-                ...c,
-                lastMessage: replyMsg.text,
-                lastTime: '刚刚',
-              }
-            : c
-        )
-      );
-    }, 1500);
+    void communityApi.sendChatMessage(peerId, text.trim()).then((message) => {
+      const nextMessage = toPrototypeChatMessage(message, user.id);
+      setChatMessages((prev) => [...prev, nextMessage]);
+      setConversations((prev) => prev.map((conversation) => conversation.peerUser.id === peerId
+        ? { ...conversation, lastMessage: nextMessage.text, lastTime: nextMessage.timestamp }
+        : conversation));
+    }).catch(() => undefined);
   };
 
   // Idea Box
   const addIdea = (title: string, content: string, tags: string[]) => {
-    const newIdea: IdeaItem = {
-      id: `idea-${Date.now()}`,
-      title,
-      content,
-      tags,
-      createdAt: new Date().toISOString().split('T')[0],
-      sourceType: 'MANUAL',
-    };
-    setIdeas([newIdea, ...ideas]);
+    void communityApi.createCreatorIdea({ title, content, tags, sourceType: 'MANUAL' })
+      .then((idea) => setIdeas((prev) => [toPrototypeIdea(idea), ...prev]))
+      .catch(() => undefined);
   };
 
   // Article Addition
-  const addArticle = (newArticle: Partial<Article>): Article => {
-    const created: Article = {
-      id: `art-${Date.now()}`,
-      title: newArticle.title || '无标题文章',
-      slug: (newArticle.title || 'untitled').toLowerCase().replace(/\s+/g, '-'),
-      summary: newArticle.summary || '暂无摘要',
-      content: newArticle.content || '',
-      coverImage: newArticle.coverImage || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80',
-      author: user || currentUser,
-      blogId: 'pxczxn-blog',
-      publishedAt: '刚刚',
-      updatedAt: '刚刚',
-      viewsCount: 1,
-      likesCount: 0,
-      favoritesCount: 0,
-      commentsCount: 0,
-      tags: newArticle.tags || ['系统设计'],
-      readingTimeMinutes: 5,
-      wordCount: (newArticle.content || '').length,
-      version: 'v1.0.0',
-    };
-    setArticles([created, ...articles]);
-    return created;
+  const addArticle = async (newArticle: Partial<Article>): Promise<string | null> => {
+    if (!user) return null;
+    const title = newArticle.title?.trim();
+    const markdownContent = newArticle.content?.trim();
+    if (!title || !markdownContent) return null;
+    try {
+      const created = await communityApi.createArticle({
+        title,
+        summary: newArticle.summary?.trim() || markdownContent.slice(0, 160),
+        contentMode: 'MARKDOWN',
+        markdownContent,
+        visibility: 'PUBLIC',
+        publishMethod: 'PLATFORM_REVIEW',
+        tagIds: [],
+        contentFileIds: [],
+      });
+      const saved = await communityApi.saveArticle(created.articleId, {
+        title,
+        slug: created.slug,
+        summary: newArticle.summary?.trim() || markdownContent.slice(0, 160),
+        contentMode: 'MARKDOWN',
+        markdownContent,
+        visibility: 'PUBLIC',
+        publishMethod: 'PLATFORM_REVIEW',
+        tagIds: [],
+        contentFileIds: [],
+        expectedLockVersion: created.lockVersion,
+      });
+      await communityApi.submitReview(saved.articleId, saved.lockVersion);
+      return saved.articleId;
+    } catch {
+      return null;
+    }
   };
 
   // Search
   const triggerSearch = (query: string) => {
     setGlobalSearchQuery(query);
+    void communityApi.search(query).catch(() => undefined);
     navigateTo('/search');
   };
 
@@ -610,6 +653,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         notifications,
         conversations,
         activeConversationId,
+        selectConversation,
         chatMessages,
         ideas,
         likeArticle,
