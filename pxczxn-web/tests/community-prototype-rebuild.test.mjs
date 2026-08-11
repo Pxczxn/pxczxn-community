@@ -196,6 +196,7 @@ test("does not seed community runtime state from prototype mock data", async () 
   assert.doesNotMatch(settings, /Active Sessions Mock Data/);
   assert.doesNotMatch(settings, /useState\([^\n]*images\.unsplash\.com/);
   assert.doesNotMatch(settings, /useState\([^\n]*pxczxn\.community/);
+  assert.match(settings, /const \[keywords, setKeywords\] = useState<string\[\]>\(\[\]\)/);
   assert.doesNotMatch(articleDetail, /routeParams\.id \|\|/);
   assert.doesNotMatch(teamDetail, /routeParams\.slug \|\|/);
   assert.doesNotMatch(teamWorkspace, /routeParams\.slug \|\|/);

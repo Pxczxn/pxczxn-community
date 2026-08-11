@@ -300,7 +300,7 @@ export const SettingsView: React.FC = () => {
 
   // ================= 7. BLOCKS & MUTING STATE =================
   const [blockCategory, setBlockCategory] = useState<'USER' | 'BLOG' | 'TAG' | 'KEYWORD'>('USER');
-  const [keywords, setKeywords] = useState<string[]>(['加密货币', '低俗垃圾', '纯营销']);
+  const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeywordInput, setNewKeywordInput] = useState('');
 
   const [blocks, setBlocks] = useState<CommunityBlock[]>([]);
