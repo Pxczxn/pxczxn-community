@@ -25,8 +25,8 @@ import {
 export const ArticleDetailView: React.FC = () => {
   const { articles, routeParams, navigateTo, likeArticle, favoriteArticle, isCompactViewport } = useApp();
 
-  const articleId = routeParams.id || 'art-101';
-  const article = articles.find((a) => a.id === articleId) || articles[0];
+  const articleId = routeParams.id;
+  const article = articleId ? articles.find((item) => item.id === articleId) : undefined;
 
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; time: string }>>([]);
@@ -53,7 +53,7 @@ export const ArticleDetailView: React.FC = () => {
 
   const handleSendComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!article || !commentText.trim()) return;
     try {
       const comment = await communityApi.createComment('ARTICLE', article.id, commentText.trim());
       setComments((current) => [toDisplayComment(comment), ...current]);
@@ -62,6 +62,10 @@ export const ArticleDetailView: React.FC = () => {
       // Preserve the draft when the server rejects the comment.
     }
   };
+
+  if (!article) {
+    return <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 text-sm text-slate-500">内容加载中或不存在。</div>;
+  }
 
   return (
     <div className={`max-w-4xl mx-auto px-3 sm:px-4 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>

@@ -47,6 +47,7 @@ function AppContent() {
       case '/articles/:id':
         return <ArticleDetailView />;
       case '/moments':
+      case '/moments/:id':
         return <MomentsView />;
       case '/series':
         return <SeriesView />;
@@ -62,6 +63,7 @@ function AppContent() {
         return <TeamWorkspaceView />;
       case '/profile':
       case '/profile/:username':
+      case '/profile/:slug':
       case '/users/:username':
         return <ProfileView />;
       case '/me':

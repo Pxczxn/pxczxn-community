@@ -30,8 +30,8 @@ import {
 export const TeamWorkspaceView: React.FC = () => {
   const { teams, articles, seriesList, routeParams, navigateTo, isCompactViewport } = useApp();
 
-  const slug = routeParams.slug || 'starry-core-dev';
-  const team = teams.find((t) => t.slug === slug) || teams[0];
+  const slug = routeParams.slug;
+  const team = slug ? teams.find((item) => item.slug === slug) : undefined;
 
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CONTENT' | 'SERIES' | 'SUBMISSIONS' | 'MEMBERS' | 'SETTINGS'>('OVERVIEW');
   const [teamSettingsSaved, setTeamSettingsSaved] = useState(false);
@@ -95,6 +95,10 @@ export const TeamWorkspaceView: React.FC = () => {
       setTeamSettingsSaved(false);
     }
   };
+
+  if (!team) {
+    return <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6 text-sm text-slate-500">团队加载中或不存在。</div>;
+  }
 
   return (
     <div className={`max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>

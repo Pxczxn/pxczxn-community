@@ -22,8 +22,8 @@ import {
 export const TeamDetailView: React.FC = () => {
   const { teams, articles, seriesList, routeParams, navigateTo, toggleFollowTeam, isCompactViewport } = useApp();
 
-  const slug = routeParams.slug || 'starry-core-dev';
-  const team = teams.find((t) => t.slug === slug) || teams[0];
+  const slug = routeParams.slug;
+  const team = slug ? teams.find((item) => item.slug === slug) : undefined;
 
   const [activeTab, setActiveTab] = useState<'ARTICLES' | 'SERIES' | 'MEMBERS' | 'SUBMIT'>('ARTICLES');
   const [submittableArticles, setSubmittableArticles] = useState<SubmittableArticle[]>([]);
@@ -54,6 +54,10 @@ export const TeamDetailView: React.FC = () => {
       setSubmittedSuccess(false);
     }
   };
+
+  if (!team) {
+    return <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-6 text-sm text-slate-500">团队加载中或不存在。</div>;
+  }
 
   return (
     <div className={`max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 transition-all ${isCompactViewport ? 'py-3' : 'py-6'}`}>

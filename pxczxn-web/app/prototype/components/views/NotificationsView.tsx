@@ -116,13 +116,7 @@ export const NotificationsView: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (n.targetUrl?.startsWith('/teams')) {
-                      navigateTo('/teams/:slug/workspace', { slug: 'starry-core-dev' });
-                    } else if (n.targetUrl?.startsWith('/articles')) {
-                      navigateTo('/articles/:id', { id: 'art-101' });
-                    } else {
-                      navigateTo('/governance');
-                    }
+                    if (n.targetUrl) navigateTo(n.targetUrl);
                   }}
                   className="px-2.5 py-1 bg-indigo-600 text-white font-bold rounded-lg text-[11px] shrink-0"
                 >

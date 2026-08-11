@@ -26,13 +26,18 @@ test("renders the imported community prototype through the public entry routes",
 });
 
 test("keeps prototype navigation on real URLs", async () => {
-  const context = await source("app/prototype/context/AppContext.tsx");
+  const [context, shell] = await Promise.all([
+    source("app/prototype/context/AppContext.tsx"),
+    source("app/prototype/app-shell.tsx"),
+  ]);
 
   assert.match(context, /usePathname/);
   assert.match(context, /useRouter/);
   assert.match(context, /router\.push\(resolveRoute/);
   assert.match(context, /\/articles\/:id/);
   assert.match(context, /\/teams\/:slug\/workspace/);
+  assert.match(shell, /case '\/moments\/:id'/);
+  assert.match(shell, /case '\/profile\/:slug'/);
 });
 
 test("maps available content and interactions to the community API", async () => {
@@ -177,9 +182,13 @@ test("registers creator persistence mappers required by connected creator action
 });
 
 test("does not seed community runtime state from prototype mock data", async () => {
-  const [context, settings] = await Promise.all([
+  const [context, settings, articleDetail, teamDetail, teamWorkspace, notifications] = await Promise.all([
     source("app/prototype/context/AppContext.tsx"),
     source("app/prototype/components/views/SettingsView.tsx"),
+    source("app/prototype/components/views/ArticleDetailView.tsx"),
+    source("app/prototype/components/views/TeamDetailView.tsx"),
+    source("app/prototype/components/views/TeamWorkspaceView.tsx"),
+    source("app/prototype/components/views/NotificationsView.tsx"),
   ]);
 
   assert.doesNotMatch(context, /from ['"]\.\.\/data\/mockData['"]/);
@@ -187,6 +196,10 @@ test("does not seed community runtime state from prototype mock data", async () 
   assert.doesNotMatch(settings, /Active Sessions Mock Data/);
   assert.doesNotMatch(settings, /useState\([^\n]*images\.unsplash\.com/);
   assert.doesNotMatch(settings, /useState\([^\n]*pxczxn\.community/);
+  assert.doesNotMatch(articleDetail, /routeParams\.id \|\|/);
+  assert.doesNotMatch(teamDetail, /routeParams\.slug \|\|/);
+  assert.doesNotMatch(teamWorkspace, /routeParams\.slug \|\|/);
+  assert.doesNotMatch(notifications, /starry-core-dev|art-101/);
 });
 
 test("derives the blog portal from live community content instead of a static blog list", async () => {
