@@ -55,6 +55,9 @@ export const Navbar: React.FC = () => {
     toggleLogin,
     notifications,
     conversations,
+    chatMessages,
+    selectConversation,
+    sendChatMessage,
     markNotificationRead,
     markAllNotificationsRead,
     markAllConversationsRead,
@@ -105,18 +108,6 @@ export const Navbar: React.FC = () => {
   const [isChatInputFocused, setIsChatInputFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const [chatMessages, setChatMessages] = useState<Record<string, Array<{ id: string; sender: 'me' | 'peer'; text: string; time: string }>>>({
-    c1: [
-      { id: 'm1', sender: 'peer', text: '星语社区 V2.1 的视口紧凑排版效果太棒了！', time: '14:18' },
-      { id: 'm2', sender: 'me', text: '非常感谢！我们对移动端和中屏响应式布局做了全面升级。', time: '14:19' },
-      { id: 'm3', sender: 'peer', text: '期待后续在大模型 Agent 协同与知识图谱上的重磅更新！', time: '14:20' },
-    ],
-    c2: [
-      { id: 'm1', sender: 'peer', text: '大模型 Agent 灵感箱（Idea Box）已经梳理好逻辑，有空一起讨论！', time: '昨天 18:30' },
-      { id: 'm2', sender: 'me', text: '好的，稍后我看一下方案并在社区提交架构演进提案。', time: '昨天 18:35' },
-    ],
-  });
-
   useEffect(() => {
     if (selectedChatConv) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -125,17 +116,7 @@ export const Navbar: React.FC = () => {
 
   const handleSendChatMessage = () => {
     if (!chatInputText.trim() || !selectedChatConv) return;
-    const key = selectedChatConv.id || 'c1';
-    const newMsg = {
-      id: `msg-${Date.now()}`,
-      sender: 'me' as const,
-      text: chatInputText.trim(),
-      time: '刚刚',
-    };
-    setChatMessages((prev) => ({
-      ...prev,
-      [key]: [...(prev[key] || []), newMsg],
-    }));
+    sendChatMessage(selectedChatConv.peerUser.id, chatInputText.trim());
     setChatInputText('');
   };
 
@@ -155,6 +136,12 @@ export const Navbar: React.FC = () => {
 
   const unreadNotificationsCount = notifications.filter((n) => !n.isRead).length;
   const unreadChatCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
+  const selectedChatMessages = selectedChatConv
+    ? chatMessages.filter((message) => (
+      message.senderId === selectedChatConv.peerUser.id
+      || message.receiverId === selectedChatConv.peerUser.id
+    ))
+    : [];
 
   const filteredNotifs = notifications.filter((n) => {
     if (notifFilter === 'ALL') return true;
@@ -164,39 +151,8 @@ export const Navbar: React.FC = () => {
     return true;
   });
 
-  // 生成无限历史通知流（供悬浮卡片纵向无限向下滚动）
-  const extendedNotifs = React.useMemo(() => {
-    if (filteredNotifs.length === 0) return [];
-    const list = [];
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < filteredNotifs.length; j++) {
-        const item = filteredNotifs[j];
-        list.push({
-          ...item,
-          uniqueKey: `${item.id}-loop-${i}`,
-          createdAt: i === 0 ? item.createdAt : `${i * 2}天前`,
-        });
-      }
-    }
-    return list;
-  }, [filteredNotifs]);
-
-  // 生成无限历史私信流
-  const extendedConversations = React.useMemo(() => {
-    if (conversations.length === 0) return [];
-    const list = [];
-    for (let i = 0; i < 5; i++) {
-      for (let j = 0; j < conversations.length; j++) {
-        const conv = conversations[j];
-        list.push({
-          ...conv,
-          uniqueKey: `${conv.id}-loop-${i}`,
-          lastTime: i === 0 ? conv.lastTime : `${i + 1}周前`,
-        });
-      }
-    }
-    return list;
-  }, [conversations]);
+  const extendedNotifs = filteredNotifs;
+  const extendedConversations = conversations;
 
   const handleNotifScroll = (e: React.UIEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -427,7 +383,7 @@ export const Navbar: React.FC = () => {
                       <>
                         {extendedNotifs.slice(0, visibleNotifCount).map((notif) => (
                           <div
-                            key={notif.uniqueKey}
+                            key={notif.id}
                             onClick={() => {
                               markNotificationRead(notif.id);
                               setActivePopover(null);
@@ -609,7 +565,7 @@ export const Navbar: React.FC = () => {
                         <>
                           {extendedConversations.slice(0, visibleChatCount).map((conv) => (
                             <div
-                              key={conv.uniqueKey}
+                              key={conv.id}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedChatConv(conv);
@@ -677,7 +633,10 @@ export const Navbar: React.FC = () => {
                         {conversations.map((conv) => (
                           <div
                             key={conv.id}
-                            onClick={() => setSelectedChatConv(conv)}
+                            onClick={() => {
+                              setSelectedChatConv(conv);
+                              selectConversation(conv.peerUser.id);
+                            }}
                             className={`p-2 rounded-xl transition-all cursor-pointer flex items-center space-x-2 ${
                               selectedChatConv.id === conv.id
                                 ? 'bg-purple-100/80 dark:bg-purple-900/50 text-purple-900 dark:text-purple-100 font-semibold'
@@ -726,24 +685,23 @@ export const Navbar: React.FC = () => {
                           onWheel={(e) => e.stopPropagation()}
                           className="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs min-w-0 bg-slate-50/40 dark:bg-slate-950/30"
                         >
-                          {(chatMessages[selectedChatConv.id] || [
-                            { id: 'm1', sender: 'peer', text: selectedChatConv.lastMessage || '您好！欢迎随时交流。', time: selectedChatConv.lastTime || '14:20' },
-                            { id: 'm2', sender: 'me', text: '你好！有什么可以帮到您的？', time: '14:21' },
-                          ]).map((msg) => (
+                          {selectedChatMessages.length === 0 ? (
+                            <p className="py-8 text-center text-slate-400">暂无私信记录</p>
+                          ) : selectedChatMessages.map((msg) => (
                             <div
                               key={msg.id}
-                              className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'} max-w-full`}
+                              className={`flex flex-col ${msg.isSelf ? 'items-end' : 'items-start'} max-w-full`}
                             >
                               <div
                                 className={`max-w-[85%] px-3 py-2 rounded-2xl leading-relaxed text-[11px] break-words whitespace-pre-wrap overflow-hidden ${
-                                  msg.sender === 'me'
+                                  msg.isSelf
                                     ? 'bg-purple-600 text-white rounded-br-none shadow-xs'
                                     : 'bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-none shadow-xs'
                                 }`}
                               >
                                 {msg.text}
                               </div>
-                              <span className="text-[9px] text-slate-400 mt-0.5 px-1 font-mono">{msg.time}</span>
+                              <span className="text-[9px] text-slate-400 mt-0.5 px-1 font-mono">{msg.timestamp}</span>
                             </div>
                           ))}
                           <div ref={messagesEndRef} />

@@ -86,8 +86,9 @@ test("does not keep supported community actions as prototype-only state", async 
 });
 
 test("connects chat selection and team submission actions to their persisted APIs", async () => {
-  const [chat, teamDetail, workspace, settings, search, articleDetail, moments, personalSpace, governance, editor, api] = await Promise.all([
+  const [chat, navbar, teamDetail, workspace, settings, search, articleDetail, moments, personalSpace, governance, editor, api] = await Promise.all([
     source("app/prototype/components/views/ChatView.tsx"),
+    source("app/prototype/components/layout/Navbar.tsx"),
     source("app/prototype/components/views/TeamDetailView.tsx"),
     source("app/prototype/components/views/TeamWorkspaceView.tsx"),
     source("app/prototype/components/views/SettingsView.tsx"),
@@ -101,6 +102,9 @@ test("connects chat selection and team submission actions to their persisted API
   ]);
 
   assert.match(chat, /selectedPeerId \|\| activeConversationId/);
+  assert.match(navbar, /sendChatMessage\(selectedChatConv\.peerUser\.id, chatInputText\.trim\(\)\)/);
+  assert.match(navbar, /selectConversation\(conv\.peerUser\.id\)/);
+  assert.doesNotMatch(navbar, /chatMessages\[selectedChatConv\.id\]/);
   assert.match(teamDetail, /communityApi\.submittableArticles/);
   assert.match(teamDetail, /communityApi\.createTeamSubmission/);
   assert.match(workspace, /communityApi\.teamSubmissions/);
