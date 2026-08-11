@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+async function source(path) {
+  return readFile(new URL(`../${path}`, import.meta.url), "utf8");
+}
+
+test("renders the imported community prototype through the public entry routes", async () => {
+  const [home, discover, articles, moments, series, teams, shell] = await Promise.all([
+    source("app/page.tsx"),
+    source("app/discover/page.tsx"),
+    source("app/articles/page.tsx"),
+    source("app/moments/page.tsx"),
+    source("app/series/page.tsx"),
+    source("app/teams/page.tsx"),
+    source("app/prototype/app-shell.tsx"),
+  ]);
+
+  for (const route of [home, discover, articles, moments, series, teams]) {
+    assert.match(route, /<PrototypeRoute \/>/);
+  }
+  for (const view of ["HomeView", "DiscoverView", "ArticlesView", "MomentsView", "SeriesView", "TeamsView"]) {
+    assert.match(shell, new RegExp(view));
+  }
+});
+
+test("keeps prototype navigation on real URLs", async () => {
+  const context = await source("app/prototype/context/AppContext.tsx");
+
+  assert.match(context, /usePathname/);
+  assert.match(context, /useRouter/);
+  assert.match(context, /router\.push\(resolveRoute/);
+  assert.match(context, /\/articles\/:id/);
+  assert.match(context, /\/teams\/:slug\/workspace/);
+});
+
+test("maps available content and interactions to the community API", async () => {
+  const context = await source("app/prototype/context/AppContext.tsx");
+
+  for (const apiCall of [
+    "communityApi.discoverArticles",
+    "communityApi.moments",
+    "communityApi.series",
+    "communityApi.teams",
+    "communityApi.me",
+    "communityApi.setLike",
+    "communityApi.setFavorite",
+    "communityApi.followSeries",
+    "communityApi.unfollowSeries",
+  ]) {
+    assert.match(context, new RegExp(apiCall.replaceAll(".", "\\.")));
+  }
+});
+
+test("formats IPv6 localhost as a valid backend URL", async () => {
+  const client = await source("app/lib/community/client.ts");
+
+  assert.match(client, /hostname\.replace\(\/\^\\\[\|\\\]\$\/g, ""\)/);
+  assert.match(client, /browserHostname\.includes\(":"\)/);
+  assert.match(client, /\$\{browserHostForUrl\}:8849/);
+});

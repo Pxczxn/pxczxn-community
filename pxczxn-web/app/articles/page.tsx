@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { ArticlesPageView } from "./articles-page";
+import { PrototypeRoute } from "@/app/components/prototype-route";
 
-export const metadata: Metadata = { title: "文章" };
-
-export default function ArticlesRoute() {
-  return <ArticlesPageView />;
+export default function ArticlesPage() {
+  return <PrototypeRoute />;
 }

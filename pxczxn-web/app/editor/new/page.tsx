@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import { ArticleEditorPanel } from "../article-editor-panel";
+import { PrototypeRoute } from "@/app/components/prototype-route";
 
-export const metadata: Metadata = {
-  title: "新建文章",
-};
-
-export default function NewArticlePage() {
-  return <ArticleEditorPanel />;
+export default function NewEditorPage() {
+  return <PrototypeRoute />;
 }
-

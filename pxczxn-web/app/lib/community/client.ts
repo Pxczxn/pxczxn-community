@@ -6,7 +6,12 @@ const configuredApiBaseUrl =
   process.env.COMMUNITY_API_BASE_URL?.trim() ||
   process.env.NEXT_PUBLIC_COMMUNITY_API_BASE_URL?.trim();
 const browserHostname =
-  typeof window !== "undefined" ? window.location.hostname : "";
+  typeof window !== "undefined"
+    ? window.location.hostname.replace(/^\[|\]$/g, "")
+    : "";
+const browserHostForUrl = browserHostname.includes(":")
+  ? `[${browserHostname}]`
+  : browserHostname;
 const isLocalBrowser =
   typeof window !== "undefined" &&
   (
@@ -18,7 +23,7 @@ const isLocalBrowser =
   );
 const inferredLocalApiBaseUrl =
   isLocalBrowser
-    ? `${window.location.protocol}//${browserHostname}:8849`
+    ? `${window.location.protocol}//${browserHostForUrl}:8849`
     : "";
 const inferredSameOriginApiBaseUrl =
   typeof window !== "undefined" && !isLocalBrowser

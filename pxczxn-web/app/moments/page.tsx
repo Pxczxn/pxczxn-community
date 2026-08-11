@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { MomentsCommunityPage } from "./moments-community-page";
+import { PrototypeRoute } from "@/app/components/prototype-route";
 
-export const metadata: Metadata = {
-  title: "动态广场",
-};
-
-export default function MomentsIndexPage() {
-  return <MomentsCommunityPage />;
+export default function MomentsPage() {
+  return <PrototypeRoute />;
 }

@@ -1,10 +1,5 @@
-import { ProfileEntry } from "./profile-entry";
+import { PrototypeRoute } from "@/app/components/prototype-route";
 
-export default async function UserProfileRoute({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  return <ProfileEntry slug={slug} />;
+export default function ProfilePage() {
+  return <PrototypeRoute />;
 }

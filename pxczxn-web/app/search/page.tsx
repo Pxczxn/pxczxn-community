@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import { SearchPage } from "./search-page";
+import { PrototypeRoute } from "@/app/components/prototype-route";
 
-export const metadata: Metadata = {
-  title: "统一搜索",
-  description: "搜索公开文章、动态、博客、连载、标签和用户。",
-};
-
-export default function SearchRoute() {
-  return <SearchPage />;
+export default function SearchPage() {
+  return <PrototypeRoute />;
 }

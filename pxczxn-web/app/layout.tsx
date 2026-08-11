@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { ThemeBootstrap } from "./components/theme-bootstrap";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { swFonts } from "./fonts";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -57,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning className={`font-sans ${swFonts}`}>
+    <html lang="zh-CN" suppressHydrationWarning className="font-sans">
       <body>
         <ThemeBootstrap />
         <TooltipProvider>{children}</TooltipProvider>

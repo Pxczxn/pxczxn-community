@@ -45,6 +45,7 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      host: "127.0.0.1",
       port: 8847,
       strictPort: true,
       allowedHosts: ["pxczxn.mars-tunnel.ccwu.cc"],
