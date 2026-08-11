@@ -185,3 +185,11 @@ test("loads discovery tags from the community API instead of prototype seed valu
   assert.doesNotMatch(discover, /const hotTags = \[/);
   assert.match(discover, /communityApi\.getHotTopics/);
 });
+
+test("does not present unsupported security features as active services", async () => {
+  const settings = await source("app/prototype/components/views/SettingsView.tsx");
+
+  assert.match(settings, /disabled=\{sessions\.length === 0\}/);
+  assert.match(settings, /NOT AVAILABLE/);
+  assert.doesNotMatch(settings, /sk-••/);
+});

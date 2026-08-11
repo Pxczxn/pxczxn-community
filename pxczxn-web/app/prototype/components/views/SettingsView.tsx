@@ -920,6 +920,7 @@ export const SettingsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSessions(sessions.filter((s) => s.current))}
+                      disabled={sessions.length === 0}
                       className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold hover:underline"
                     >
                       下线其他所有设备
@@ -963,6 +964,11 @@ export const SettingsView: React.FC = () => {
                         )}
                       </div>
                     ))}
+                    {sessions.length === 0 && (
+                      <p className="p-3 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                        暂无可管理的会话
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -976,7 +982,7 @@ export const SettingsView: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={enable2FA}
-                      onChange={(e) => setEnable2FA(e.target.checked)}
+                      disabled
                       className="w-4 h-4 accent-slate-900 dark:accent-indigo-500 rounded cursor-pointer"
                     />
                   </div>
@@ -988,19 +994,22 @@ export const SettingsView: React.FC = () => {
                         <span>API Access Token</span>
                       </span>
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
-                        ACTIVE
+                        NOT AVAILABLE
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <input
                         type={showKey ? 'text' : 'password'}
                         value={apiKey}
+                        placeholder="暂未开通"
                         readOnly
+                        disabled
                         className="flex-1 px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-[11px]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKey(!showKey)}
+                        disabled
                         className="p-1.5 text-slate-400 hover:text-slate-600"
                       >
                         {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -1008,6 +1017,7 @@ export const SettingsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleCopyKey}
+                        disabled
                         className="px-2.5 py-1 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold rounded-lg text-[10px]"
                       >
                         {copiedKey ? '已复制' : '复制'}
