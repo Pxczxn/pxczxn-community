@@ -8,10 +8,14 @@ import {
   EyeOff,
   Github,
   LoaderCircle,
+  Lock,
   MessageCircle,
   UserRound,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   CommunityApiError,
   communityApi,
@@ -65,7 +69,7 @@ export function AuthPanel() {
         return;
       }
       if (!PASSWORD_PATTERN.test(password)) {
-        setMessage({ tone: "error", text: "密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格" });
+        setMessage({ tone: "error", text: "密码须为 12-72 位，并包含大写、小写、数字和特殊字符" });
         return;
       }
     }
@@ -138,190 +142,202 @@ export function AuthPanel() {
 
   return (
     <section className="auth-panel">
-      <div className="auth-card surface-lg shadow-sm">
-        <div className="auth-tabs" role="tablist">
-          <button
-            aria-selected={mode === "login"}
-            className={mode === "login" ? "active" : ""}
-            onClick={() => setMode("login")}
-            role="tab"
-            type="button"
-          >
-            登录
-          </button>
-          <button
-            aria-selected={mode === "register"}
-            className={mode === "register" ? "active" : ""}
-            onClick={() => setMode("register")}
-            role="tab"
-            type="button"
-          >
-            注册
-          </button>
-        </div>
+      <Tabs className="auth-tabs-container" value={mode} onValueChange={(v) => setMode(v as "login" | "register")}>
+        <TabsList className="w-full">
+          <TabsTrigger className="flex-1" value="login">登录</TabsTrigger>
+          <TabsTrigger className="flex-1" value="register">注册</TabsTrigger>
+        </TabsList>
 
-        <form className="auth-form" onSubmit={submit}>
-          {mode === "register" && (
-            <>
-              <label>
-                <span>昵称</span>
-                <input
-                  className="field"
-                  maxLength={80}
-                  name="displayName"
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  placeholder="用于公开展示的名称"
-                  required
-                  value={displayName}
-                />
-              </label>
-              <label>
-                <span>个人空间地址</span>
-                <input
-                  autoComplete="username"
-                  className="field"
-                  name="username"
-                  onChange={(event) => setUsername(event.target.value)}
-                  placeholder="例如 zhangsan，将生成 /zhangsan"
-                  required
-                  value={username}
-                />
-                <small className="auth-field-hint">仅限字母、数字、下划线和连字符；以字母开头，以字母或数字结尾。</small>
-              </label>
-            </>
-          )}
-          <label>
-            <span>邮箱</span>
-            <input
-              autoComplete="email"
-              className="field"
-              name="email"
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="请输入邮箱地址"
-              required
-              type="email"
-              value={email}
-            />
-          </label>
-          <label>
-            <span>密码</span>
-            <span className="password-field">
-              <input
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                className="field"
-                name="password"
-                onChange={(event) => setPassword(event.target.value)}
-                minLength={mode === "register" ? 12 : 1}
-                maxLength={72}
-                placeholder={mode === "login" ? "请输入密码" : "12-72 位，含大小写、数字和特殊字符"}
-                required
-                type={showPassword ? "text" : "password"}
-                value={password}
+        <TabsContent className="auth-tab-content" value="login">
+          <form className="auth-form" onSubmit={submit}>
+            <div className="auth-field">
+              <label htmlFor="login-email">邮箱</label>
+              <Input
+                id="login-email"
+                autoComplete="email"
+                placeholder="请输入邮箱地址"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-              <button
-                aria-label={showPassword ? "隐藏密码" : "显示密码"}
-                onClick={() => setShowPassword((value) => !value)}
-                type="button"
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </span>
-          </label>
+            </div>
 
-          {mode === "login" ? (
+            <div className="auth-field">
+              <label htmlFor="login-password">密码</label>
+              <div className="password-wrapper">
+                <Input
+                  id="login-password"
+                  autoComplete="current-password"
+                  placeholder="请输入密码"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
             <div className="auth-options">
               <label className="checkbox-row">
                 <input
-                  checked={rememberMe}
-                  onChange={(event) => setRememberMe(event.target.checked)}
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                 />
                 <span>记住我</span>
               </label>
               <button
-                className="link text-button"
-                onClick={() => setForgotOpen(true)}
                 type="button"
+                className="forgot-link"
+                onClick={() => setForgotOpen(true)}
               >
                 忘记密码？
               </button>
             </div>
-          ) : (
-            <label className="checkbox-row auth-agreement">
+
+            {message && (
+              <div className={`auth-alert auth-alert--${message.tone}`}>
+                {message.tone === "error" ? (
+                  <AlertCircle size={16} />
+                ) : (
+                  <CheckCircle2 size={16} />
+                )}
+                <span>{message.text}</span>
+              </div>
+            )}
+
+            <Button className="auth-submit-btn" type="submit" disabled={submitting}>
+              {submitting && <LoaderCircle className="animate-spin" size={16} />}
+              {submitting ? "登录中…" : "登录"}
+            </Button>
+          </form>
+        </TabsContent>
+
+        <TabsContent className="auth-tab-content" value="register">
+          <form className="auth-form" onSubmit={submit}>
+            <div className="auth-field">
+              <label htmlFor="register-name">昵称</label>
+              <Input
+                id="register-name"
+                placeholder="用于公开展示的名称"
+                maxLength={80}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="register-username">个人空间地址</label>
+              <Input
+                id="register-username"
+                autoComplete="username"
+                placeholder="例如 zhangsan"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <span className="field-hint">将生成 /{username || "username"} 主页</span>
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="register-email">邮箱</label>
+              <Input
+                id="register-email"
+                autoComplete="email"
+                placeholder="请输入邮箱地址"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="register-password">密码</label>
+              <div className="password-wrapper">
+                <Input
+                  id="register-password"
+                  autoComplete="new-password"
+                  placeholder="12-72 位，含大小写、数字和特殊字符"
+                  type={showPassword ? "text" : "password"}
+                  maxLength={72}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <label className="agreement-row">
               <input
-                checked={agreed}
-                onChange={(event) => setAgreed(event.target.checked)}
                 type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
               />
               <span>
-                我已阅读并同意 <a className="link">服务协议</a> 与{" "}
-                <a className="link">隐私政策</a>
+                我已阅读并同意 <a href="#" className="auth-link">服务协议</a> 与{" "}
+                <a href="#" className="auth-link">隐私政策</a>
               </span>
             </label>
-          )}
 
-          {message && (
-            <div
-              className={`auth-alert auth-alert--${message.tone}`}
-              role={message.tone === "error" ? "alert" : "status"}
-            >
-              {message.tone === "error"
-                ? <AlertCircle aria-hidden="true" size={17} />
-                : <CheckCircle2 aria-hidden="true" size={17} />}
-              <span>{message.text}</span>
-            </div>
-          )}
+            {message && (
+              <div className={`auth-alert auth-alert--${message.tone}`}>
+                {message.tone === "error" ? (
+                  <AlertCircle size={16} />
+                ) : (
+                  <CheckCircle2 size={16} />
+                )}
+                <span>{message.text}</span>
+              </div>
+            )}
 
-          <button
-            className="primary-button auth-submit"
-            disabled={submitting}
-            type="submit"
-          >
-            {submitting && <LoaderCircle className="spin" size={17} />}
-            {submitting
-              ? mode === "login" ? "登录中…" : "创建中…"
-              : mode === "login" ? "登录" : "创建账号"}
-          </button>
-        </form>
+            <Button className="auth-submit-btn" type="submit" disabled={submitting}>
+              {submitting && <LoaderCircle className="animate-spin" size={16} />}
+              {submitting ? "创建中…" : "创建账号"}
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
 
-        <p className="auth-switch">
-          {mode === "login" ? "还没有账号？" : "已有账号？"}
-          <button
-            className="link text-button"
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
-            type="button"
-          >
-            {mode === "login" ? "立即注册" : "返回登录"}
-          </button>
-        </p>
-        <p className="auth-demo"><Link className="link" href="/discover">暂不登录，先浏览社区内容</Link></p>
+      <p className="auth-demo">
+        <Link href="/discover" className="auth-link">暂不登录，先浏览社区内容</Link>
+      </p>
 
-        <div className="auth-divider">
-          <span>其他登录方式</span>
-        </div>
-        <div className="social-logins">
-          <button aria-label="使用微信登录" type="button">
-            <MessageCircle size={19} />
-          </button>
-          <button aria-label="使用通用账号登录" type="button">
-            <UserRound size={19} />
-          </button>
-          <button aria-label="使用 GitHub 登录" type="button">
-            <Github size={19} />
-          </button>
-        </div>
-        <p className="auth-legal">
-          登录即代表同意《用户协议》和《隐私政策》
-        </p>
+      <div className="auth-divider">
+        <span>其他登录方式</span>
       </div>
+
+      <div className="social-logins">
+        <button type="button" aria-label="使用微信登录">
+          <MessageCircle size={19} />
+        </button>
+        <button type="button" aria-label="使用通用账号登录">
+          <UserRound size={19} />
+        </button>
+        <button type="button" aria-label="使用 GitHub 登录">
+          <Github size={19} />
+        </button>
+      </div>
+
       <ForgotPasswordDialog
-        onClose={() => setForgotOpen(false)}
+        open={forgotOpen}
+        onOpenChange={setForgotOpen}
         onReset={(email) => {
           setForgotOpen(false);
-          setMode("login");
           setEmail(email);
         }}
-        open={forgotOpen}
       />
     </section>
   );
@@ -329,11 +345,11 @@ export function AuthPanel() {
 
 function ForgotPasswordDialog({
   open,
-  onClose,
+  onOpenChange,
   onReset,
 }: {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onReset: (email: string) => void;
 }) {
   const [step, setStep] = useState<"email" | "code" | "done">("email");
@@ -368,8 +384,7 @@ function ForgotPasswordDialog({
 
   function close() {
     if (sendingCode || resetting) return;
-    onClose();
-    // 下次打开时回到第一步
+    onOpenChange(false);
     window.setTimeout(() => {
       setStep("email");
       setCode("");
@@ -417,7 +432,7 @@ function ForgotPasswordDialog({
     if (!PASSWORD_PATTERN.test(newPassword)) {
       setMessage({
         tone: "error",
-        text: "新密码须为 12-72 位，并包含大写、小写、数字和特殊字符，且不能含空格",
+        text: "新密码须为 12-72 位，并包含大写、小写、数字和特殊字符",
       });
       return;
     }
@@ -440,156 +455,120 @@ function ForgotPasswordDialog({
     }
   }
 
+  if (!open) return null;
+
   return (
-    <div
-      aria-hidden={!open}
-      className="settings-password-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="forgot-password-title"
-      style={{ display: open ? undefined : "none" }}
-    >
-      <button
-        aria-label="关闭找回密码弹窗"
-        className="settings-password-backdrop"
-        onClick={close}
-        type="button"
-      />
-      <div className="surface settings-password-dialog auth-forgot-dialog">
-        <header>
-          <h2 id="forgot-password-title">找回密码</h2>
-          <button aria-label="关闭" className="icon-button" onClick={close} type="button">×</button>
-        </header>
+    <div className="dialog-overlay" onClick={close}>
+      <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">
+          <h2>找回密码</h2>
+          <button type="button" className="dialog-close" onClick={close}>×</button>
+        </div>
 
         {step === "email" && (
-          <form className="auth-form auth-forgot-form" onSubmit={(event) => { event.preventDefault(); void sendCode(); }}>
-            <p className="auth-forgot-tip">
-              请输入注册时使用的邮箱，我们会向该邮箱发送 6 位数字验证码。
-            </p>
-            <label>
-              <span>邮箱</span>
-              <input
+          <form onSubmit={(e) => { e.preventDefault(); void sendCode(); }} className="dialog-form">
+            <p className="dialog-tip">请输入注册时使用的邮箱，我们会向该邮箱发送 6 位数字验证码。</p>
+            <div className="auth-field">
+              <label htmlFor="forgot-email">邮箱</label>
+              <Input
+                id="forgot-email"
                 autoComplete="email"
                 autoFocus
-                className="field"
-                onChange={(event) => setEmail(event.target.value)}
                 placeholder="请输入注册邮箱"
-                required
                 type="email"
                 value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
-            </label>
+            </div>
             {message && (
-              <div className={`auth-alert ${message.tone === "success" ? "auth-alert--success" : ""}`} role={message.tone === "error" ? "alert" : "status"}>
-                {message.tone === "error"
-                  ? <AlertCircle aria-hidden="true" size={17} />
-                  : <CheckCircle2 aria-hidden="true" size={17} />}
+              <div className={`auth-alert auth-alert--${message.tone}`}>
+                {message.tone === "error" ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
                 <span>{message.text}</span>
               </div>
             )}
-            <button
-              className="primary-button auth-submit"
-              disabled={sendingCode}
-              type="submit"
-            >
-              {sendingCode && <LoaderCircle className="spin" size={17} />}
+            <Button type="submit" className="w-full" disabled={sendingCode}>
+              {sendingCode && <LoaderCircle className="animate-spin" size={16} />}
               {sendingCode ? "发送中…" : "发送验证码"}
-            </button>
+            </Button>
           </form>
         )}
 
         {step === "code" && (
-          <form className="auth-form auth-forgot-form" onSubmit={submitReset}>
-            <p className="auth-forgot-tip">
+          <form onSubmit={submitReset} className="dialog-form">
+            <p className="dialog-tip">
               验证码已发送至 {email}
               {cooldown > 0 ? `（${cooldown} 秒后可重新发送）` : ""}
             </p>
-            <label>
-              <span>验证码</span>
-              <input
+            <div className="auth-field">
+              <label htmlFor="reset-code">验证码</label>
+              <Input
+                id="reset-code"
                 autoComplete="one-time-code"
                 autoFocus
-                className="field"
                 inputMode="numeric"
                 maxLength={6}
-                onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
-                pattern="\d{6}"
                 placeholder="6 位数字验证码"
-                required
                 value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               />
-            </label>
-            <label>
-              <span>新密码</span>
-              <span className="password-field">
-                <input
+            </div>
+            <div className="auth-field">
+              <label htmlFor="reset-new-password">新密码</label>
+              <div className="password-wrapper">
+                <Input
+                  id="reset-new-password"
                   autoComplete="new-password"
-                  className="field"
-                  maxLength={72}
-                  minLength={12}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  placeholder="12-72 位，含大小写、数字和特殊字符"
-                  required
                   type={showNewPassword ? "text" : "password"}
-                  value={newPassword}
-                />
-                <button
-                  aria-label={showNewPassword ? "隐藏密码" : "显示密码"}
-                  onClick={() => setShowNewPassword((value) => !value)}
-                  type="button"
-                >
-                  {showNewPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              </span>
-            </label>
-            <label>
-              <span>确认新密码</span>
-              <span className="password-field">
-                <input
-                  autoComplete="new-password"
-                  className="field"
                   maxLength={72}
-                  minLength={12}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="再次输入新密码"
-                  required
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={confirmPassword}
+                  placeholder="12-72 位，含大小写、数字和特殊字符"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                 />
                 <button
-                  aria-label={showConfirmPassword ? "隐藏密码" : "显示密码"}
-                  onClick={() => setShowConfirmPassword((value) => !value)}
                   type="button"
+                  className="password-toggle"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
-              </span>
-            </label>
-            <p className="auth-forgot-tip">
-              新密码须为 12-72 位，包含大写、小写、数字和特殊字符，且不能含空格。
-            </p>
+              </div>
+            </div>
+            <div className="auth-field">
+              <label htmlFor="reset-confirm-password">确认新密码</label>
+              <div className="password-wrapper">
+                <Input
+                  id="reset-confirm-password"
+                  autoComplete="new-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  maxLength={72}
+                  placeholder="再次输入新密码"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
             {message && (
-              <div className={`auth-alert ${message.tone === "success" ? "auth-alert--success" : ""}`} role={message.tone === "error" ? "alert" : "status"}>
-                {message.tone === "error"
-                  ? <AlertCircle aria-hidden="true" size={17} />
-                  : <CheckCircle2 aria-hidden="true" size={17} />}
+              <div className={`auth-alert auth-alert--${message.tone}`}>
+                {message.tone === "error" ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
                 <span>{message.text}</span>
               </div>
             )}
-            <button
-              className="primary-button auth-submit"
-              disabled={resetting}
-              type="submit"
-            >
-              {resetting && <LoaderCircle className="spin" size={17} />}
+            <Button type="submit" className="w-full" disabled={resetting}>
+              {resetting && <LoaderCircle className="animate-spin" size={16} />}
               {resetting ? "重置中…" : "重置密码"}
-            </button>
+            </Button>
             <button
-              className="link text-button"
+              type="button"
+              className="resend-btn"
               disabled={sendingCode || cooldown > 0}
               onClick={() => void sendCode()}
-              style={{ justifySelf: "center" }}
-              type="button"
             >
               {cooldown > 0 ? `${cooldown} 秒后重新发送` : "重新发送验证码"}
             </button>
@@ -597,17 +576,13 @@ function ForgotPasswordDialog({
         )}
 
         {step === "done" && (
-          <div className="auth-forgot-done">
-            <CheckCircle2 aria-hidden="true" size={44} />
+          <div className="dialog-done">
+            <CheckCircle2 size={48} className="done-icon" />
             <h3>密码已重置</h3>
             <p>请使用新密码重新登录。</p>
-            <button
-              className="primary-button auth-submit"
-              onClick={() => onReset(email)}
-              type="button"
-            >
+            <Button onClick={() => onReset(email)} className="w-full">
               返回登录
-            </button>
+            </Button>
           </div>
         )}
       </div>
