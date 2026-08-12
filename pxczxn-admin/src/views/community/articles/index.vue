@@ -163,6 +163,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import { NButton, NTag, type DataTableColumns } from 'naive-ui'
 import { EyeOutline, RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityArticle } from '@/api/community'
+import { useLatestRequest } from '@/composables/useLatestRequest'
 import { compactNumber, formatDateTime, statusLabel, statusTone } from '@/utils/community'
 import { useUserStore } from '@/stores/user'
 
@@ -170,6 +171,7 @@ const userStore = useUserStore()
 const rows = ref<CommunityArticle[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
+const { beginRequest } = useLatestRequest()
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const detailError = ref('')
@@ -293,6 +295,7 @@ const columns: DataTableColumns<CommunityArticle> = [
 const rowKey = (row: CommunityArticle) => row.id
 
 async function loadData() {
+  const isCurrentRequest = beginRequest()
   loading.value = true
   errorMessage.value = ''
   try {
@@ -304,12 +307,14 @@ async function loadData() {
       pageNum: pagination.page,
       pageSize: pagination.pageSize
     })
-    rows.value = result.list
+    if (!isCurrentRequest()) return
+    rows.value = result.list ?? []
     pagination.itemCount = result.total
   } catch (error) {
+    if (!isCurrentRequest()) return
     errorMessage.value = error instanceof Error ? error.message : '文章列表加载失败'
   } finally {
-    loading.value = false
+    if (isCurrentRequest()) loading.value = false
   }
 }
 

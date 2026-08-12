@@ -1,6 +1,12 @@
 package top.pxczxn.community.admin.query;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import top.pxczxn.platform.common.exception.BusinessException;
 import top.pxczxn.platform.common.result.PageResult;
 import top.pxczxn.platform.common.result.Result;
@@ -17,6 +23,7 @@ import top.pxczxn.community.admin.application.AdminCommunityQueryService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin-api/community")
+@Tag(name = "Admin Community Query", description = "管理端社区查询 API")
 public class AdminCommunityQueryController {
 
     private final AdminCommunityQueryService queryService;
@@ -31,11 +38,29 @@ public class AdminCommunityQueryController {
 
     @GetMapping("/users")
     @SaCheckPermission("community:user:list")
+    @Operation(
+        summary = "查询社区用户列表",
+        description = "分页查询社区用户，支持关键词搜索和状态筛选"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "成功",
+        content = @Content(schema = @Schema(implementation = AdminCommunityUserPageResult.class))
+    )
     public Result<PageResult<AdminCommunityUserResponse>> users(
+            @Parameter(description = "搜索关键词（用户名/显示名/邮箱）", example = "张三")
             @RequestParam(required = false) String keyword,
+
+            @Parameter(description = "账号状态", schema = @Schema(allowableValues = {"NORMAL", "LIMITED", "FROZEN", "BANNED", "DEACTIVATED", "DELETED"}))
             @RequestParam(required = false) String status,
+
+            @Parameter(description = "认证状态", schema = @Schema(allowableValues = {"UNVERIFIED", "VERIFIED"}))
             @RequestParam(required = false) String verificationStatus,
+
+            @Parameter(description = "页码", example = "1", schema = @Schema(defaultValue = "1"))
             @RequestParam(defaultValue = "1") Integer pageNum,
+
+            @Parameter(description = "每页大小", example = "20", schema = @Schema(defaultValue = "20"))
             @RequestParam(defaultValue = "20") Integer pageSize
     ) {
         var page = queryService.users(

@@ -71,6 +71,44 @@ test('community pagination matches the backend contract and normalizes numeric s
   assert.match(api, /pageSize:\s*Number\(result\.pageSize\)/)
 })
 
+test('community remote tables discard stale results and route changes do not keep leaving views alive', async () => {
+  const [layout, latestRequest, users, articles, blogs] = await Promise.all([
+    source('src/layout/index.vue'),
+    source('src/composables/useLatestRequest.ts'),
+    source('src/views/community/users/index.vue'),
+    source('src/views/community/articles/index.vue'),
+    source('src/views/community/blogs/index.vue')
+  ])
+
+  const routeView = layout.match(/<router-view[\s\S]*?<\/router-view>/)?.[0]
+  assert.ok(routeView)
+  assert.doesNotMatch(routeView, /<transition/)
+  assert.match(routeView, /class="route-view route-fade-in"/)
+  assert.match(latestRequest, /onBeforeUnmount/)
+
+  for (const page of [users, articles, blogs]) {
+    assert.match(page, /useLatestRequest/)
+    assert.match(page, /if \(!isCurrentRequest\(\)\) return/)
+  }
+  assert.match(users, /const isCurrentRequest = beginListRequest\(\)/)
+  assert.match(users, /const isCurrentRequest = beginDetailRequest\(\)/)
+  for (const page of [articles, blogs]) {
+    assert.match(page, /const isCurrentRequest = beginRequest\(\)/)
+  }
+})
+
+test('community user rows render nullable email values safely', async () => {
+  const [api, users] = await Promise.all([
+    source('src/api/community.ts'),
+    source('src/views/community/users/index.vue')
+  ])
+
+  assert.match(api, /email\?: string \| null/)
+  assert.match(users, /function maskedEmail\(email\?: string \| null\)/)
+  assert.match(users, /if \(!email\) return '—'/)
+  assert.match(users, /if \(!row\.email\) return '—'/)
+})
+
 test('wide community tables stay inside the content card', async () => {
   const styles = await source('src/styles/index.scss')
   const layoutShrinkRule = styles.match(

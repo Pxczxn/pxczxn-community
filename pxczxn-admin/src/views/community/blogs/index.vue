@@ -74,11 +74,13 @@ import { h, onMounted, reactive, ref } from 'vue'
 import { NTag, type DataTableColumns } from 'naive-ui'
 import { RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityBlog } from '@/api/community'
+import { useLatestRequest } from '@/composables/useLatestRequest'
 import { compactNumber, formatDateTime, statusLabel, statusTone } from '@/utils/community'
 
 const rows = ref<CommunityBlog[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
+const { beginRequest } = useLatestRequest()
 const filters = reactive({
   keyword: '',
   blogType: null as string | null,
@@ -167,6 +169,7 @@ const columns: DataTableColumns<CommunityBlog> = [
 const rowKey = (row: CommunityBlog) => row.id
 
 async function loadData() {
+  const isCurrentRequest = beginRequest()
   loading.value = true
   errorMessage.value = ''
   try {
@@ -177,12 +180,14 @@ async function loadData() {
       pageNum: pagination.page,
       pageSize: pagination.pageSize
     })
-    rows.value = result.list
+    if (!isCurrentRequest()) return
+    rows.value = result.list ?? []
     pagination.itemCount = result.total
   } catch (error) {
+    if (!isCurrentRequest()) return
     errorMessage.value = error instanceof Error ? error.message : '博客列表加载失败'
   } finally {
-    loading.value = false
+    if (isCurrentRequest()) loading.value = false
   }
 }
 

@@ -45,12 +45,12 @@ export interface CommunityUser {
   id: string
   username: string
   displayName: string
-  email: string
+  email?: string | null
   status: string
   verificationStatus: string
-  personalBlogId?: string
-  personalBlogName?: string
-  lastLoginAt?: string
+  personalBlogId?: string | null
+  personalBlogName?: string | null
+  lastLoginAt?: string | null
   createdAt: string
 }
 

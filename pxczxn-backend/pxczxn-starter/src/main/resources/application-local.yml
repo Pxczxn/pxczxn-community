@@ -92,3 +92,18 @@ logging:
   level:
     top.pxczxn.platform: debug
     top.pxczxn.community: debug
+
+# Springdoc OpenAPI 3.1 配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+

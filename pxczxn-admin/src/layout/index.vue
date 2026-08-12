@@ -309,9 +309,7 @@
       <!-- 内容区 -->
       <n-layout-content class="layout-content">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
+          <component :is="Component" class="route-view route-fade-in" />
         </router-view>
       </n-layout-content>
     </n-layout>
@@ -1230,6 +1228,15 @@ body.dark-theme .layout-content {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.route-fade-in {
+  animation: route-fade-in 0.15s ease;
+}
+
+@keyframes route-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* 搜索面板 */

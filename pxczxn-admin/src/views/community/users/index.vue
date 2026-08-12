@@ -102,11 +102,14 @@ import { useRouter } from 'vue-router'
 import { NButton, NTag, useMessage, type DataTableColumns } from 'naive-ui'
 import { RefreshOutline, SearchOutline } from '@vicons/ionicons5'
 import { communityApi, type CommunityUser } from '@/api/community'
+import { useLatestRequest } from '@/composables/useLatestRequest'
 import { formatDateTime, statusLabel, statusTone } from '@/utils/community'
 
 const rows = ref<CommunityUser[]>([])
 const loading = ref(false)
 const errorMessage = ref('')
+const { beginRequest: beginListRequest } = useLatestRequest()
+const { beginRequest: beginDetailRequest } = useLatestRequest()
 const router = useRouter()
 const message = useMessage()
 const filters = reactive({
@@ -128,15 +131,19 @@ const userDetailLoading = ref(false)
 
 async function openUserDetail(row: CommunityUser) {
   if (userDetailLoading.value) return
+  const isCurrentRequest = beginDetailRequest()
   showUserDetail.value = true
   userDetailLoading.value = true
   userDetail.value = null
   try {
-    userDetail.value = await communityApi.user(row.id)
+    const detail = await communityApi.user(row.id)
+    if (!isCurrentRequest()) return
+    userDetail.value = detail
   } catch (cause) {
+    if (!isCurrentRequest()) return
     message.error(cause instanceof Error ? cause.message : '用户资料加载失败')
   } finally {
-    userDetailLoading.value = false
+    if (isCurrentRequest()) userDetailLoading.value = false
   }
 }
 
@@ -159,8 +166,13 @@ function maskedValue(value: string, visiblePrefix = 2) {
   return `${value.slice(0, visiblePrefix)}***${value.slice(-1)}`
 }
 
-function maskedEmail(email: string) {
+function maskedEmail(email?: string | null) {
+  if (!email) return '—'
+
   const [local = '', domain = ''] = email.split('@')
+
+  if (!domain) return maskedValue(local)
+
   return `${maskedValue(local)}@${maskedValue(domain, 1)}`
 }
 
@@ -176,14 +188,20 @@ const columns: DataTableColumns<CommunityUser> = [
     title: '用户',
     key: 'displayName',
     width: 160,
-    render: row => h('div', { class: 'identity-cell' }, [
-      h('strong', row.displayName || row.username),
-      sensitiveValue(`@${maskedValue(row.username)}`, `@${row.username}`)
-    ])
+    render: row => {
+      const username = row.username || '—'
+      return h('div', { class: 'identity-cell' }, [
+        h('strong', row.displayName || username),
+        sensitiveValue(`@${maskedValue(username)}`, `@${username}`)
+      ])
+    }
   },
   {
     title: '邮箱', key: 'email', width: 175,
-    render: row => sensitiveValue(maskedEmail(row.email), row.email)
+    render: row => {
+      if (!row.email) return '—'
+      return sensitiveValue(maskedEmail(row.email), row.email)
+    }
   },
   {
     title: '状态',
@@ -241,6 +259,7 @@ const columns: DataTableColumns<CommunityUser> = [
 const rowKey = (row: CommunityUser) => row.id
 
 async function loadData() {
+  const isCurrentRequest = beginListRequest()
   loading.value = true
   errorMessage.value = ''
   try {
@@ -251,12 +270,14 @@ async function loadData() {
       pageNum: pagination.page,
       pageSize: pagination.pageSize
     })
-    rows.value = result.list
+    if (!isCurrentRequest()) return
+    rows.value = result.list ?? []
     pagination.itemCount = result.total
   } catch (error) {
+    if (!isCurrentRequest()) return
     errorMessage.value = error instanceof Error ? error.message : '用户列表加载失败'
   } finally {
-    loading.value = false
+    if (isCurrentRequest()) loading.value = false
   }
 }
 

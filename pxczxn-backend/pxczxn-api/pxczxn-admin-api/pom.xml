@@ -74,5 +74,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
+        <!-- Springdoc OpenAPI (for annotations) -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

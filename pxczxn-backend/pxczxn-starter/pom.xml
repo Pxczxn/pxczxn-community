@@ -23,6 +23,13 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
+
+        <!-- Springdoc OpenAPI 3.1 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
         <!-- 后台接口层 -->
         <dependency>
             <groupId>top.pxczxn</groupId>
